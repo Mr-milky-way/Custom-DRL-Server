@@ -20,6 +20,7 @@
   "homepage": "https://github.com/Mr-milky-way/Custom-DRL-Server#readme",
   "dependencies": {
     "express": "^5.2.1",
+    "multer": "^2.0.2",
     "sqlite3": "^5.1.7"
   }
 }
