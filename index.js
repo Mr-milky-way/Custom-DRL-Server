@@ -5,7 +5,7 @@ const querystring = require('querystring');
 const db = new sqlite3.Database('main.db');
 
 const app = express();
-const PORT = 3000;
+const PORT = 8080;
 
 db.serialize(() => {
     db.run("CREATE TABLE IF NOT EXISTS user (token TEXT, time INT, version TEXT, os TEXT)");
@@ -109,7 +109,7 @@ function getTimeBase64() {
     const base64Data = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');
     return base64Data
 }
-
+/*
 function dummyStateData(res) {
     const payload = { lastState: null };
     const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
@@ -239,10 +239,10 @@ const server = http.createServer((req, res) => {
     }
 });
 
-server.listen(8080, () => {
+server.listen(null, () => {
     console.log("Server listening on http://192.168.1.34:8080"); // THIS WILL BE DIFFERENT IF ON A DIFFERENT COMPUTER
 });
-
+*/
 app.listen(PORT, () => {
     console.log(`Server is running on [http://localhost:${PORT}](http://localhost:${PORT})`);
 });
