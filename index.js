@@ -1,10 +1,18 @@
 const http = require('http');
+const sqlite3 = require('sqlite3').verbose();
 const querystring = require('querystring');
+const db = new sqlite3.Database('main.db');
+
+
+db.serialize(() => {
+    db.run("CREATE TABLE IF NOT EXISTS user (token TEXT, time INT, version TEXT, os TEXT)");
+});
+
 
 // Helper: timestamp as Base64
 function getTimeBase64() {
     const payload = {
-    time: Math.floor(Date.now() / 1000)
+        time: Math.floor(Date.now() / 1000)
     };
     const base64Data = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');
     return base64Data
@@ -38,20 +46,7 @@ function dummyProgressionData(res) {
 }
 
 function dummyMapData(res) {
-    const payload = [
-        {
-            guid: "track-001",
-            name: "Beginner Track",
-            "xp-value": 100,
-            "xp-min-time": 45
-        },
-        {
-            guid: "track-002",
-            name: "Advanced Track",
-            "xp-value": 300,
-            "xp-min-time": 40
-        }
-    ]; // can be empty array
+    const payload = [];
     const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ success: true, data: base64Data }));
@@ -86,6 +81,14 @@ function respondLogin(req, res) {
             .from(JSON.stringify(responseData))
             .toString('base64');
 
+        db.serialize(() => {
+            const stmt = db.prepare("INSERT INTO user (token, time, version, os) VALUES (?)");
+            for (let i = 0; i < 10; i++) {
+                stmt.run(parsed.token, parsed.time, parsed.version, parsed.os);
+            }
+            stmt.finalize();
+        });
+
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
             success: true,
@@ -96,6 +99,16 @@ function respondLogin(req, res) {
 }
 
 function respondStorage(res) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true }));
+}
+
+function dummyXPprogData( res) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true }));
+}
+
+function dummyCircuitsData( res) {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ success: true }));
 }
@@ -122,6 +135,10 @@ const server = http.createServer((req, res) => {
         dummyStateData(res);
     } else if (req.method === "GET" && (req.url.startsWith("/maps/"))) {
         dummyMapData(res);
+    } else if (req.method === "GET" && (req.url.startsWith("/experience-points/progression/"))) {
+        dummyXPprogData(res);
+    } else if (req.method === "GET" && (req.url.startsWith("/circuits/"))) {
+        dummyCircuitsData(res);
     } else {
         console.log("404 sent")
         res.writeHead(404, { 'Content-Type': 'application/json' });
@@ -130,5 +147,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(8080, () => {
-    console.log("Server listening on http://192.168.1.34:8080");
+    console.log("Server listening on http://192.168.1.34:8080"); // THIS WILL BE DIFFERENT IF ON A DIFFERENT COMPUTER
 });
