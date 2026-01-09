@@ -14,13 +14,23 @@ db.serialize(() => {
     db.run("CREATE TABLE IF NOT EXISTS user (token TEXT, time INT, version TEXT, os TEXT)");
 });
 
-app.use('/tracks', express.static(path.join(__dirname, 'tracks')));
+app.use('/maps', express.static(path.join(__dirname, 'maps')));
 
 app.post('/storage/logs/', (req, res) => {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+        console.log(body)
+    })
     res.status(200).json({ success: true });
 })
 
 app.post('/storage/image/', (req, res) => {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+        console.log(body)
+    })
     res.status(200).json({ success: true });
 })
 
@@ -89,7 +99,7 @@ app.get('/state/game/', (req, res) => {
 
 app.get('/state/', (req, res) => {
     const payload = {
-        "invalidate-settings-cache": "True",
+        "invalidate-settings-cache": "False",
         "_id": "629fdc1cf9f4670094b5dbb6",
         "createdAt": "2022-06-07T23:15:40.526Z",
         "updatedAt": "2025-06-06T21:25:04.988Z",
@@ -101,9 +111,9 @@ app.get('/state/', (req, res) => {
         "clear-maps-cache": false,
         "player-id": "629fdc1c6b1092601af12c93",
         "profile-color": "8e00ef",
-        "profile-country-iso": "DE",
+        "profile-country-iso": "US",
         "profile-language-iso": "english",
-        "profile-name": "gysi OG",
+        "profile-name": "Ninety9prob",
         "settings-controller-profiles": "{\"Version\":3,\"Data\":[{\"hardwareName\":\"frsky simulator\",\"guid\":\"978c63dd2933\",\"isDefault\":false,\"defaultControllerType\":3,\"centerPointMode\":false,\"rawInputMode\":false,\"assignedAxisData\":[{\"ElementID\":3,\"rawAxis\":1,\"assignedAxis\":0,\"center\":-0.00363135338,\"min\":-0.9921111,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0005},{\"ElementID\":0,\"rawAxis\":4,\"assignedAxis\":1,\"center\":0.0154345036,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":1.0,\"inverted\":false,\"deadzone\":0.0005},{\"ElementID\":1,\"rawAxis\":3,\"assignedAxis\":2,\"center\":-0.002342403,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0005},{\"ElementID\":2,\"rawAxis\":2,\"assignedAxis\":3,\"center\":-0.007799804,\"min\":-0.9527428,\"max\":0.9527428,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0005},{\"ElementID\":4,\"rawAxis\":27,\"assignedAxis\":4,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0005},{\"ElementID\":7,\"rawAxis\":28,\"assignedAxis\":5,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0005}],\"toggleAsButtonA\":-1,\"toggleAsButtonB\":-1,\"customXMLmap\":\"\",\"usingCustomXMLmap\":true,\"usingAdapter\":false},{\"hardwareName\":\"controller (xbox 360 for windows)\",\"guid\":\"d61d81697dcb\",\"isDefault\":true,\"defaultControllerType\":1,\"centerPointMode\":false,\"rawInputMode\":false,\"assignedAxisData\":[{\"ElementID\":0,\"rawAxis\":1,\"assignedAxis\":0,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0005},{\"ElementID\":1,\"rawAxis\":4,\"assignedAxis\":1,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":0.0,\"inverted\":false,\"deadzone\":0.0005},{\"ElementID\":2,\"rawAxis\":3,\"assignedAxis\":2,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0005},{\"ElementID\":3,\"rawAxis\":2,\"assignedAxis\":3,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0005},{\"ElementID\":-1,\"rawAxis\":27,\"assignedAxis\":4,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0005},{\"ElementID\":-1,\"rawAxis\":28,\"assignedAxis\":5,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0005}],\"toggleAsButtonA\":-2,\"toggleAsButtonB\":-2,\"customXMLmap\":\"\",\"usingCustomXMLmap\":false,\"usingAdapter\":false},{\"hardwareName\":\"rm tx16s joystick\",\"guid\":\"WindowsRawInputRMTX16SJoystick203084f541209-0000-0000-0000-504944564944\",\"isDefault\":false,\"defaultControllerType\":3,\"centerPointMode\":false,\"rawInputMode\":false,\"assignedAxisData\":[{\"ElementID\":3,\"rawAxis\":1,\"assignedAxis\":0,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0005},{\"ElementID\":2,\"rawAxis\":4,\"assignedAxis\":1,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-1.0,\"inverted\":false,\"deadzone\":0.0005},{\"ElementID\":0,\"rawAxis\":3,\"assignedAxis\":2,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0005},{\"ElementID\":1,\"rawAxis\":2,\"assignedAxis\":3,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0005},{\"ElementID\":4,\"rawAxis\":27,\"assignedAxis\":4,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0},{\"ElementID\":5,\"rawAxis\":28,\"assignedAxis\":5,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0}],\"toggleAsButtonA\":-1,\"toggleAsButtonB\":-1,\"customXMLmap\":\"\",\"usingCustomXMLmap\":true,\"usingAdapter\":false},{\"hardwareName\":\"controller (xbox one for windows)\",\"guid\":\"WindowsRawInputController(XboxOneForWindows)76702ff045e-0000-0000-0000-504944564944\",\"isDefault\":false,\"defaultControllerType\":1,\"centerPointMode\":false,\"rawInputMode\":false,\"assignedAxisData\":[{\"ElementID\":0,\"rawAxis\":1,\"assignedAxis\":0,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0},{\"ElementID\":1,\"rawAxis\":4,\"assignedAxis\":1,\"center\":0.203362942,\"min\":-0.3591618,\"max\":1.0,\"zeroThrottle\":-1.0,\"inverted\":true,\"deadzone\":0.0},{\"ElementID\":2,\"rawAxis\":3,\"assignedAxis\":2,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0},{\"ElementID\":3,\"rawAxis\":2,\"assignedAxis\":3,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":true,\"deadzone\":0.0},{\"ElementID\":4,\"rawAxis\":27,\"assignedAxis\":4,\"center\":0.0,\"min\":-1.0,\"max\":0.9414359,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0},{\"ElementID\":5,\"rawAxis\":28,\"assignedAxis\":5,\"center\":0.0,\"min\":-1.0,\"max\":0.9960937,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0}],\"toggleAsButtonA\":-1,\"toggleAsButtonB\":-1,\"customXMLmap\":\"\",\"usingCustomXMLmap\":true,\"usingAdapter\":false},{\"hardwareName\":\"radiomaster boxer joystick\",\"guid\":\"WindowsRawInputRadiomasterBoxerJoystick203084f541209-0000-0000-0000-504944564944\",\"isDefault\":false,\"defaultControllerType\":3,\"centerPointMode\":false,\"rawInputMode\":false,\"assignedAxisData\":[{\"ElementID\":3,\"rawAxis\":1,\"assignedAxis\":0,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0},{\"ElementID\":2,\"rawAxis\":4,\"assignedAxis\":1,\"center\":-0.00600608252,\"min\":-1.0,\"max\":0.9849918,\"zeroThrottle\":-1.0,\"inverted\":false,\"deadzone\":0.0},{\"ElementID\":0,\"rawAxis\":3,\"assignedAxis\":2,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0102000479},{\"ElementID\":1,\"rawAxis\":2,\"assignedAxis\":3,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0102000479},{\"ElementID\":32,\"rawAxis\":27,\"assignedAxis\":4,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0},{\"ElementID\":33,\"rawAxis\":28,\"assignedAxis\":5,\"center\":0.0,\"min\":-1.0,\"max\":1.0,\"zeroThrottle\":-2.0,\"inverted\":false,\"deadzone\":0.0}],\"toggleAsButtonA\":0,\"toggleAsButtonB\":1,\"customXMLmap\":\"\",\"usingCustomXMLmap\":true,\"usingAdapter\":false}]}",
         "settings-fc-profile-active-guid": "816aa6a57b4b",
         "settings-fc-profiles": "[{\"fcp-guid\":\"c9c95741a820\",\"fcp-rc-rate-pitch-rollp\":0.65,\"fcp-rc-rate-pitch-rollr\":0.65,\"fcp-rc-rate-yaw\":0.65,\"fcp-super-rate-pitch-rollp\":0.65,\"fcp-super-rate-pitch-rollr\":0.65,\"fcp-super-rate-yaw\":0.65,\"fcp-expo-pitch-rollp\":0.0,\"fcp-expo-pitch-rollr\":0.0,\"fcp-expo-yaw\":0.0,\"fcp-expo-throttle\":0.0,\"fcp-super-rate-throttle\":0.5,\"fcp-drone-tilt\":35.0,\"fcp-drone-fov\":90.84043,\"fcp-pid-yaw-p\":55.0,\"fcp-pid-yaw-i\":0.0,\"fcp-pid-yaw-d\":0.0,\"fcp-pid-pitch-p\":40.0,\"fcp-pid-pitch-i\":0.0,\"fcp-pid-pitch-d\":50.0,\"fcp-pid-roll-p\":40.0,\"fcp-pid-roll-i\":0.0,\"fcp-pid-roll-d\":50.0,\"fcp-rc-rate-throttle\":2.5142},{\"fcp-guid\":\"816aa6a57b4b\",\"fcp-rc-rate-pitch-rollp\":0.7,\"fcp-rc-rate-pitch-rollr\":0.93,\"fcp-rc-rate-yaw\":0.539999962,\"fcp-super-rate-pitch-rollp\":0.7,\"fcp-super-rate-pitch-rollr\":0.7,\"fcp-super-rate-yaw\":0.7,\"fcp-expo-pitch-rollp\":0.0,\"fcp-expo-pitch-rollr\":0.0,\"fcp-expo-yaw\":0.0,\"fcp-expo-throttle\":0.0,\"fcp-super-rate-throttle\":0.0,\"fcp-drone-tilt\":46.0,\"fcp-drone-fov\":94.43441,\"fcp-pid-yaw-p\":55.0,\"fcp-pid-yaw-i\":0.0,\"fcp-pid-yaw-d\":0.0,\"fcp-pid-pitch-p\":40.0,\"fcp-pid-pitch-i\":0.0,\"fcp-pid-pitch-d\":50.0,\"fcp-pid-roll-p\":40.0,\"fcp-pid-roll-i\":0.0,\"fcp-pid-roll-d\":50.0,\"fcp-rc-rate-throttle\":2.5142},{\"fcp-guid\":\"747408b3b665\",\"fcp-rc-rate-pitch-rollp\":1.93999994,\"fcp-rc-rate-pitch-rollr\":0.5,\"fcp-rc-rate-yaw\":0.25,\"fcp-super-rate-pitch-rollp\":0.0,\"fcp-super-rate-pitch-rollr\":0.7,\"fcp-super-rate-yaw\":0.7,\"fcp-expo-pitch-rollp\":1.0,\"fcp-expo-pitch-rollr\":0.0,\"fcp-expo-yaw\":0.0,\"fcp-expo-throttle\":0.0,\"fcp-super-rate-throttle\":0.0,\"fcp-pid-yaw-p\":55.0,\"fcp-pid-yaw-i\":0.0,\"fcp-pid-yaw-d\":0.0,\"fcp-pid-pitch-p\":40.0,\"fcp-pid-pitch-i\":0.0,\"fcp-pid-pitch-d\":50.0,\"fcp-pid-roll-p\":40.0,\"fcp-pid-roll-i\":0.0,\"fcp-pid-roll-d\":50.0,\"fcp-rc-rate-throttle\":2.5142,\"fcp-drone-tilt\":46.0,\"fcp-drone-fov\":94.43441},{\"fcp-guid\":\"04c1d0067c95\",\"fcp-rc-rate-pitch-rollp\":0.7,\"fcp-rc-rate-pitch-rollr\":0.7,\"fcp-rc-rate-yaw\":0.7,\"fcp-super-rate-pitch-rollp\":0.099999994,\"fcp-super-rate-pitch-rollr\":0.099999994,\"fcp-super-rate-yaw\":0.099999994,\"fcp-expo-pitch-rollp\":0.0,\"fcp-expo-pitch-rollr\":0.0,\"fcp-expo-yaw\":0.0,\"fcp-expo-throttle\":0.0,\"fcp-super-rate-throttle\":0.5},{\"fcp-guid\":\"140555e05021\",\"fcp-rc-rate-pitch-rollp\":0.7,\"fcp-rc-rate-pitch-rollr\":0.7,\"fcp-rc-rate-yaw\":0.7,\"fcp-super-rate-pitch-rollp\":0.1,\"fcp-super-rate-pitch-rollr\":0.1,\"fcp-super-rate-yaw\":0.1,\"fcp-expo-pitch-rollp\":0.0,\"fcp-expo-pitch-rollr\":0.0,\"fcp-expo-yaw\":0.0,\"fcp-expo-throttle\":0.0,\"fcp-super-rate-throttle\":0.5}]",
@@ -141,14 +151,14 @@ app.get('/state/', (req, res) => {
         "settings-audio-volume-main": "0.2031153",
         "profile-affiliation-ama": "no",
         "profile-affiliation-military": "no",
-        "profile-age": "32",
-        "profile-country": "DE",
+        "profile-age": "",
+        "profile-country": "US",
         "profile-data-completion": "1",
-        "profile-email": "drl@i337.de",
+        "profile-email": "",
         "profile-experience-built-own-drone": "no",
         "profile-experience-fpv": "never flown",
         "profile-experience-non-fpv": "never flown",
-        "profile-full-name": "Gregor Dieter",
+        "profile-full-name": "",
         "profile-gender": "male",
         "profile-watch-drl": "social media",
         "profile-experience-fpv-years": "1",
@@ -201,7 +211,11 @@ app.get('/state/', (req, res) => {
 app.use(express.json());
 
 app.post('/state/', (req, res) => {
-    console.log(req.body);
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+        console.log(body)
+    })
     res.status(200).json({ success: true });
 })
 
@@ -219,20 +233,51 @@ app.get('/maps/user/updated/', (req, res) => {
     res.status(200).json({ success: true, data: base64Data });
 })
 
+
+function getStartOfNextISOWeek() {
+    const today = new Date();
+
+    const todayISODay = today.getDay() === 0 ? 7 : today.getDay();
+
+    const daysUntilNextMonday = 8 - todayISODay; 
+    
+    today.setDate(today.getDate() + daysUntilNextMonday);
+    today.setHours(0, 0, 0, 0);
+
+
+    return today.toISOString().split('T')[0];
+}
+
+
+function getEndOfLastISOWeek() {
+    const today = new Date();
+
+    const daysSinceLastSunday = today.getDay() === 0 ? 7 : today.getDay();
+
+    const lastSunday = new Date(today.setDate(today.getDate() - daysSinceLastSunday));
+
+    lastSunday.setHours(23, 59, 59, 999);
+
+    const isoString = lastSunday.toISOString();
+
+    return isoString;
+}
+
+
 app.get('/experience-points/progression/', (req, res) => {
     const payload = {
-        "xp": 3500,
-        "previous-level-xp": 2000,
-        "next-level-xp": 5000,
-        "level": 7,
-        "rank-name": "Gold",
-        "rank-index": 3,
-        "rank-position": 42,
-        "rank-round-start": "2026-01-01T00:00:00",
-        "rank-round-end": "2026-01-31T23:59:59",
-        "streak-points": 15,
-        "daily-completed-maps": 3,
-        "goal-daily-completed-maps": 5,
+        "xp": 0,
+        "previous-level-xp": 0,
+        "next-level-xp": 100,
+        "level": 1,
+        "rank-name": "Bronze",
+        "rank-index": 0,
+        "rank-position": 0,
+        "rank-round-start": getEndOfLastISOWeek(),
+        "rank-round-end": getStartOfNextISOWeek(),
+        "streak-points": 0,
+        "daily-completed-maps": 0,
+        "goal-daily-completed-maps": 0,
         "prizes": [
             { "id": "prize1", "name": "Golden Badge", "amount": 1 },
             { "id": "prize2", "name": "XP Boost", "amount": 100 }
