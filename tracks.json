@@ -70,7 +70,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-c16dc288e3fe656ba00bb43a"
+        "full-track-url": "http://localhost:8080/tracks/CMP-c16dc288e3fe656ba00bb43a"
     },
     {
         "guid": "CMP-546ceb6adc18c96faffe2018",
@@ -139,7 +139,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-546ceb6adc18c96faffe2018"
+        "full-track-url": "http://localhost:8080/tracks/CMP-546ceb6adc18c96faffe2018"
     },
     {
         "guid": "CMP-a45115bb2cf0ef930010f43e",
@@ -208,7 +208,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-a45115bb2cf0ef930010f43e"
+        "full-track-url": "http://localhost:8080/tracks/CMP-a45115bb2cf0ef930010f43e"
     },
     {
         "guid": "CMP-67d5c63ccb933810c817258d",
@@ -277,7 +277,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-67d5c63ccb933810c817258d"
+        "full-track-url": "http://localhost:8080/tracks/CMP-67d5c63ccb933810c817258d"
     },
     {
         "guid": "CMP-304dc7d6ddf678e16db8ede5",
@@ -343,7 +343,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-304dc7d6ddf678e16db8ede5"
+        "full-track-url": "http://localhost:8080/tracks/CMP-304dc7d6ddf678e16db8ede5"
     },
     {
         "guid": "CMP-c2190ea5eea7f872b1309953",
@@ -410,7 +410,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-c2190ea5eea7f872b1309953"
+        "full-track-url": "http://localhost:8080/tracks/CMP-c2190ea5eea7f872b1309953"
     },
     {
         "guid": "CMP-4de34c061e2226d7edc9d9d0",
@@ -481,7 +481,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-4de34c061e2226d7edc9d9d0"
+        "full-track-url": "http://localhost:8080/tracks/CMP-4de34c061e2226d7edc9d9d0"
     },
     {
         "guid": "CMP-36b74e609abf17e160c1d58f",
@@ -547,7 +547,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-36b74e609abf17e160c1d58f"
+        "full-track-url": "http://localhost:8080/tracks/CMP-36b74e609abf17e160c1d58f"
     },
     {
         "guid": "CMP-b285fbf2e99932ae599fc384",
@@ -614,7 +614,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-b285fbf2e99932ae599fc384"
+        "full-track-url": "http://localhost:8080/tracks/CMP-b285fbf2e99932ae599fc384"
     },
     {
         "guid": "CMP-febc2c29bfa619795f7d2f48",
@@ -686,7 +686,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-febc2c29bfa619795f7d2f48"
+        "full-track-url": "http://localhost:8080/tracks/CMP-febc2c29bfa619795f7d2f48"
     },
     {
         "guid": "CMP-6f7c2863c0d546dca5ad5ff5",
@@ -757,7 +757,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-6f7c2863c0d546dca5ad5ff5"
+        "full-track-url": "http://localhost:8080/tracks/CMP-6f7c2863c0d546dca5ad5ff5"
     },
     {
         "guid": "CMP-38af59750b8eff2fe44b08ef",
@@ -826,7 +826,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-38af59750b8eff2fe44b08ef"
+        "full-track-url": "http://localhost:8080/tracks/CMP-38af59750b8eff2fe44b08ef"
     },
     {
         "guid": "CMP-083a3849284fbb25b734079f",
@@ -892,7 +892,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-083a3849284fbb25b734079f"
+        "full-track-url": "http://localhost:8080/tracks/CMP-083a3849284fbb25b734079f"
     },
     {
         "guid": "CMP-2619f376e9122e3b06e469fb",
@@ -968,7 +968,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-2619f376e9122e3b06e469fb"
+        "full-track-url": "http://localhost:8080/tracks/CMP-2619f376e9122e3b06e469fb"
     },
     {
         "guid": "CMP-9be8e7b12eec10b0936883b9",
@@ -1037,7 +1037,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-9be8e7b12eec10b0936883b9"
+        "full-track-url": "http://localhost:8080/tracks/CMP-9be8e7b12eec10b0936883b9"
     },
     {
         "guid": "CMP-3b1318db5ff046a88efca70e",
@@ -1101,7 +1101,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-3b1318db5ff046a88efca70e"
+        "full-track-url": "http://localhost:8080/tracks/CMP-3b1318db5ff046a88efca70e"
     },
     {
         "guid": "CMP-cc69708c444badce0901218d",
@@ -1170,7 +1170,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-cc69708c444badce0901218d"
+        "full-track-url": "http://localhost:8080/tracks/CMP-cc69708c444badce0901218d"
     },
     {
         "guid": "CMP-457ab50bcbda6268c0a17075",
@@ -1239,7 +1239,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-457ab50bcbda6268c0a17075"
+        "full-track-url": "http://localhost:8080/tracks/CMP-457ab50bcbda6268c0a17075"
     },
     {
         "guid": "CMP-90e6cc22f1be0f9aeca7874c",
@@ -1308,7 +1308,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-90e6cc22f1be0f9aeca7874c"
+        "full-track-url": "http://localhost:8080/tracks/CMP-90e6cc22f1be0f9aeca7874c"
     },
     {
         "guid": "CMP-845373803fa882b910a33a68",
@@ -1369,7 +1369,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-845373803fa882b910a33a68"
+        "full-track-url": "http://localhost:8080/tracks/CMP-845373803fa882b910a33a68"
     },
     {
         "guid": "CMP-3e9c750ba34ada10dcd7e8bb",
@@ -1430,7 +1430,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-3e9c750ba34ada10dcd7e8bb"
+        "full-track-url": "http://localhost:8080/tracks/CMP-3e9c750ba34ada10dcd7e8bb"
     },
     {
         "guid": "CMP-79e13c21ed29b9f3adc5325f",
@@ -1490,7 +1490,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-79e13c21ed29b9f3adc5325f"
+        "full-track-url": "http://localhost:8080/tracks/CMP-79e13c21ed29b9f3adc5325f"
     },
     {
         "guid": "CMP-8034249272c8430e13de8a34",
@@ -1552,7 +1552,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-8034249272c8430e13de8a34"
+        "full-track-url": "http://localhost:8080/tracks/CMP-8034249272c8430e13de8a34"
     },
     {
         "guid": "CMP-c0978f02e5708b904b859217",
@@ -1617,7 +1617,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-c0978f02e5708b904b859217"
+        "full-track-url": "http://localhost:8080/tracks/CMP-c0978f02e5708b904b859217"
     },
     {
         "guid": "CMP-dd11027f28d8faeb3bb19da7",
@@ -1682,7 +1682,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-dd11027f28d8faeb3bb19da7"
+        "full-track-url": "http://localhost:8080/tracks/CMP-dd11027f28d8faeb3bb19da7"
     },
     {
         "guid": "CMP-33a6f23044671189fb388f05",
@@ -1743,7 +1743,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-33a6f23044671189fb388f05"
+        "full-track-url": "http://localhost:8080/tracks/CMP-33a6f23044671189fb388f05"
     },
     {
         "guid": "CMP-c7efbebf80937e5ecd21a274",
@@ -1803,7 +1803,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-c7efbebf80937e5ecd21a274"
+        "full-track-url": "http://localhost:8080/tracks/CMP-c7efbebf80937e5ecd21a274"
     },
     {
         "guid": "CMP-bd33becd20128e0c8a4e86b3",
@@ -1863,7 +1863,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-bd33becd20128e0c8a4e86b3"
+        "full-track-url": "http://localhost:8080/tracks/CMP-bd33becd20128e0c8a4e86b3"
     },
     {
         "guid": "CMP-d542268e8c636e482a5a0296",
@@ -1925,7 +1925,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-d542268e8c636e482a5a0296"
+        "full-track-url": "http://localhost:8080/tracks/CMP-d542268e8c636e482a5a0296"
     },
     {
         "guid": "CMP-e67d3f0fa2e374298edfc36e",
@@ -1986,7 +1986,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-e67d3f0fa2e374298edfc36e"
+        "full-track-url": "http://localhost:8080/tracks/CMP-e67d3f0fa2e374298edfc36e"
     },
     {
         "guid": "CMP-e7cb4467b63b7ab6f3617456",
@@ -2051,7 +2051,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-e7cb4467b63b7ab6f3617456"
+        "full-track-url": "http://localhost:8080/tracks/CMP-e7cb4467b63b7ab6f3617456"
     },
     {
         "guid": "CMP-62c9f4ad5c15160e7077eb4f",
@@ -2120,7 +2120,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-62c9f4ad5c15160e7077eb4f"
+        "full-track-url": "http://localhost:8080/tracks/CMP-62c9f4ad5c15160e7077eb4f"
     },
     {
         "guid": "CMP-dbab65c14263966c74ada465",
@@ -2187,7 +2187,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-dbab65c14263966c74ada465"
+        "full-track-url": "http://localhost:8080/tracks/CMP-dbab65c14263966c74ada465"
     },
     {
         "guid": "CMP-503331f36ea43ae2ebb25879",
@@ -2248,7 +2248,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-503331f36ea43ae2ebb25879"
+        "full-track-url": "http://localhost:8080/tracks/CMP-503331f36ea43ae2ebb25879"
     },
     {
         "guid": "CMP-439fe01fcf55f219cd116b01",
@@ -2315,7 +2315,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-439fe01fcf55f219cd116b01"
+        "full-track-url": "http://localhost:8080/tracks/CMP-439fe01fcf55f219cd116b01"
     },
     {
         "guid": "CMP-f66d54b925d5096e9a367611",
@@ -2384,7 +2384,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-f66d54b925d5096e9a367611"
+        "full-track-url": "http://localhost:8080/tracks/CMP-f66d54b925d5096e9a367611"
     },
     {
         "guid": "CMP-3dd16f97c8ae3e5f36470eee",
@@ -2448,7 +2448,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-3dd16f97c8ae3e5f36470eee"
+        "full-track-url": "http://localhost:8080/tracks/CMP-3dd16f97c8ae3e5f36470eee"
     },
     {
         "guid": "CMP-a485031f4658460bb19bba68",
@@ -2511,7 +2511,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-a485031f4658460bb19bba68"
+        "full-track-url": "http://localhost:8080/tracks/CMP-a485031f4658460bb19bba68"
     },
     {
         "guid": "CMP-374eda734d9113a2344bdf09",
@@ -2570,7 +2570,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-374eda734d9113a2344bdf09"
+        "full-track-url": "http://localhost:8080/tracks/CMP-374eda734d9113a2344bdf09"
     },
     {
         "guid": "CMP-8d795ae3825d453b984c5637",
@@ -2633,7 +2633,7 @@
         "profile-platform-id": "76561198026600498",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-8d795ae3825d453b984c5637"
+        "full-track-url": "http://localhost:8080/tracks/CMP-8d795ae3825d453b984c5637"
     },
     {
         "guid": "CMP-1cc2bbd7e8b61df9ccf2bfcb",
@@ -2699,7 +2699,7 @@
         "profile-platform-id": "76561197997070354",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-1cc2bbd7e8b61df9ccf2bfcb"
+        "full-track-url": "http://localhost:8080/tracks/CMP-1cc2bbd7e8b61df9ccf2bfcb"
     },
     {
         "guid": "CMP-8feaf4ac08350f9c036f6b8b",
@@ -2765,7 +2765,7 @@
         "profile-platform-id": "76561197997070354",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-8feaf4ac08350f9c036f6b8b"
+        "full-track-url": "http://localhost:8080/tracks/CMP-8feaf4ac08350f9c036f6b8b"
     },
     {
         "guid": "CMP-0b4bad556c75bab6023e1c4a",
@@ -2828,7 +2828,7 @@
         "profile-platform-id": "76561197997070354",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-0b4bad556c75bab6023e1c4a"
+        "full-track-url": "http://localhost:8080/tracks/CMP-0b4bad556c75bab6023e1c4a"
     },
     {
         "guid": "CMP-47531dbc941da23f7a06f589",
@@ -2895,7 +2895,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-47531dbc941da23f7a06f589"
+        "full-track-url": "http://localhost:8080/tracks/CMP-47531dbc941da23f7a06f589"
     },
     {
         "guid": "CMP-a21cafe6e1c6c43509111c9a",
@@ -2964,7 +2964,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-a21cafe6e1c6c43509111c9a"
+        "full-track-url": "http://localhost:8080/tracks/CMP-a21cafe6e1c6c43509111c9a"
     },
     {
         "guid": "CMP-ad9784b026932d04123da653",
@@ -3027,7 +3027,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-ad9784b026932d04123da653"
+        "full-track-url": "http://localhost:8080/tracks/CMP-ad9784b026932d04123da653"
     },
     {
         "guid": "CMP-09cf181543e35fdbdbfd2e76",
@@ -3090,7 +3090,7 @@
         "profile-platform-id": "76561197997070354",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-09cf181543e35fdbdbfd2e76"
+        "full-track-url": "http://localhost:8080/tracks/CMP-09cf181543e35fdbdbfd2e76"
     },
     {
         "guid": "CMP-d74a7b93f15431314fcafa63",
@@ -3160,7 +3160,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-d74a7b93f15431314fcafa63"
+        "full-track-url": "http://localhost:8080/tracks/CMP-d74a7b93f15431314fcafa63"
     },
     {
         "guid": "CMP-1236184b3b6eae92e376a12c",
@@ -3219,7 +3219,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-1236184b3b6eae92e376a12c"
+        "full-track-url": "http://localhost:8080/tracks/CMP-1236184b3b6eae92e376a12c"
     },
     {
         "guid": "CMP-63f29e988f24a54fccf949bb",
@@ -3282,7 +3282,7 @@
         "profile-platform-id": "76561197997070354",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-63f29e988f24a54fccf949bb"
+        "full-track-url": "http://localhost:8080/tracks/CMP-63f29e988f24a54fccf949bb"
     },
     {
         "guid": "CMP-ef225f0752c3de49e0d9b38a",
@@ -3354,7 +3354,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-ef225f0752c3de49e0d9b38a"
+        "full-track-url": "http://localhost:8080/tracks/CMP-ef225f0752c3de49e0d9b38a"
     },
     {
         "guid": "CMP-bdae07145fb79f2ad9ba0423",
@@ -3420,7 +3420,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-bdae07145fb79f2ad9ba0423"
+        "full-track-url": "http://localhost:8080/tracks/CMP-bdae07145fb79f2ad9ba0423"
     },
     {
         "guid": "CMP-c3095bd8c72cd0d9eb0b80f1",
@@ -3481,7 +3481,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-c3095bd8c72cd0d9eb0b80f1"
+        "full-track-url": "http://localhost:8080/tracks/CMP-c3095bd8c72cd0d9eb0b80f1"
     },
     {
         "guid": "CMP-bc8c43f123bf70b0708cccd8",
@@ -3557,7 +3557,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-bc8c43f123bf70b0708cccd8"
+        "full-track-url": "http://localhost:8080/tracks/CMP-bc8c43f123bf70b0708cccd8"
     },
     {
         "guid": "CMP-af26895e90b0f65bcbc80f14",
@@ -3632,7 +3632,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-af26895e90b0f65bcbc80f14"
+        "full-track-url": "http://localhost:8080/tracks/CMP-af26895e90b0f65bcbc80f14"
     },
     {
         "guid": "CMP-35575708d9373f7822be6deb",
@@ -3701,7 +3701,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-35575708d9373f7822be6deb"
+        "full-track-url": "http://localhost:8080/tracks/CMP-35575708d9373f7822be6deb"
     },
     {
         "guid": "CMP-078934965adb3e7db63af736",
@@ -3765,7 +3765,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-078934965adb3e7db63af736"
+        "full-track-url": "http://localhost:8080/tracks/CMP-078934965adb3e7db63af736"
     },
     {
         "guid": "CMP-9a51ec5d1a80d7bffe7c16fd",
@@ -3833,7 +3833,7 @@
         "profile-platform-id": "76561197997070354",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-9a51ec5d1a80d7bffe7c16fd"
+        "full-track-url": "http://localhost:8080/tracks/CMP-9a51ec5d1a80d7bffe7c16fd"
     },
     {
         "guid": "CMP-3b5f210d04c5b7fdc75bfa6d",
@@ -3900,7 +3900,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-3b5f210d04c5b7fdc75bfa6d"
+        "full-track-url": "http://localhost:8080/tracks/CMP-3b5f210d04c5b7fdc75bfa6d"
     },
     {
         "guid": "CMP-b9c7ba35c21802e5690bf508",
@@ -3964,7 +3964,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-b9c7ba35c21802e5690bf508"
+        "full-track-url": "http://localhost:8080/tracks/CMP-b9c7ba35c21802e5690bf508"
     },
     {
         "guid": "CMP-e93ca3f973497401d0dcb331",
@@ -4028,7 +4028,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-e93ca3f973497401d0dcb331"
+        "full-track-url": "http://localhost:8080/tracks/CMP-e93ca3f973497401d0dcb331"
     },
     {
         "guid": "CMP-6292624e89d43fea71420f16",
@@ -4085,7 +4085,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-6292624e89d43fea71420f16"
+        "full-track-url": "http://localhost:8080/tracks/CMP-6292624e89d43fea71420f16"
     },
     {
         "guid": "CMP-60da79544961bced88e1e769",
@@ -4160,7 +4160,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-60da79544961bced88e1e769"
+        "full-track-url": "http://localhost:8080/tracks/CMP-60da79544961bced88e1e769"
     },
     {
         "guid": "CMP-4ec6dba40a8aa0ddd81be4e9",
@@ -4232,7 +4232,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-4ec6dba40a8aa0ddd81be4e9"
+        "full-track-url": "http://localhost:8080/tracks/CMP-4ec6dba40a8aa0ddd81be4e9"
     },
     {
         "guid": "CMP-80574022d16b03e0b2c7226b",
@@ -4303,7 +4303,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-80574022d16b03e0b2c7226b"
+        "full-track-url": "http://localhost:8080/tracks/CMP-80574022d16b03e0b2c7226b"
     },
     {
         "guid": "CMP-66e6e6bc8764eb5ae7927e64",
@@ -4377,7 +4377,7 @@
         "profile-platform-id": "76561198028948202",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-66e6e6bc8764eb5ae7927e64"
+        "full-track-url": "http://localhost:8080/tracks/CMP-66e6e6bc8764eb5ae7927e64"
     },
     {
         "guid": "CMP-07a097cd1c9be6785da56827",
@@ -4437,7 +4437,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-07a097cd1c9be6785da56827"
+        "full-track-url": "http://localhost:8080/tracks/CMP-07a097cd1c9be6785da56827"
     },
     {
         "guid": "CMP-48ce4155c57415baedaece19",
@@ -4498,7 +4498,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-48ce4155c57415baedaece19"
+        "full-track-url": "http://localhost:8080/tracks/CMP-48ce4155c57415baedaece19"
     },
     {
         "guid": "CMP-b7d43486bac2362320b7a67e",
@@ -4565,7 +4565,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-b7d43486bac2362320b7a67e"
+        "full-track-url": "http://localhost:8080/tracks/CMP-b7d43486bac2362320b7a67e"
     },
     {
         "guid": "CMP-14e2e077bc9118c37eabc414",
@@ -4631,7 +4631,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-14e2e077bc9118c37eabc414"
+        "full-track-url": "http://localhost:8080/tracks/CMP-14e2e077bc9118c37eabc414"
     },
     {
         "guid": "CMP-01981c786c41b5ed895255d3",
@@ -4692,7 +4692,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-01981c786c41b5ed895255d3"
+        "full-track-url": "http://localhost:8080/tracks/CMP-01981c786c41b5ed895255d3"
     },
     {
         "guid": "CMP-a953a1a75b2d615a0213a7dc",
@@ -4753,7 +4753,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-a953a1a75b2d615a0213a7dc"
+        "full-track-url": "http://localhost:8080/tracks/CMP-a953a1a75b2d615a0213a7dc"
     },
     {
         "guid": "CMP-b145cea7a61bab93a939dedc",
@@ -4816,7 +4816,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-b145cea7a61bab93a939dedc"
+        "full-track-url": "http://localhost:8080/tracks/CMP-b145cea7a61bab93a939dedc"
     },
     {
         "guid": "CMP-3b1a8c12295620845732a8e9",
@@ -4872,7 +4872,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-3b1a8c12295620845732a8e9"
+        "full-track-url": "http://localhost:8080/tracks/CMP-3b1a8c12295620845732a8e9"
     },
     {
         "guid": "CMP-544538ecdc1044d33dd182b1",
@@ -4938,7 +4938,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-544538ecdc1044d33dd182b1"
+        "full-track-url": "http://localhost:8080/tracks/CMP-544538ecdc1044d33dd182b1"
     },
     {
         "guid": "CMP-0709ea6c674e4198b20b491b",
@@ -4998,7 +4998,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-0709ea6c674e4198b20b491b"
+        "full-track-url": "http://localhost:8080/tracks/CMP-0709ea6c674e4198b20b491b"
     },
     {
         "guid": "CMP-672bbc1bcce9deb80a5b5d2c",
@@ -5061,7 +5061,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-672bbc1bcce9deb80a5b5d2c"
+        "full-track-url": "http://localhost:8080/tracks/CMP-672bbc1bcce9deb80a5b5d2c"
     },
     {
         "guid": "CMP-ab9981617b9374b76124902a",
@@ -5141,7 +5141,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-ab9981617b9374b76124902a"
+        "full-track-url": "http://localhost:8080/tracks/CMP-ab9981617b9374b76124902a"
     },
     {
         "guid": "CMP-a5d347010669a55ce8b6b687",
@@ -5221,7 +5221,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-a5d347010669a55ce8b6b687"
+        "full-track-url": "http://localhost:8080/tracks/CMP-a5d347010669a55ce8b6b687"
     },
     {
         "guid": "CMP-3de48bbcd19e9de8841d2584",
@@ -5282,7 +5282,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-3de48bbcd19e9de8841d2584"
+        "full-track-url": "http://localhost:8080/tracks/CMP-3de48bbcd19e9de8841d2584"
     },
     {
         "guid": "CMP-b95789a1e0852a47d5cb362a",
@@ -5361,7 +5361,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-b95789a1e0852a47d5cb362a"
+        "full-track-url": "http://localhost:8080/tracks/CMP-b95789a1e0852a47d5cb362a"
     },
     {
         "guid": "CMP-da50eba1bdbd4100dd34eac5",
@@ -5423,7 +5423,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-da50eba1bdbd4100dd34eac5"
+        "full-track-url": "http://localhost:8080/tracks/CMP-da50eba1bdbd4100dd34eac5"
     },
     {
         "guid": "CMP-71558c8eb98d1c3332a33ed9",
@@ -5482,7 +5482,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-71558c8eb98d1c3332a33ed9"
+        "full-track-url": "http://localhost:8080/tracks/CMP-71558c8eb98d1c3332a33ed9"
     },
     {
         "guid": "CMP-863532bc5eceb904093a4911",
@@ -5541,7 +5541,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-863532bc5eceb904093a4911"
+        "full-track-url": "http://localhost:8080/tracks/CMP-863532bc5eceb904093a4911"
     },
     {
         "guid": "CMP-5139d69e60c224258cd50188",
@@ -5616,7 +5616,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-5139d69e60c224258cd50188"
+        "full-track-url": "http://localhost:8080/tracks/CMP-5139d69e60c224258cd50188"
     },
     {
         "guid": "CMP-85d04375a6db27817102b2cb",
@@ -5696,7 +5696,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-85d04375a6db27817102b2cb"
+        "full-track-url": "http://localhost:8080/tracks/CMP-85d04375a6db27817102b2cb"
     },
     {
         "guid": "CMP-8731baacb65a9b3520701332",
@@ -5776,7 +5776,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-8731baacb65a9b3520701332"
+        "full-track-url": "http://localhost:8080/tracks/CMP-8731baacb65a9b3520701332"
     },
     {
         "guid": "CMP-823c5ece9b43868118d13388",
@@ -5856,7 +5856,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-823c5ece9b43868118d13388"
+        "full-track-url": "http://localhost:8080/tracks/CMP-823c5ece9b43868118d13388"
     },
     {
         "guid": "CMP-107010c1d6cec19cd00c03da",
@@ -5936,7 +5936,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-107010c1d6cec19cd00c03da"
+        "full-track-url": "http://localhost:8080/tracks/CMP-107010c1d6cec19cd00c03da"
     },
     {
         "guid": "CMP-99700035eeb537cc22d68d6d",
@@ -6016,7 +6016,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-99700035eeb537cc22d68d6d"
+        "full-track-url": "http://localhost:8080/tracks/CMP-99700035eeb537cc22d68d6d"
     },
     {
         "guid": "CMP-79e3b7dd97bce2be6d7ac26e",
@@ -6093,7 +6093,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-79e3b7dd97bce2be6d7ac26e"
+        "full-track-url": "http://localhost:8080/tracks/CMP-79e3b7dd97bce2be6d7ac26e"
     },
     {
         "guid": "CMP-189046b6b6985c5623e49041",
@@ -6172,7 +6172,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-189046b6b6985c5623e49041"
+        "full-track-url": "http://localhost:8080/tracks/CMP-189046b6b6985c5623e49041"
     },
     {
         "guid": "CMP-e881d92a3b613be559cd4162",
@@ -6241,7 +6241,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-e881d92a3b613be559cd4162"
+        "full-track-url": "http://localhost:8080/tracks/CMP-e881d92a3b613be559cd4162"
     },
     {
         "guid": "CMP-9d3494209244e3467d263dd8",
@@ -6307,7 +6307,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-9d3494209244e3467d263dd8"
+        "full-track-url": "http://localhost:8080/tracks/CMP-9d3494209244e3467d263dd8"
     },
     {
         "guid": "CMP-ea59ba2e81b5d7055e324c48",
@@ -6373,7 +6373,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-ea59ba2e81b5d7055e324c48"
+        "full-track-url": "http://localhost:8080/tracks/CMP-ea59ba2e81b5d7055e324c48"
     },
     {
         "guid": "CMP-7bb6420c3728c153eacdf9e9",
@@ -6432,7 +6432,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-7bb6420c3728c153eacdf9e9"
+        "full-track-url": "http://localhost:8080/tracks/CMP-7bb6420c3728c153eacdf9e9"
     },
     {
         "guid": "CMP-5d89e00547e720d80b13beaa",
@@ -6501,7 +6501,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-5d89e00547e720d80b13beaa"
+        "full-track-url": "http://localhost:8080/tracks/CMP-5d89e00547e720d80b13beaa"
     },
     {
         "guid": "CMP-5498a622a39bc3973543c4aa",
@@ -6574,7 +6574,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-5498a622a39bc3973543c4aa"
+        "full-track-url": "http://localhost:8080/tracks/CMP-5498a622a39bc3973543c4aa"
     },
     {
         "guid": "CMP-0160851365aab5a8bbbb7eb9",
@@ -6644,7 +6644,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-0160851365aab5a8bbbb7eb9"
+        "full-track-url": "http://localhost:8080/tracks/CMP-0160851365aab5a8bbbb7eb9"
     },
     {
         "guid": "CMP-2cca00a8a982d1236e8d157a",
@@ -6716,7 +6716,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-2cca00a8a982d1236e8d157a"
+        "full-track-url": "http://localhost:8080/tracks/CMP-2cca00a8a982d1236e8d157a"
     },
     {
         "guid": "CMP-3a3d362c2a5058a91c43a701",
@@ -6805,7 +6805,7 @@
         "profile-platform-id": "76561198403439972",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-3a3d362c2a5058a91c43a701"
+        "full-track-url": "http://localhost:8080/tracks/CMP-3a3d362c2a5058a91c43a701"
     },
     {
         "guid": "CMP-c5ea414071e5d108d6d555b4",
@@ -6883,7 +6883,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-c5ea414071e5d108d6d555b4"
+        "full-track-url": "http://localhost:8080/tracks/CMP-c5ea414071e5d108d6d555b4"
     },
     {
         "guid": "CMP-a88c8801c8d39856a5c164d1",
@@ -6956,7 +6956,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-a88c8801c8d39856a5c164d1"
+        "full-track-url": "http://localhost:8080/tracks/CMP-a88c8801c8d39856a5c164d1"
     },
     {
         "guid": "CMP-4a530b1e9d25ab99db03dce8",
@@ -7049,7 +7049,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-4a530b1e9d25ab99db03dce8"
+        "full-track-url": "http://localhost:8080/tracks/CMP-4a530b1e9d25ab99db03dce8"
     },
     {
         "guid": "CMP-ea711dc167b409eac5797e57",
@@ -7120,7 +7120,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-ea711dc167b409eac5797e57"
+        "full-track-url": "http://localhost:8080/tracks/CMP-ea711dc167b409eac5797e57"
     },
     {
         "guid": "CMP-c9a4e988257bd462681b5055",
@@ -7196,7 +7196,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-c9a4e988257bd462681b5055"
+        "full-track-url": "http://localhost:8080/tracks/CMP-c9a4e988257bd462681b5055"
     },
     {
         "guid": "CMP-bba477dca256b82d0c76c762",
@@ -7281,7 +7281,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-bba477dca256b82d0c76c762"
+        "full-track-url": "http://localhost:8080/tracks/CMP-bba477dca256b82d0c76c762"
     },
     {
         "guid": "CMP-03eca5ed327327d4957d4d2c",
@@ -7357,7 +7357,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-03eca5ed327327d4957d4d2c"
+        "full-track-url": "http://localhost:8080/tracks/CMP-03eca5ed327327d4957d4d2c"
     },
     {
         "guid": "CMP-de300cb3b96a08a7de378c70",
@@ -7430,7 +7430,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-de300cb3b96a08a7de378c70"
+        "full-track-url": "http://localhost:8080/tracks/CMP-de300cb3b96a08a7de378c70"
     },
     {
         "guid": "CMP-929ae2c66a4a0c7293168514",
@@ -7490,7 +7490,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-929ae2c66a4a0c7293168514"
+        "full-track-url": "http://localhost:8080/tracks/CMP-929ae2c66a4a0c7293168514"
     },
     {
         "guid": "CMP-4cd29364c4142b14c6a3179a",
@@ -7559,7 +7559,7 @@
         "profile-platform-id": "76561198266776435",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/tr.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-4cd29364c4142b14c6a3179a"
+        "full-track-url": "http://localhost:8080/tracks/CMP-4cd29364c4142b14c6a3179a"
     },
     {
         "guid": "CMP-5d4a0a0c38c1b81258a29ec7",
@@ -7637,7 +7637,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-5d4a0a0c38c1b81258a29ec7"
+        "full-track-url": "http://localhost:8080/tracks/CMP-5d4a0a0c38c1b81258a29ec7"
     },
     {
         "guid": "CMP-71711b4806777c6748aa045e",
@@ -7708,7 +7708,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-71711b4806777c6748aa045e"
+        "full-track-url": "http://localhost:8080/tracks/CMP-71711b4806777c6748aa045e"
     },
     {
         "guid": "CMP-7ab877a2c62446a10c9316a0",
@@ -7779,7 +7779,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-7ab877a2c62446a10c9316a0"
+        "full-track-url": "http://localhost:8080/tracks/CMP-7ab877a2c62446a10c9316a0"
     },
     {
         "guid": "CMP-65b9e4d81355bbc6987e28a7",
@@ -7866,7 +7866,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-65b9e4d81355bbc6987e28a7"
+        "full-track-url": "http://localhost:8080/tracks/CMP-65b9e4d81355bbc6987e28a7"
     },
     {
         "guid": "CMP-ec3987d58e2a4923656d133c",
@@ -7935,7 +7935,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-ec3987d58e2a4923656d133c"
+        "full-track-url": "http://localhost:8080/tracks/CMP-ec3987d58e2a4923656d133c"
     },
     {
         "guid": "CMP-4537002d7b2cc5024851bcbe",
@@ -8018,7 +8018,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-4537002d7b2cc5024851bcbe"
+        "full-track-url": "http://localhost:8080/tracks/CMP-4537002d7b2cc5024851bcbe"
     },
     {
         "guid": "CMP-2eb752471d01b43ceb0651e0",
@@ -8092,7 +8092,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-2eb752471d01b43ceb0651e0"
+        "full-track-url": "http://localhost:8080/tracks/CMP-2eb752471d01b43ceb0651e0"
     },
     {
         "guid": "CMP-375de6d27c8bc5dd1a19e7ad",
@@ -8166,7 +8166,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-375de6d27c8bc5dd1a19e7ad"
+        "full-track-url": "http://localhost:8080/tracks/CMP-375de6d27c8bc5dd1a19e7ad"
     },
     {
         "guid": "CMP-228ae86477555306ded50942",
@@ -8228,7 +8228,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-228ae86477555306ded50942"
+        "full-track-url": "http://localhost:8080/tracks/CMP-228ae86477555306ded50942"
     },
     {
         "guid": "CMP-7cb59960c72b2ec83452b2eb",
@@ -8298,7 +8298,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-7cb59960c72b2ec83452b2eb"
+        "full-track-url": "http://localhost:8080/tracks/CMP-7cb59960c72b2ec83452b2eb"
     },
     {
         "guid": "CMP-71b8247a519186303d66d016",
@@ -8402,7 +8402,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-71b8247a519186303d66d016"
+        "full-track-url": "http://localhost:8080/tracks/CMP-71b8247a519186303d66d016"
     },
     {
         "guid": "CMP-432c8519c48487cee21c735d",
@@ -8465,7 +8465,7 @@
         "profile-platform-id": "76561199054288625",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/fr.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-432c8519c48487cee21c735d"
+        "full-track-url": "http://localhost:8080/tracks/CMP-432c8519c48487cee21c735d"
     },
     {
         "guid": "CMP-b3a54d2c77e381444ec9a895",
@@ -8541,7 +8541,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-b3a54d2c77e381444ec9a895"
+        "full-track-url": "http://localhost:8080/tracks/CMP-b3a54d2c77e381444ec9a895"
     },
     {
         "guid": "CMP-4dbda7541c347b41b72b0d84",
@@ -8617,7 +8617,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-4dbda7541c347b41b72b0d84"
+        "full-track-url": "http://localhost:8080/tracks/CMP-4dbda7541c347b41b72b0d84"
     },
     {
         "guid": "CMP-59cda59ebb6baea4ad06552a",
@@ -8693,7 +8693,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-59cda59ebb6baea4ad06552a"
+        "full-track-url": "http://localhost:8080/tracks/CMP-59cda59ebb6baea4ad06552a"
     },
     {
         "guid": "CMP-842164d38ba646d666ae316d",
@@ -8772,7 +8772,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-842164d38ba646d666ae316d"
+        "full-track-url": "http://localhost:8080/tracks/CMP-842164d38ba646d666ae316d"
     },
     {
         "guid": "CMP-64d95c28a623a0002b30ac9c",
@@ -8841,7 +8841,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-64d95c28a623a0002b30ac9c"
+        "full-track-url": "http://localhost:8080/tracks/CMP-64d95c28a623a0002b30ac9c"
     },
     {
         "guid": "CMP-64dbb6e892bb3c001715b982",
@@ -8913,7 +8913,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-64dbb6e892bb3c001715b982"
+        "full-track-url": "http://localhost:8080/tracks/CMP-64dbb6e892bb3c001715b982"
     },
     {
         "guid": "CMP-64dbe95fb5ef8a00331a811d",
@@ -8987,7 +8987,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-64dbe95fb5ef8a00331a811d"
+        "full-track-url": "http://localhost:8080/tracks/CMP-64dbe95fb5ef8a00331a811d"
     },
     {
         "guid": "CMP-65d7ea0ab97c87002dae983b",
@@ -9074,7 +9074,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-65d7ea0ab97c87002dae983b"
+        "full-track-url": "http://localhost:8080/tracks/CMP-65d7ea0ab97c87002dae983b"
     },
     {
         "guid": "CMP-66c4505d76cf3b0039698f02",
@@ -9142,7 +9142,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-66c4505d76cf3b0039698f02"
+        "full-track-url": "http://localhost:8080/tracks/CMP-66c4505d76cf3b0039698f02"
     },
     {
         "guid": "CMP-66e6d482fa453600108c98f4",
@@ -9211,7 +9211,7 @@
         "profile-platform-id": "2a4cb0821fc447b58fa5794e8e4fc373",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-66e6d482fa453600108c98f4"
+        "full-track-url": "http://localhost:8080/tracks/CMP-66e6d482fa453600108c98f4"
     },
     {
         "guid": "CMP-66e6d4fc7471360009813d31",
@@ -9280,7 +9280,7 @@
         "profile-platform-id": "76561198026600498",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-66e6d4fc7471360009813d31"
+        "full-track-url": "http://localhost:8080/tracks/CMP-66e6d4fc7471360009813d31"
     },
     {
         "guid": "CMP-66e904a9f2c72a00187bfad0",
@@ -9348,7 +9348,7 @@
         "profile-platform-id": "76561198883091485",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/au.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-66e904a9f2c72a00187bfad0"
+        "full-track-url": "http://localhost:8080/tracks/CMP-66e904a9f2c72a00187bfad0"
     },
     {
         "guid": "CMP-66eb8328e7c359000a802986",
@@ -9416,7 +9416,7 @@
         "profile-platform-id": "2a4cb0821fc447b58fa5794e8e4fc373",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-66eb8328e7c359000a802986"
+        "full-track-url": "http://localhost:8080/tracks/CMP-66eb8328e7c359000a802986"
     },
     {
         "guid": "CMP-66eff3c32521e90017be347e",
@@ -9485,7 +9485,7 @@
         "profile-platform-id": "76561197972389335",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-66eff3c32521e90017be347e"
+        "full-track-url": "http://localhost:8080/tracks/CMP-66eff3c32521e90017be347e"
     },
     {
         "guid": "CMP-66f22ad050da98000f32e387",
@@ -9553,7 +9553,7 @@
         "profile-platform-id": "76561198026600498",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-66f22ad050da98000f32e387"
+        "full-track-url": "http://localhost:8080/tracks/CMP-66f22ad050da98000f32e387"
     },
     {
         "guid": "CMP-66f4cca5aad03c000919803d",
@@ -9618,7 +9618,7 @@
         "profile-platform-id": "2a4cb0821fc447b58fa5794e8e4fc373",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-66f4cca5aad03c000919803d"
+        "full-track-url": "http://localhost:8080/tracks/CMP-66f4cca5aad03c000919803d"
     },
     {
         "guid": "CMP-66f8dbfbf772ad0028e7a20e",
@@ -9689,7 +9689,7 @@
         "profile-platform-id": "76561199054288625",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/fr.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-66f8dbfbf772ad0028e7a20e"
+        "full-track-url": "http://localhost:8080/tracks/CMP-66f8dbfbf772ad0028e7a20e"
     },
     {
         "guid": "CMP-66fa3d3b6b88fe000a121e7d",
@@ -9758,7 +9758,7 @@
         "profile-platform-id": "76561198883091485",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/au.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-66fa3d3b6b88fe000a121e7d"
+        "full-track-url": "http://localhost:8080/tracks/CMP-66fa3d3b6b88fe000a121e7d"
     },
     {
         "guid": "CMP-66fe33e34a8206003b91c1dc",
@@ -9831,7 +9831,7 @@
         "profile-platform-id": "76561197965989008",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-66fe33e34a8206003b91c1dc"
+        "full-track-url": "http://localhost:8080/tracks/CMP-66fe33e34a8206003b91c1dc"
     },
     {
         "guid": "CMP-67020b9b4a8206003b9203e1",
@@ -9900,7 +9900,7 @@
         "profile-platform-id": "76561198883091485",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/au.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-67020b9b4a8206003b9203e1"
+        "full-track-url": "http://localhost:8080/tracks/CMP-67020b9b4a8206003b9203e1"
     },
     {
         "guid": "CMP-6704ad39e26b730040e4d27c",
@@ -9971,7 +9971,7 @@
         "profile-platform-id": "76561198099415386",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-6704ad39e26b730040e4d27c"
+        "full-track-url": "http://localhost:8080/tracks/CMP-6704ad39e26b730040e4d27c"
     },
     {
         "guid": "CMP-6707588c1e0228002bee3b7e",
@@ -10040,7 +10040,7 @@
         "profile-platform-id": "76561197962206745",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/de.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-6707588c1e0228002bee3b7e"
+        "full-track-url": "http://localhost:8080/tracks/CMP-6707588c1e0228002bee3b7e"
     },
     {
         "guid": "CMP-670b380657c75e001edb2d98",
@@ -10113,7 +10113,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-670b380657c75e001edb2d98"
+        "full-track-url": "http://localhost:8080/tracks/CMP-670b380657c75e001edb2d98"
     },
     {
         "guid": "CMP-670da17d7c840e0010921960",
@@ -10181,7 +10181,7 @@
         "profile-platform-id": "76561199054288625",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/fr.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-670da17d7c840e0010921960"
+        "full-track-url": "http://localhost:8080/tracks/CMP-670da17d7c840e0010921960"
     },
     {
         "guid": "CMP-67108c9186a105001fa56f43",
@@ -10249,7 +10249,7 @@
         "profile-platform-id": "2a4cb0821fc447b58fa5794e8e4fc373",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-67108c9186a105001fa56f43"
+        "full-track-url": "http://localhost:8080/tracks/CMP-67108c9186a105001fa56f43"
     },
     {
         "guid": "CMP-6714816f205e3e0041ba10fd",
@@ -10318,7 +10318,7 @@
         "profile-platform-id": "76561199054288625",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/fr.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-6714816f205e3e0041ba10fd"
+        "full-track-url": "http://localhost:8080/tracks/CMP-6714816f205e3e0041ba10fd"
     },
     {
         "guid": "CMP-67170fd93be4ec00349da570",
@@ -10391,7 +10391,7 @@
         "profile-platform-id": "76561198026600498",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-67170fd93be4ec00349da570"
+        "full-track-url": "http://localhost:8080/tracks/CMP-67170fd93be4ec00349da570"
     },
     {
         "guid": "CMP-671e235751590100389fac8f",
@@ -10460,7 +10460,7 @@
         "profile-platform-id": "76561197962206745",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/de.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-671e235751590100389fac8f"
+        "full-track-url": "http://localhost:8080/tracks/CMP-671e235751590100389fac8f"
     },
     {
         "guid": "CMP-6720cece4e9b740010bb9f98",
@@ -10528,7 +10528,7 @@
         "profile-platform-id": "76561197972389335",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-6720cece4e9b740010bb9f98"
+        "full-track-url": "http://localhost:8080/tracks/CMP-6720cece4e9b740010bb9f98"
     },
     {
         "guid": "CMP-6723567327ba0100104e0771",
@@ -10597,7 +10597,7 @@
         "profile-platform-id": "76561198098758739",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-6723567327ba0100104e0771"
+        "full-track-url": "http://localhost:8080/tracks/CMP-6723567327ba0100104e0771"
     },
     {
         "guid": "CMP-672706fd950898001045418f",
@@ -10661,7 +10661,7 @@
         "profile-platform-id": "2a4cb0821fc447b58fa5794e8e4fc373",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-672706fd950898001045418f"
+        "full-track-url": "http://localhost:8080/tracks/CMP-672706fd950898001045418f"
     },
     {
         "guid": "CMP-6729ac775d601700251dc0eb",
@@ -10734,7 +10734,7 @@
         "profile-platform-id": "76561199054288625",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/fr.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-6729ac775d601700251dc0eb"
+        "full-track-url": "http://localhost:8080/tracks/CMP-6729ac775d601700251dc0eb"
     },
     {
         "guid": "CMP-672c465275ec600009accbaf",
@@ -10803,7 +10803,7 @@
         "profile-platform-id": "5f34fe7152d64613bf3e6449bd0d6003",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-672c465275ec600009accbaf"
+        "full-track-url": "http://localhost:8080/tracks/CMP-672c465275ec600009accbaf"
     },
     {
         "guid": "CMP-1cb12980a51217c210e8339b",
@@ -10872,7 +10872,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-1cb12980a51217c210e8339b"
+        "full-track-url": "http://localhost:8080/tracks/CMP-1cb12980a51217c210e8339b"
     },
     {
         "guid": "CMP-3836941250ba172a0ea681e2",
@@ -10959,7 +10959,7 @@
         "profile-platform-id": "76561198123885504",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-3836941250ba172a0ea681e2"
+        "full-track-url": "http://localhost:8080/tracks/CMP-3836941250ba172a0ea681e2"
     },
     {
         "guid": "CMP-3947963bc8c42b57e443e670",
@@ -11048,7 +11048,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-3947963bc8c42b57e443e670"
+        "full-track-url": "http://localhost:8080/tracks/CMP-3947963bc8c42b57e443e670"
     },
     {
         "guid": "CMP-d935ba0c62153d32b30c3c0e",
@@ -11117,7 +11117,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-d935ba0c62153d32b30c3c0e"
+        "full-track-url": "http://localhost:8080/tracks/CMP-d935ba0c62153d32b30c3c0e"
     },
     {
         "guid": "CMP-6ba465387ca55861c929bb5e",
@@ -11206,7 +11206,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-6ba465387ca55861c929bb5e"
+        "full-track-url": "http://localhost:8080/tracks/CMP-6ba465387ca55861c929bb5e"
     },
     {
         "guid": "CMP-1a79c2484ac359ed8120390c",
@@ -11280,7 +11280,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-1a79c2484ac359ed8120390c"
+        "full-track-url": "http://localhost:8080/tracks/CMP-1a79c2484ac359ed8120390c"
     },
     {
         "guid": "CMP-c239e8b6c1a73d8168953dd3",
@@ -11348,7 +11348,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-c239e8b6c1a73d8168953dd3"
+        "full-track-url": "http://localhost:8080/tracks/CMP-c239e8b6c1a73d8168953dd3"
     },
     {
         "guid": "CMP-2c2a05b8ee2ee938598ad117",
@@ -11419,7 +11419,7 @@
         "profile-platform-id": "76561198015853086",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ro.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-2c2a05b8ee2ee938598ad117"
+        "full-track-url": "http://localhost:8080/tracks/CMP-2c2a05b8ee2ee938598ad117"
     },
     {
         "guid": "CMP-041761a1de63902e52304637",
@@ -11508,7 +11508,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-041761a1de63902e52304637"
+        "full-track-url": "http://localhost:8080/tracks/CMP-041761a1de63902e52304637"
     },
     {
         "guid": "CMP-ca0c1dc73892311359ab1b41",
@@ -11574,7 +11574,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-ca0c1dc73892311359ab1b41"
+        "full-track-url": "http://localhost:8080/tracks/CMP-ca0c1dc73892311359ab1b41"
     },
     {
         "guid": "CMP-7babaaa0cbd3c4c401928518",
@@ -11648,7 +11648,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-7babaaa0cbd3c4c401928518"
+        "full-track-url": "http://localhost:8080/tracks/CMP-7babaaa0cbd3c4c401928518"
     },
     {
         "guid": "CMP-13a82136c3271576174acb50",
@@ -11738,7 +11738,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-13a82136c3271576174acb50"
+        "full-track-url": "http://localhost:8080/tracks/CMP-13a82136c3271576174acb50"
     },
     {
         "guid": "CMP-ade1346e9dbab236ced05666",
@@ -11809,7 +11809,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-ade1346e9dbab236ced05666"
+        "full-track-url": "http://localhost:8080/tracks/CMP-ade1346e9dbab236ced05666"
     },
     {
         "guid": "CMP-40134530c2e711cb99e689e6",
@@ -11880,7 +11880,7 @@
         "profile-platform-id": "76561198015853086",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ro.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-40134530c2e711cb99e689e6"
+        "full-track-url": "http://localhost:8080/tracks/CMP-40134530c2e711cb99e689e6"
     },
     {
         "guid": "CMP-873899440387945b47438ca5",
@@ -11969,7 +11969,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-873899440387945b47438ca5"
+        "full-track-url": "http://localhost:8080/tracks/CMP-873899440387945b47438ca5"
     },
     {
         "guid": "CMP-b8045bb693781b049c37c096",
@@ -12040,7 +12040,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-b8045bb693781b049c37c096"
+        "full-track-url": "http://localhost:8080/tracks/CMP-b8045bb693781b049c37c096"
     },
     {
         "guid": "CMP-4301a83126bb59eb3d13c270",
@@ -12126,7 +12126,7 @@
         "profile-platform-id": "76561199274179343",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-4301a83126bb59eb3d13c270"
+        "full-track-url": "http://localhost:8080/tracks/CMP-4301a83126bb59eb3d13c270"
     },
     {
         "guid": "CMP-e58ae62733eb302242450bc5",
@@ -12203,7 +12203,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-e58ae62733eb302242450bc5"
+        "full-track-url": "http://localhost:8080/tracks/CMP-e58ae62733eb302242450bc5"
     },
     {
         "guid": "CMP-92e84b5c2e04dcab65c26859",
@@ -12272,7 +12272,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-92e84b5c2e04dcab65c26859"
+        "full-track-url": "http://localhost:8080/tracks/CMP-92e84b5c2e04dcab65c26859"
     },
     {
         "guid": "CMP-6535a3c016207abb945bddb9",
@@ -12344,7 +12344,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-6535a3c016207abb945bddb9"
+        "full-track-url": "http://localhost:8080/tracks/CMP-6535a3c016207abb945bddb9"
     },
     {
         "guid": "CMP-ce3a087844e4d6b8da11daba",
@@ -12436,7 +12436,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-ce3a087844e4d6b8da11daba"
+        "full-track-url": "http://localhost:8080/tracks/CMP-ce3a087844e4d6b8da11daba"
     },
     {
         "guid": "CMP-909b60384099d99b03a3e013",
@@ -12503,7 +12503,7 @@
         "profile-platform-id": "76561198045450626",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/hr.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-909b60384099d99b03a3e013"
+        "full-track-url": "http://localhost:8080/tracks/CMP-909b60384099d99b03a3e013"
     },
     {
         "guid": "CMP-e324230cb1ca0c465c24972b",
@@ -12595,7 +12595,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-e324230cb1ca0c465c24972b"
+        "full-track-url": "http://localhost:8080/tracks/CMP-e324230cb1ca0c465c24972b"
     },
     {
         "guid": "CMP-a82539bc9ae5dbc60cdaaa89",
@@ -12669,7 +12669,7 @@
         "profile-platform-id": "76561198046438903",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/us.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-a82539bc9ae5dbc60cdaaa89"
+        "full-track-url": "http://localhost:8080/tracks/CMP-a82539bc9ae5dbc60cdaaa89"
     },
     {
         "guid": "CMP-668d073be6c8259671dacd21",
@@ -12751,7 +12751,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-668d073be6c8259671dacd21"
+        "full-track-url": "http://localhost:8080/tracks/CMP-668d073be6c8259671dacd21"
     },
     {
         "guid": "CMP-16953a83380c7ddeb4c81984",
@@ -12823,7 +12823,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-16953a83380c7ddeb4c81984"
+        "full-track-url": "http://localhost:8080/tracks/CMP-16953a83380c7ddeb4c81984"
     },
     {
         "guid": "CMP-a6223c836849a3e8717414d4",
@@ -12914,7 +12914,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-a6223c836849a3e8717414d4"
+        "full-track-url": "http://localhost:8080/tracks/CMP-a6223c836849a3e8717414d4"
     },
     {
         "guid": "CMP-46ca8b78a4a341ab40754e81",
@@ -13000,7 +13000,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-46ca8b78a4a341ab40754e81"
+        "full-track-url": "http://localhost:8080/tracks/CMP-46ca8b78a4a341ab40754e81"
     },
     {
         "guid": "CMP-ad563a02a23329e1c9809752",
@@ -13094,7 +13094,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-ad563a02a23329e1c9809752"
+        "full-track-url": "http://localhost:8080/tracks/CMP-ad563a02a23329e1c9809752"
     },
     {
         "guid": "CMP-015db2ae2096a0a18d054915",
@@ -13185,7 +13185,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-015db2ae2096a0a18d054915"
+        "full-track-url": "http://localhost:8080/tracks/CMP-015db2ae2096a0a18d054915"
     },
     {
         "guid": "CMP-6c2bc4addbd1928c1bc01db3",
@@ -13240,7 +13240,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-6c2bc4addbd1928c1bc01db3"
+        "full-track-url": "http://localhost:8080/tracks/CMP-6c2bc4addbd1928c1bc01db3"
     },
     {
         "guid": "CMP-004cbc546ec06dca564d52b8",
@@ -13300,7 +13300,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-004cbc546ec06dca564d52b8"
+        "full-track-url": "http://localhost:8080/tracks/CMP-004cbc546ec06dca564d52b8"
     },
     {
         "guid": "CMP-558ea06080d14de0d15a5820",
@@ -13367,7 +13367,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-558ea06080d14de0d15a5820"
+        "full-track-url": "http://localhost:8080/tracks/CMP-558ea06080d14de0d15a5820"
     },
     {
         "guid": "CMP-6104bc99decb73448e880128",
@@ -13432,7 +13432,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-6104bc99decb73448e880128"
+        "full-track-url": "http://localhost:8080/tracks/CMP-6104bc99decb73448e880128"
     },
     {
         "guid": "CMP-79b5ec85848a2d65b239145d",
@@ -13496,7 +13496,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-79b5ec85848a2d65b239145d"
+        "full-track-url": "http://localhost:8080/tracks/CMP-79b5ec85848a2d65b239145d"
     },
     {
         "guid": "CMP-822841be172a5dae822ba773",
@@ -13560,7 +13560,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-822841be172a5dae822ba773"
+        "full-track-url": "http://localhost:8080/tracks/CMP-822841be172a5dae822ba773"
     },
     {
         "guid": "CMP-5a02b53793c7e083c1971eb2",
@@ -13618,7 +13618,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-5a02b53793c7e083c1971eb2"
+        "full-track-url": "http://localhost:8080/tracks/CMP-5a02b53793c7e083c1971eb2"
     },
     {
         "guid": "CMP-b5ea5aede3456e0bc49237c0",
@@ -13675,7 +13675,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-b5ea5aede3456e0bc49237c0"
+        "full-track-url": "http://localhost:8080/tracks/CMP-b5ea5aede3456e0bc49237c0"
     },
     {
         "guid": "CMP-57ace9ba14e234b1cbc96c31",
@@ -13734,7 +13734,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-57ace9ba14e234b1cbc96c31"
+        "full-track-url": "http://localhost:8080/tracks/CMP-57ace9ba14e234b1cbc96c31"
     },
     {
         "guid": "CMP-d1589b47a931928059c403c2",
@@ -13791,7 +13791,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-d1589b47a931928059c403c2"
+        "full-track-url": "http://localhost:8080/tracks/CMP-d1589b47a931928059c403c2"
     },
     {
         "guid": "CMP-8b2cce63cae8c0cc0000e256",
@@ -13848,7 +13848,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-8b2cce63cae8c0cc0000e256"
+        "full-track-url": "http://localhost:8080/tracks/CMP-8b2cce63cae8c0cc0000e256"
     },
     {
         "guid": "CMP-797414cb7302007587818b61",
@@ -13909,7 +13909,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-797414cb7302007587818b61"
+        "full-track-url": "http://localhost:8080/tracks/CMP-797414cb7302007587818b61"
     },
     {
         "guid": "CMP-9acd927cccbd2131aa17491b",
@@ -13970,7 +13970,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-9acd927cccbd2131aa17491b"
+        "full-track-url": "http://localhost:8080/tracks/CMP-9acd927cccbd2131aa17491b"
     },
     {
         "guid": "CMP-8bcca5e4b5350721e2291867",
@@ -14027,7 +14027,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-8bcca5e4b5350721e2291867"
+        "full-track-url": "http://localhost:8080/tracks/CMP-8bcca5e4b5350721e2291867"
     },
     {
         "guid": "CMP-5e454d20c0b897a6a1ae8bda",
@@ -14089,7 +14089,7 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-5e454d20c0b897a6a1ae8bda"
+        "full-track-url": "http://localhost:8080/tracks/CMP-5e454d20c0b897a6a1ae8bda"
     },
     {
         "guid": "CMP-e74536dad8e7791d58d66ad0",
@@ -14148,6 +14148,6 @@
         "profile-platform-id": "76561198147961226",
         "flag-url": "https://drl-backend-isgguyjobq-ue.a.run.app/images/flags/4x3/ca.png",
         "is-avatar-blocked": false,
-        "full-track-url": "http://localhost:8080/maps/CMP-e74536dad8e7791d58d66ad0"
+        "full-track-url": "http://localhost:8080/tracks/CMP-e74536dad8e7791d58d66ad0"
     }
 ]

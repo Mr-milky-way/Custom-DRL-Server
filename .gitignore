@@ -142,3 +142,5 @@ vite.config.ts.timestamp-*
 
 # dbs
 main.db
+
+replay-cloud/
