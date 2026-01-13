@@ -274,7 +274,7 @@ app.post('/v2/login', (req, res) => {
         }
         db.serialize(() => {
             const stmt = db.prepare(
-                `INSERT INTO user (uid, token, expires, name) VALUES (?, ?, ?, ?)
+                `INSERT INTO user (uid, token, expires) VALUES (?, ?, ?)
                 ON CONFLICT(uid) DO UPDATE SET token = excluded.token, expires = excluded.expires;`
             );
 
@@ -282,7 +282,6 @@ app.post('/v2/login', (req, res) => {
                 decToken.uid,
                 parsed.token,
                 responseData.expires,
-                UsernameGenerator.generateUsername("-", 2),
                 (err) => {
                     if (err) {
                         console.error("SQLite insert failed:", err);
@@ -389,9 +388,6 @@ app.post('/state/', (req, res) => {
     req.on('end', () => {
         const raw = body.startsWith('state=') ? body.slice(6) : body;
         const parsed = JSON.parse(decodeURIComponent(raw));
-        db.get(`SELECT name FROM user WHERE token = ?`, [token], (err, row) => {
-            console.log("Player", row ? row.name : "unknown", "is saving state.");
-        });
 
         db.get(`SELECT uid, name FROM user WHERE token = ?`, [token], (err, row) => {
             if (err || !row) {
@@ -399,9 +395,12 @@ app.post('/state/', (req, res) => {
                 res.status(404).json({ success: false });
                 return;
             }
-
+            const stmt1 = db.prepare(
+                `INSERT INTO user (uid, name) VALUES (?, ?)
+                    ON CONFLICT(uid) DO UPDATE SET name = excluded.name;`
+            );
             const uid = row.uid;
-            parsed['profile-name'] = row.name;
+            stmt1.run(uid, row.name, (err) => { });
             parsed['player-id'] = row.uid;
 
 
@@ -676,7 +675,7 @@ app.post('/leaderboards/', (req, res) => {
                     }
                     const stmt = db.prepare(
                         `INSERT INTO playerprogression (uid, xp, previous_level_xp, next_level_xp, level, rank_name, rank_index, rank_position, rank_round_start, rank_round_end, streak_points, daily_completed_maps, goal_daily_completed_maps, prizes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ON CONFLICT (uid) DO UPDATE SET xp = excluded.xp, previous_level_xp = excluded.previous_level_xp, next_level_xp = excluded.next_level_xp;`
+                        ON CONFLICT (uid) DO UPDATE SET xp = excluded.xp, previous_level_xp = excluded.previous_level_xp, next_level_xp = excluded.next_level_xp, level = excluded.level;`
                     );
                     stmt.run(
                         uid,
