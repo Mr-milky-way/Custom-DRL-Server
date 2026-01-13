@@ -13,6 +13,7 @@ const Ctracks = require('./Ctracks.json')
 
 const multer = require('multer');
 const { log } = require('console');
+const e = require('express');
 const replayCloud = multer({ dest: 'replay-cloud/' });
 
 const app = express();
@@ -107,31 +108,18 @@ db.serialize(() => {
         rank_position INT,
         rank_round_start TEXT,
         rank_round_end TEXT,
-        league TEXT,
+        league_name TEXT,
+        league_guid TEXT,
         streak_date_start TEXT,
         streak_date_end TEXT,
         streak_points INT,
         daily_completed_maps INT,
         goal_daily_completed_maps INT,
-        prizes TEXT);`);
-    db.run(`CREATE TABLE IF NOT EXISTS playerweeklyprogression (
-        uid TEXT UNIQUE,
-        xp INT,
-        previous_level_xp INT,
-        next_level_xp INT,
-        level INT,
-        rank_name TEXT,
-        rank_index INT,
-        rank_position INT,
-        rank_round_start TEXT,
-        rank_round_end TEXT,
-        league TEXT,
-        streak_date_start TEXT,
-        streak_date_end TEXT,
-        streak_points INT,
-        daily_completed_maps INT,
-        goal_daily_completed_maps INT,
-        prizes TEXT);`);
+        prizes TEXT,
+        xp_this_week INT,
+        weekstart TEXT,
+        weekend TEXT
+        );`);
     //db.run("DROP TABLE playerprogression")
 });
 
@@ -489,7 +477,7 @@ app.get('/tournaments/', (req, res) => {
             "title": "Sunday Session EU",
             "description": "Community Tournament featuring a recent community-made track",
             "region": "EU",
-            "type": "DRL",
+            "type": "normal",
 
             "players-size": 0,
             "max-players": 16,
@@ -621,9 +609,12 @@ app.post('/leaderboards/', (req, res) => {
             });
         });
 
-        res.status(200).json({ success: true });
+        //res.status(200).json({ success: true });
     });
     */
+
+
+    //----------------------------------------------------
     console.log("NEW LEADERBOARD POST:\n")
     console.log("Headers:", req.headers);
     let body = '';
@@ -650,13 +641,17 @@ app.post('/leaderboards/', (req, res) => {
                             xpValue = Tracks[i]['xp-value'];
                         }
                     }
-                    console.log("XP VALUE FOR MAP", "is", xpValue);
                     let NEWXP = row.xp + xpValue;
                     if (NEWXP >= row.next_level_xp) {
                         row.previous_level_xp = row.next_level_xp;
                         row.level += 1;
                         row.next_level_xp = row.next_level_xp * 1.5;
-                        console.log(row.next_level_xp);
+                    }
+                    currentTIME = new Date()
+                    if (currentTIME > Date(row.weekend)) {
+                        xpThisWeek = 0 + xpValue;
+                    } else {
+                        xpThisWeek = row.xp_this_week + xpValue;
                     }
                     progression = {
                         xp: NEWXP,
@@ -674,9 +669,10 @@ app.post('/leaderboards/', (req, res) => {
                         prizes: JSON.parse(row.prizes)
                     }
                     const stmt = db.prepare(
-                        `INSERT INTO playerprogression (uid, xp, previous_level_xp, next_level_xp, level, rank_name, rank_index, rank_position, rank_round_start, rank_round_end, streak_points, daily_completed_maps, goal_daily_completed_maps, prizes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ON CONFLICT (uid) DO UPDATE SET xp = excluded.xp, previous_level_xp = excluded.previous_level_xp, next_level_xp = excluded.next_level_xp, level = excluded.level;`
+                        `INSERT INTO playerprogression (uid, xp, previous_level_xp, next_level_xp, level, rank_name, rank_index, rank_position, rank_round_start, rank_round_end, streak_points, daily_completed_maps, goal_daily_completed_maps, prizes, xp_this_week, weekstart, weekend) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT (uid) DO UPDATE SET xp = excluded.xp, previous_level_xp = excluded.previous_level_xp, next_level_xp = excluded.next_level_xp, level = excluded.level, xp_this_week = excluded.xp_this_week, weekstart = excluded.weekstart, weekend = excluded.weekend;`
                     );
+
                     stmt.run(
                         uid,
                         progression.xp,
@@ -691,7 +687,10 @@ app.post('/leaderboards/', (req, res) => {
                         progression["streak-points"],
                         progression["daily-completed-maps"],
                         progression["goal-daily-completed-maps"],
-                        JSON.stringify(progression.prizes)
+                        JSON.stringify(progression.prizes),
+                        xpThisWeek,
+                        getEndOfLastISOWeek(),
+                        getStartOfNextISOWeek()
                     );
                     res.status(200).json({
                         success: true, data: [
@@ -729,6 +728,7 @@ app.get('/leaderboards/rivals/', (req, res) => {
                     "player-id": "player_steam_000",
                     "position": 1,
                     "username": "AAA",
+                    "profile_name": "YOU or smt",
                     "score": 60000,
                     "replayURL": "https://cdn/game/replays/top1"
                 }
@@ -738,17 +738,20 @@ app.get('/leaderboards/rivals/', (req, res) => {
                 {
                     "position": 98,
                     "username": "XYZ",
+                    "profile_name": "YOU or smt",
                     "score": 80000,
                 },
                 {
                     "position": 99,
                     "username": "YOU",
+                    "profile_name": "YOU or smt",
                     "score": 90000,
                     progression: { "xp": 1500 }
                 },
                 {
                     "position": 100,
                     "username": "ABC",
+                    "profile_name": "YOU or smt",
                     "score": 90101,
                 }
             ],
@@ -829,6 +832,52 @@ app.get('/leaderboards/', (req, res) => {
 
 app.get('/experience-points/ranking/', (req, res) => {
     console.log(req.headers);
+    token = req.headers['x-access-jsonwebtoken'];
+    db.serialize(() => {
+        db.get(`SELECT uid FROM user WHERE token = ?`, [token], (err, row) => {
+            console.log("Player", row ? row.uid : "unknown", "is requesting progression");
+            if (err || !row) {
+                console.error("Error fetching UID:", err);
+                res.status(404).json({ success: false });
+                return;
+            }
+            uid = row.uid;
+            db.get(`SELECT * FROM playerprogression WHERE uid = ?`, [uid], (err, row) => {
+                if (err || !row) {
+                    console.error("Error fetching playerprogression:", err);
+                    res.status(500).json({ success: false });
+                    return;
+                } else {
+                    if (row.xp_this_week == 0) {
+                        res.status(200).json({ success: true, data: null });
+                    } else {
+                        jsondata = {
+                            "league": {
+                                "name": row.league_name,
+                                "guid": row.league_guid
+                            },
+                            "start-at": row.weekstart,
+                            "end-at": row.weekend,
+                            "ranking": [{
+                                "is-player": true,
+                                "is-top": true,
+                                "is-bottom": false,
+                                "profile-color": "3FA9F5",
+                                "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64",
+                                "profile-name": "YOU",
+                                "flag-url": "https://cdn/game/flags/us.png",
+                                "position": 1,
+                                "type": "player",
+                                "xp": row.xp_this_week
+                            }]
+                        };
+                        res.status(200).json({ success: true, data: jsondata });
+                    }
+                }
+            });
+        });
+    });
+
     const payload = {
         "league": {
             "name": "",
@@ -849,8 +898,6 @@ app.get('/experience-points/ranking/', (req, res) => {
             "xp": 0
         }]
     };
-
-    res.status(200).json({ success: true, data: payload });
 })
 
 
@@ -891,7 +938,7 @@ app.get('/experience-points/progression/', (req, res) => {
                     jsondata = payload;
                     res.status(200).json({ success: true, data: payload });
                     const stmt = db.prepare(
-                        `INSERT INTO playerprogression (uid, xp, previous_level_xp, next_level_xp, level, rank_name, rank_index, rank_position, rank_round_start, rank_round_end, streak_points, daily_completed_maps, goal_daily_completed_maps, prizes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
+                        `INSERT INTO playerprogression (uid, xp, previous_level_xp, next_level_xp, level, rank_name, rank_index, rank_position, rank_round_start, rank_round_end, streak_points, daily_completed_maps, goal_daily_completed_maps, prizes, league_guid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
                     );
                     stmt.run(
                         uid,
@@ -907,7 +954,8 @@ app.get('/experience-points/progression/', (req, res) => {
                         payload["streak-points"],
                         payload["daily-completed-maps"],
                         payload["goal-daily-completed-maps"],
-                        JSON.stringify(payload.prizes)
+                        JSON.stringify(payload.prizes),
+                        "LG-0"
                     );
                     console.log("Inserted default progression for UID:", uid);
                 } else {
@@ -982,7 +1030,7 @@ function getStartOfNextISOWeek() {
     const daysUntilNextMonday = 8 - todayISODay;
 
     today.setDate(today.getDate() + daysUntilNextMonday);
-    today.setHours(0, 0, 0, 0);
+    today.setHours(23, 59, 59, 999);
 
 
     return today.toISOString().split('T')[0];
