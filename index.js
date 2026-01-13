@@ -8,7 +8,7 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const querystring = require('querystring');
 const db = new sqlite3.Database('main.db');
-const tracks = require('./tracks.json')
+const Tracks = require('./tracks.json')
 const Ctracks = require('./Ctracks.json')
 
 const multer = require('multer');
@@ -111,71 +111,26 @@ db.serialize(() => {
     drone_rig TEXT,
     drone_hash TEXT
     );`);
-    /*
-    db.run(`CREATE TABLE IF NOT EXISTS leaderboard (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    player_id TEXT,
-    profile_platform_id TEXT,
-    username TEXT,
-    profile_color TEXT,
-    profile_thumb TEXT,
-    profile_name TEXT,
-    profile_platform TEXT,
-    map TEXT,
-    track TEXT,
-    is_custom_map BOOLEAN,
-    custom_map TEXT,
-    mission TEXT,
-    group_id TEXT,
-    region TEXT,
-    replay_url TEXT,
-    game_type TEXT,
-    diameter INT,
-    drone_name TEXT,
-    drone_thumb TEXT,
-    multiplayer BOOLEAN,
-    multiplayer_room_id TEXT,
-    multiplayer_room_size INT,
-    multiplayer_player_id TEXT,
-    multiplayer_master_id TEXT,
-    multiplayer_player_position INT,
-    flag_url TEXT,
-    score_type TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME,
-    match_id TEXT,
-    tryouts BOOLEAN,
-    battery_resistance FLOAT,
-    controller_type TEXT,
-    position INT,
-    score INT,
-    score_check INT,
-    score_double_check INT,
-    score_cheat BOOLEAN,
-    score_cheat_ratio FLOAT,
-    score_cheat_samples TEXT,
-    crash_count INT,
-    top_speed FLOAT,
-    time_in_first FLOAT,
-    lap_times TEXT,
-    gate_times TEXT,
-    fastest_lap INT,
-    slowest_lap INT,
-    total_distance FLOAT,
-    percentile FLOAT,
-    order_col INT,
-    high_score BOOLEAN,
-    race_id TEXT,
-    limit_col INT,
-    heat INT,
-    custom_physics BOOLEAN,
-    drl_official BOOLEAN,
-    drl_pilot_mode BOOLEAN,
-    drone_guid TEXT,
-    drone_rig TEXT,
-    drone_hash TEXT
-    );`); */
-    //db.run("DROP TABLE user")
+
+    db.run(`CREATE TABLE IF NOT EXISTS playerprogression (
+        uid TEXT UNIQUE,
+        xp INT,
+        previous_level_xp INT,
+        next_level_xp INT,
+        level INT,
+        rank_name TEXT,
+        rank_index INT,
+        rank_position INT,
+        rank_round_start TEXT,
+        rank_round_end TEXT,
+        league TEXT,
+        streak_date_start TEXT,
+        streak_date_end TEXT,
+        streak_points INT,
+        daily_completed_maps INT,
+        goal_daily_completed_maps INT,
+        prizes TEXT);`);
+    //db.run("DROP TABLE playerprogression")
 });
 
 app.use('/tracks', express.static(path.join(__dirname, 'tracks')));
@@ -185,7 +140,7 @@ app.get('/maps/:guid', (req, res) => {
     console.log("/maps/ MAPS", guid);
 
     // Filter the tracks if GUID exists
-    const mapData = tracks.filter(track => track.guid === guid);
+    const mapData = Tracks.filter(track => track.guid === guid);
 
     console.log(mapData)
     res.status(200).json({
@@ -281,11 +236,11 @@ app.get('/time/', (req, res) => {
 app.get('/progression/maps/', (req, res) => {
     let progressionMaps = [
     ];
-    for (let i = 0; i < tracks.length; i++) {
+    for (let i = 0; i < Tracks.length; i++) {
         let data = {
-            guid: tracks[i].guid,
-            "name": tracks[i]["map-title"],
-            "xp-value": tracks[i]["xp-value"]
+            guid: Tracks[i].guid,
+            "name": Tracks[i]["map-title"],
+            "xp-value": Tracks[i]["xp-value"]
         }
         progressionMaps.push(data);
     }
@@ -453,12 +408,12 @@ app.get('/state/', (req, res) => {
 })
 
 app.post('/leaderboards/', (req, res) => {
-    req.headers['x-access-jsonwebtoken']
-    body = JSON.parse(req.body)
+    token = req.headers['x-access-jsonwebtoken']
+
     db.get(`SELECT name FROM user WHERE token = ?`, [token], (err, row) => {
         console.log("Player", row ? row.name : "unknown", "is sending leaderboard");
     });
-
+    /*
     db.get(`SELECT uid, name FROM user WHERE token = ?`, [token], (err, row) => {
         if (err || !row) {
             console.error("Error fetching UID:", err);
@@ -522,35 +477,99 @@ app.post('/leaderboards/', (req, res) => {
 
         res.status(200).json({ success: true });
     });
+    */
     console.log("NEW LEADERBOARD POST:\n")
     console.log("Headers:", req.headers);
-    console.log("Body:", req.body)
     let body = '';
     req.on('data', c => body += c);
     req.on('end', () => {
         const raw = body.startsWith('list=') ? body.slice(5) : body;
         const parsed = JSON.parse(decodeURIComponent(raw));
         console.log("LEADERBOARDS BODY:", parsed);
-
-    });
-    res.status(200).json({
-        success: true, data: [
-            {
-                playerId: "abc123",
-                username: "PilotOne",
-                platformPlayerId: "steam_001",
-                score: 123456,
-                position: 1,
-                gameType: "Race",
-                matchId: "match_001",
-                map: "Desert",
-                track: "TrackA",
-                lapTimes: [40000, 41000, 39500],
-                topSpeed: 98.5,
-                timeInFirst: 120000,
-                totalDistance: 1500
-            }
-        ]
+        db.serialize(() => {
+            db.get(`SELECT uid FROM user WHERE token = ?`, [token], (err, row) => {
+                if (err || !row) {
+                    res.status(500).json({ success: false });
+                    return;
+                }
+                const uid = row.uid;
+                db.get(`SELECT * FROM playerprogression WHERE uid = ?`, [uid], (err, row) => {
+                    if (err || !row) {
+                        console.error("Error fetching playerprogression:", err);
+                        res.status(500).json({ success: false });
+                        return;
+                    }
+                    for (let i = 0; i < Tracks.length; i++) {
+                        if (Tracks[i].guid === parsed[0]['custom-map']) {
+                            xpValue = Tracks[i]['xp-value'];
+                        }
+                    }
+                    console.log("XP VALUE FOR MAP", "is", xpValue);
+                    let NEWXP = row.xp + xpValue;
+                    if (NEWXP >= row.next_level_xp) {
+                        row.previous_level_xp = row.next_level_xp;
+                        row.level += 1;
+                        row.next_level_xp = row.next_level_xp * 1.5;
+                        console.log(row.next_level_xp);
+                    }
+                    progression = {
+                        xp: NEWXP,
+                        "previous-level-xp": row.previous_level_xp,
+                        "next-level-xp": row.next_level_xp,
+                        level: row.level,
+                        "rank-name": row.rank_name,
+                        "rank-index": row.rank_index,
+                        "rank-position": row.rank_position,
+                        "rank-round-start": row.rank_round_start,
+                        "rank-round-end": row.rank_round_end,
+                        "streak-points": row.streak_points,
+                        "daily-completed-maps": row.daily_completed_maps,
+                        "goal-daily-completed-maps": row.goal_daily_completed_maps,
+                        prizes: JSON.parse(row.prizes)
+                    }
+                    const stmt = db.prepare(
+                        `INSERT INTO playerprogression (uid, xp, previous_level_xp, next_level_xp, level, rank_name, rank_index, rank_position, rank_round_start, rank_round_end, streak_points, daily_completed_maps, goal_daily_completed_maps, prizes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT (uid) DO UPDATE SET xp = excluded.xp, previous_level_xp = excluded.previous_level_xp, next_level_xp = excluded.next_level_xp;`
+                    );
+                    stmt.run(
+                        uid,
+                        progression.xp,
+                        progression['previous-level-xp'],
+                        progression['next-level-xp'],
+                        progression.level,
+                        progression["rank-name"],
+                        progression["rank-index"],
+                        progression["rank-position"],
+                        progression["rank-round-start"],
+                        progression["rank-round-end"],
+                        progression["streak-points"],
+                        progression["daily-completed-maps"],
+                        progression["goal-daily-completed-maps"],
+                        JSON.stringify(progression.prizes)
+                    );
+                    res.status(200).json({
+                        success: true, data: [
+                            {
+                                playerId: "abc123",
+                                username: "PilotOne",
+                                platformPlayerId: "steam_001",
+                                score: 123456,
+                                position: 1,
+                                gameType: "Race",
+                                matchId: "match_001",
+                                map: "Desert",
+                                track: "TrackA",
+                                lapTimes: [40000, 41000, 39500],
+                                topSpeed: 98.5,
+                                timeInFirst: 120000,
+                                totalDistance: 1500,
+                                progression: progression
+                            }
+                        ]
+                    });
+                });
+            });
+        });
     });
 });
 
@@ -717,7 +736,7 @@ app.post('/state/', (req, res) => {
 
 app.get('/maps/updated/', (req, res) => {
     console.log("/maps/updated/ MAPS")
-    const payload = tracks;
+    const payload = Tracks;
     res.status(200).json({ success: true, data: payload });
 })
 
@@ -787,6 +806,7 @@ app.get('/experience-points/ranking/', (req, res) => {
 
 
 app.get('/experience-points/progression/', (req, res) => {
+    token = req.headers['x-access-jsonwebtoken'];
     const payload = {
         "xp": 0,
         "previous-level-xp": 0,
@@ -802,8 +822,66 @@ app.get('/experience-points/progression/', (req, res) => {
         "goal-daily-completed-maps": 0,
         "prizes": []
     };
-
-    res.status(200).json({ success: true, data: payload });
+    db.serialize(() => {
+        db.get(`SELECT uid FROM user WHERE token = ?`, [token], (err, row) => {
+            console.log("Player", row ? row.uid : "unknown", "is requesting progression");
+            if (err || !row) {
+                console.error("Error fetching UID:", err);
+                res.status(404).json({ success: false });
+                return;
+            }
+            uid = row.uid;
+            db.get(`SELECT * FROM playerprogression WHERE uid = ?`, [uid], (err, row) => {
+                if (err) {
+                    console.error("Error fetching playerprogression:", err);
+                    res.status(500).json({ success: false });
+                    return;
+                }
+                if (!row) {
+                    console.log("No player progression found for UID:", uid);
+                    jsondata = payload;
+                    res.status(200).json({ success: true, data: payload });
+                    const stmt = db.prepare(
+                        `INSERT INTO playerprogression (uid, xp, previous_level_xp, next_level_xp, level, rank_name, rank_index, rank_position, rank_round_start, rank_round_end, streak_points, daily_completed_maps, goal_daily_completed_maps, prizes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`
+                    );
+                    stmt.run(
+                        uid,
+                        payload.xp,
+                        payload['previous-level-xp'],
+                        payload['next-level-xp'],
+                        payload.level,
+                        payload["rank-name"],
+                        payload["rank-index"],
+                        payload["rank-position"],
+                        payload["rank-round-start"],
+                        payload["rank-round-end"],
+                        payload["streak-points"],
+                        payload["daily-completed-maps"],
+                        payload["goal-daily-completed-maps"],
+                        JSON.stringify(payload.prizes)
+                    );
+                    console.log("Inserted default progression for UID:", uid);
+                } else {
+                    jsondata = {
+                        xp: row.xp,
+                        "previous-level-xp": row.previous_level_xp,
+                        "next-level-xp": row.next_level_xp,
+                        level: row.level,
+                        "rank-name": row.rank_name,
+                        "rank-index": row.rank_index,
+                        "rank-position": row.rank_position,
+                        "rank-round-start": row.rank_round_start,
+                        "rank-round-end": row.rank_round_end,
+                        "streak-points": row.streak_points,
+                        "daily-completed-maps": row.daily_completed_maps,
+                        "goal-daily-completed-maps": row.goal_daily_completed_maps,
+                        prizes: JSON.parse(row.prizes)
+                    }
+                    res.status(200).json({ success: true, data: jsondata });
+                }
+            });
+        });
+    });
 })
 
 app.get('/circuits/', (req, res) => {
