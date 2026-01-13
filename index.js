@@ -303,7 +303,7 @@ app.get('/state/game/', (req, res) => {
 
 app.get('/maps/', (req, res) => {
     console.log(req.headers);
-    res.status(200).json({ success: true, data:{ data: Ctracks, "pagging": { "page": 1, "limit": 10, "page-total": 2 } } });
+    res.status(200).json({ success: true, data: { data: Ctracks, "pagging": { "page": 1, "limit": 10, "page-total": 2 } } });
 })
 
 app.get('/tournaments/:guid/register', (req, res) => {
@@ -314,18 +314,17 @@ app.get('/tournaments/:guid/register', (req, res) => {
 app.get('/social/profile/', (req, res) => {
     console.log("social profile for:", req.headers);
     payload = [{
-            "platform-id": "Epic",
-            "player-id": "b9365d125935475b8327162c66a25e12",
-            "profile-color": "FFAA33",
-            "profile-secondary-color": "33FFAA",
-            "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64",
-            "profile-rank": 12,
-            "profile-name": "AcePilot",
-            "username": "AcePilot007",
-            "has-game": true,
-            "is-drl-pilot": true,
-            "flag-url": "https://cdn.game/flags/us.png"
-        }];
+        "platform-id": "Epic",
+        "player-id": "b9365d125935475b8327162c66a25e12",
+        "profile-color": "FFAA33",
+        "profile-secondary-color": "33FFAA",
+        "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64",
+        "profile-rank": 12,
+        "profile-name": "AcePilot",
+        "username": "AcePilot007",
+        "has-game": true,
+        "is-drl-pilot": false,
+    }];
     const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
     res.status(200).json({
         success: true, data: base64Data
@@ -413,7 +412,7 @@ app.get('/tournaments/', (req, res) => {
 })
 
 app.get('/state/', (req, res) => {
-    const token = decodeURIComponent(req.query.token).replace(/ /g, "+");
+    const token = req.headers['x-access-jsonwebtoken'];
     console.log("state TOKEN:", token);
     let jsondata;
     db.serialize(() => {
@@ -454,13 +453,85 @@ app.get('/state/', (req, res) => {
 })
 
 app.post('/leaderboards/', (req, res) => {
-    console.log(req.headers);
+    req.headers['x-access-jsonwebtoken']
+    body = JSON.parse(req.body)
+    db.get(`SELECT name FROM user WHERE token = ?`, [token], (err, row) => {
+        console.log("Player", row ? row.name : "unknown", "is sending leaderboard");
+    });
+
+    db.get(`SELECT uid, name FROM user WHERE token = ?`, [token], (err, row) => {
+        if (err || !row) {
+            console.error("Error fetching UID:", err);
+            res.status(404).json({ success: false });
+            return;
+        }
+
+        const uid = row.uid;
+
+
+        db.serialize(() => {
+            const stmt = db.prepare(
+                `INSERT INTO leaderboard (player_id, profile_platform_id, username, profile_color, profile_thumb, profile_name, profile_platform, map, track, is_custom_map, custom_map, mission, group_id, region, replay_url, game_type, diameter, drone_name, drone_thumb, multiplayer, multiplayer_room_id, multiplayer_room_size, multiplayer_player_id, multiplayer_master_id, multiplayer_player_position, flag_url, score_type, match_id, tryouts, battery_resistance, controller_type, position, score, score_check, score_double_check, score_cheat, score_cheat_ratio, score_cheat_samples, crash_count, top_speed, time_in_first, lap_times, gate_times, fastest_lap, slowest_lap, total_distance, percentile, order_col, high_score, race_id, limit_col, heat, custom_physics, drl_official, drl_pilot_mode, drone_guid, drone_rig, drone_hash)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(player_id, map, track, diameter, drone_name, drone_guid) DO UPDATE SET replay_url = excluded.replay_url, score = excluded.score, score_check = excluded.score_check, score_double_check = excluded.score_double_check;`
+            );
+
+            stmt.run(
+                uid, 
+                body.profile_platform_id ? body.profile_platform_id: "unknown",
+                row.name,
+                null,
+                null,
+                row.name,
+                body.profile_platform_id ? body.profile_platform_id: "unknown",
+                body.map ? body.map: "unknown",
+                body.track ? body.track: "unknown",
+                body['is-custom-map'] ? body['is-custom-map']: true,
+                body['custom-map'] ? body['custom-map']: null,
+                
+                (err) => {
+
+                if (err) {
+                    console.error("SQLite insert failed:", err);
+                    return;
+                }
+
+
+                db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
+                    if (err) {
+                        console.error("Error fetching JSON:", err);
+                        return;
+                    }
+
+                    if (!row) {
+                    } else {
+                        let jsondata;
+                        try {
+                            jsondata = JSON.parse(row.json);
+                        } catch {
+                            jsondata = row.json;
+                        }
+                    }
+
+                    stmt.finalize(err => {
+                        if (err) console.error("Error finalizing statement:", err);
+                    });
+                });
+            });
+        });
+
+        res.status(200).json({ success: true });
+    });
+    console.log("NEW LEADERBOARD POST:\n")
+    console.log("Headers:", req.headers);
+    console.log("Body:", req.body)
     let body = '';
     req.on('data', c => body += c);
     req.on('end', () => {
         const raw = body.startsWith('list=') ? body.slice(5) : body;
         const parsed = JSON.parse(decodeURIComponent(raw));
         console.log("LEADERBOARDS BODY:", parsed);
+
     });
     res.status(200).json({
         success: true, data: [
@@ -477,21 +548,6 @@ app.post('/leaderboards/', (req, res) => {
                 lapTimes: [40000, 41000, 39500],
                 topSpeed: 98.5,
                 timeInFirst: 120000,
-                totalDistance: 1500
-            },
-            {
-                playerId: "def456",
-                username: "PilotTwo",
-                platformPlayerId: "steam_002",
-                score: 130000,
-                position: 2,
-                gameType: "Race",
-                matchId: "match_001",
-                map: "Desert",
-                track: "TrackA",
-                lapTimes: [42000, 42500, 41000],
-                topSpeed: 95.3,
-                timeInFirst: 110000,
                 totalDistance: 1500
             }
         ]
