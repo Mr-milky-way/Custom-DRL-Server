@@ -12,7 +12,6 @@ const Tracks = require('./tracks.json')
 const Ctracks = require('./Ctracks.json')
 
 const multer = require('multer');
-const { log } = require('console');
 const e = require('express');
 const replayCloud = multer({ dest: 'replay-cloud/' });
 
@@ -134,26 +133,28 @@ db.serialize(() => {
 ----------------------------------------------------------------------------------------------------------------------
 */
 
+//something here is broken i think
+
+
+//path for track downloads 
 app.use('/tracks', express.static(path.join(__dirname, 'tracks')));
 
 app.get('/maps/:guid', (req, res) => {
     const guid = req.params.guid;
     console.log("/maps/ MAPS", guid);
 
-    // Filter the tracks if GUID exists
     const mapData = Tracks.filter(track => track.guid === guid);
 
-    console.log(mapData)
     res.status(200).json({
         success: true,
         data: {
             paging: {
-                "page-total": 1,   // total number of pages
-                "page": 1,                 // current page
-                "next-page-url": "",       // URL for next page, empty if none
-                "previous-page-url": ""    // URL for previous page, empty if none
+                "page-total": 1,
+                "page": 1,
+                "next-page-url": "",
+                "previous-page-url": ""
             },
-            data: mapData                  // array of items
+            data: mapData
         }
     });
 });
@@ -175,20 +176,21 @@ app.get('/progression/maps/', (req, res) => {
     });
 })
 
+//might be a duplicate
 app.get('/maps/', (req, res) => {
-    console.log(req.headers);
+    console.log("req sent to /maps/ headers are: ",req.headers);
     res.status(200).json({ success: true, data: { data: Ctracks, "pagging": { "page": 1, "limit": 10, "page-total": 2 } } });
 })
 
 app.get('/maps/updated/', (req, res) => {
-    console.log("/maps/updated/ MAPS")
+    console.log("req sent to /maps/updated/")
     const payload = Tracks;
     res.status(200).json({ success: true, data: payload });
 })
 
 
 app.get('/maps/user/updated/', (req, res) => {
-    console.log("/maps/user/updated/ MAPS")
+    console.log("req sent to /maps/user/updated/")
     const payload = Ctracks;
     const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
     res.status(200).json({ success: true, data: Ctracks });
@@ -206,13 +208,15 @@ app.get('/maps/user/updated/', (req, res) => {
 ---------------------------------------------------------------------------------------------------------
 */
 
+//replays is the only thing stored at the moment but it needs to be changed to save file endings and stuff
+
 app.post('/storage/logs/', (req, res) => {
     res.status(200).json({ success: true });
 })
 
 app.post('/storage/replay-cloud/', replayCloud.single('file'), (req, res) => {
-    console.log(req.headers);
-    console.log(req.body); // Text fields are in req.body
+    console.log("replay sent to /storage/replay-cloud/ here is data:", req.headers);
+    console.log(req.body);
     console.log(req.file);
     res.status(200).json({ success: true });
 })
@@ -240,7 +244,6 @@ app.post('/v2/login', (req, res) => {
     req.on('end', () => {
         const parsed = querystring.parse(body);
 
-        console.log('LOGIN FIELDS:', parsed);
 
         const responseData = {
             userId: 'offline-user',
@@ -256,7 +259,7 @@ app.post('/v2/login', (req, res) => {
         try {
             decToken = decryptDRL(parsed.token, "09e027edfde3212431a8758576807083", parsed.time.padStart(16, '0'));
         } catch (E) {
-            console.error("Decryption failed:", E);
+            console.error("Login Decryption failed:", E);
             res.status(400).json({ success: false });
             return
         }
@@ -285,7 +288,6 @@ app.post('/v2/login', (req, res) => {
             token: parsed.token,
             data: base64Data
         });
-        console.log(decryptDRL(parsed.token, "09e027edfde3212431a8758576807083", parsed.time.padStart(16, '0')));
     });
 });
 
@@ -301,7 +303,7 @@ app.post('/v2/login', (req, res) => {
 */
 
 app.get('/social/profile/', (req, res) => {
-    console.log("social profile for:", req.headers);
+    console.log("social profile header for:", req.headers);
     payload = [{
         "platform-id": "Epic",
         "player-id": "b9365d125935475b8327162c66a25e12",
@@ -328,7 +330,7 @@ app.get('/state/game/', (req, res) => {
 
 app.get('/state/', (req, res) => {
     const token = req.headers['x-access-jsonwebtoken'];
-    console.log("state TOKEN:", token);
+    console.log("req sent to /state/ TOKEN:", token);
     let jsondata;
     db.serialize(() => {
         db.get(`SELECT uid FROM user WHERE token = ?`, [token], (err, row) => {
@@ -357,7 +359,7 @@ app.get('/state/', (req, res) => {
                     try {
                         jsondata = JSON.parse(row.json);
                     } catch {
-                        jsondata = row.json; // fallback
+                        jsondata = row.json;
                     }
                     const base64Data = Buffer.from(JSON.stringify(jsondata)).toString('base64');
                     res.status(200).json({ success: true, data: base64Data });
@@ -369,7 +371,7 @@ app.get('/state/', (req, res) => {
 
 app.post('/state/', (req, res) => {
     const token = decodeURIComponent(req.query.token).replace(/ /g, "+");
-    console.log("TOKEN:", token);
+    console.log("post sent to /state/ TOKEN:", token);
 
     let body = '';
     req.on('data', c => body += c);
@@ -446,7 +448,7 @@ app.post('/state/', (req, res) => {
 
 
 app.get('/tournaments/:guid/register', (req, res) => {
-    console.log("Tournament registration for:", req.headers['x-access-jsonwebtoken']);
+    console.log("Tournament registration token for:", req.headers['x-access-jsonwebtoken']);
     res.status(200).json({ success: true });
 })
 
@@ -630,6 +632,11 @@ app.post('/leaderboards/', (req, res) => {
                     return;
                 }
                 const uid = row.uid;
+
+
+
+                // GET PROG FOR PLAYER RET ----------------------------------------------------------------------
+
                 db.get(`SELECT * FROM playerprogression WHERE uid = ?`, [uid], (err, row) => {
                     if (err || !row) {
                         console.error("Error fetching playerprogression:", err);
@@ -720,7 +727,7 @@ app.post('/leaderboards/', (req, res) => {
 
 
 app.get('/leaderboards/rivals/', (req, res) => {
-    console.log(req.headers);
+    console.log("req sent to /leaderboards/rivals/ headers are:", req.headers);
     res.status(200).json({
         success: true, data: {
             "top": [
@@ -762,22 +769,18 @@ app.get('/leaderboards/rivals/', (req, res) => {
 });
 
 app.get('/leaderboards/', (req, res) => {
-    const token = req.query.token;  // user auth token
-    const guid = req.query.guid;    // leaderboard ID
-    const match = req.query.match;  // optional
+    const token = req.query.token;
+    const guid = req.query.guid;
+    const match = req.query.match;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const gameType = req.query['game-type'] || null;
 
-    console.log('Query parameters:', req.query);
+    console.log('leaderboard req sent to /leaderboards/ Query parameters are:', req.query);
 
-    // Data might also come in body (some GET requests send JSON)
     console.log('Body:', req.body);
 
-    // Header that C# sends
     console.log('Headers:', req.headers);
-
-    console.log("Leaderboard request:", { token, guid, match, page, limit, gameType });
     res.status(200).json({
         success: true, data: {
             "leaderboard": [
@@ -831,7 +834,7 @@ app.get('/leaderboards/', (req, res) => {
 */
 
 app.get('/experience-points/ranking/', (req, res) => {
-    console.log(req.headers);
+    console.log("req sent to /experience-points/ranking/:", req.headers);
     token = req.headers['x-access-jsonwebtoken'];
     db.serialize(() => {
         db.get(`SELECT uid FROM user WHERE token = ?`, [token], (err, row) => {
@@ -1005,7 +1008,6 @@ app.get('/circuits/', (req, res) => {
     res.status(200).json({ success: true });
 })
 
-// Helper: timestamp as Base64
 function getTimeBase64() {
     const now = new Date();
     const yyyy = now.getFullYear();
@@ -1057,14 +1059,13 @@ app.use(rateLimit({
 }));
 
 function decryptDRL(token, keyString, ivString) {
-    const key = Buffer.from(keyString, 'utf8');    // matches C# Encoding.UTF8.GetBytes
-    const iv = Buffer.from(ivString, 'utf8');      // matches C# Encoding.UTF8.GetBytes
+    const key = Buffer.from(keyString, 'utf8');
+    const iv = Buffer.from(ivString, 'utf8');
     const encrypted = Buffer.from(token, 'base64');
 
     const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
     let decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
 
-    // Remove BOM if present
     if (decrypted[0] === 0xEF && decrypted[1] === 0xBB && decrypted[2] === 0xBF) {
         decrypted = decrypted.slice(3);
     }
