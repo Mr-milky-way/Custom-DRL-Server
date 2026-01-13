@@ -18,32 +18,16 @@ const replayCloud = multer({ dest: 'replay-cloud/' });
 const app = express();
 const PORT = 8080;
 
-
-
-
-app.use(rateLimit({
-    windowMs: 60_000,
-    max: 1000
-}));
-
-function decryptDRL(token, keyString, ivString) {
-    const key = Buffer.from(keyString, 'utf8');    // matches C# Encoding.UTF8.GetBytes
-    const iv = Buffer.from(ivString, 'utf8');      // matches C# Encoding.UTF8.GetBytes
-    const encrypted = Buffer.from(token, 'base64');
-
-    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
-    let decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
-
-    // Remove BOM if present
-    if (decrypted[0] === 0xEF && decrypted[1] === 0xBB && decrypted[2] === 0xBF) {
-        decrypted = decrypted.slice(3);
-    }
-
-    const decryptedText = decrypted.toString('utf8');
-    return JSON.parse(decryptedText);
-}
-
-app.use(express.json());
+/*
+-------------------------------------------------
+████████╗ █████╗ ██████╗ ██╗     ███████╗███████╗
+╚══██╔══╝██╔══██╗██╔══██╗██║     ██╔════╝██╔════╝
+   ██║   ███████║██████╔╝██║     █████╗  ███████╗
+   ██║   ██╔══██║██╔══██╗██║     ██╔══╝  ╚════██║
+   ██║   ██║  ██║██████╔╝███████╗███████╗███████║
+   ╚═╝   ╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝╚══════╝
+-------------------------------------------------
+*/
 
 db.serialize(() => {
     db.run("CREATE TABLE IF NOT EXISTS user (uid TEXT UNIQUE, token TEXT, expires INTEGER, name TEXT)");
@@ -130,8 +114,37 @@ db.serialize(() => {
         daily_completed_maps INT,
         goal_daily_completed_maps INT,
         prizes TEXT);`);
+    db.run(`CREATE TABLE IF NOT EXISTS playerweeklyprogression (
+        uid TEXT UNIQUE,
+        xp INT,
+        previous_level_xp INT,
+        next_level_xp INT,
+        level INT,
+        rank_name TEXT,
+        rank_index INT,
+        rank_position INT,
+        rank_round_start TEXT,
+        rank_round_end TEXT,
+        league TEXT,
+        streak_date_start TEXT,
+        streak_date_end TEXT,
+        streak_points INT,
+        daily_completed_maps INT,
+        goal_daily_completed_maps INT,
+        prizes TEXT);`);
     //db.run("DROP TABLE playerprogression")
 });
+
+/*
+----------------------------------------------------------------------------------------------------------------------
+███╗   ███╗ █████╗ ██████╗ ███████╗     █████╗ ███╗   ██╗██████╗     ████████╗██████╗  █████╗  ██████╗██╗  ██╗███████╗
+████╗ ████║██╔══██╗██╔══██╗██╔════╝    ██╔══██╗████╗  ██║██╔══██╗    ╚══██╔══╝██╔══██╗██╔══██╗██╔════╝██║ ██╔╝██╔════╝
+██╔████╔██║███████║██████╔╝███████╗    ███████║██╔██╗ ██║██║  ██║       ██║   ██████╔╝███████║██║     █████╔╝ ███████╗
+██║╚██╔╝██║██╔══██║██╔═══╝ ╚════██║    ██╔══██║██║╚██╗██║██║  ██║       ██║   ██╔══██╗██╔══██║██║     ██╔═██╗ ╚════██║
+██║ ╚═╝ ██║██║  ██║██║     ███████║    ██║  ██║██║ ╚████║██████╔╝       ██║   ██║  ██║██║  ██║╚██████╗██║  ██╗███████║
+╚═╝     ╚═╝╚═╝  ╚═╝╚═╝     ╚══════╝    ╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝        ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝
+----------------------------------------------------------------------------------------------------------------------
+*/
 
 app.use('/tracks', express.static(path.join(__dirname, 'tracks')));
 
@@ -157,6 +170,54 @@ app.get('/maps/:guid', (req, res) => {
     });
 });
 
+app.get('/progression/maps/', (req, res) => {
+    let progressionMaps = [
+    ];
+    for (let i = 0; i < Tracks.length; i++) {
+        let data = {
+            guid: Tracks[i].guid,
+            "name": Tracks[i]["map-title"],
+            "xp-value": Tracks[i]["xp-value"]
+        }
+        progressionMaps.push(data);
+    }
+
+    res.status(200).json({
+        success: true, data: progressionMaps
+    });
+})
+
+app.get('/maps/', (req, res) => {
+    console.log(req.headers);
+    res.status(200).json({ success: true, data: { data: Ctracks, "pagging": { "page": 1, "limit": 10, "page-total": 2 } } });
+})
+
+app.get('/maps/updated/', (req, res) => {
+    console.log("/maps/updated/ MAPS")
+    const payload = Tracks;
+    res.status(200).json({ success: true, data: payload });
+})
+
+
+app.get('/maps/user/updated/', (req, res) => {
+    console.log("/maps/user/updated/ MAPS")
+    const payload = Ctracks;
+    const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
+    res.status(200).json({ success: true, data: Ctracks });
+})
+
+
+/*
+---------------------------------------------------------------------------------------------------------
+███████╗████████╗ ██████╗ ██████╗  █████╗  ██████╗ ███████╗    ███████╗████████╗██╗   ██╗███████╗███████╗
+██╔════╝╚══██╔══╝██╔═══██╗██╔══██╗██╔══██╗██╔════╝ ██╔════╝    ██╔════╝╚══██╔══╝██║   ██║██╔════╝██╔════╝
+███████╗   ██║   ██║   ██║██████╔╝███████║██║  ███╗█████╗      ███████╗   ██║   ██║   ██║█████╗  █████╗
+╚════██║   ██║   ██║   ██║██╔══██╗██╔══██║██║   ██║██╔══╝      ╚════██║   ██║   ██║   ██║██╔══╝  ██╔══╝
+███████║   ██║   ╚██████╔╝██║  ██║██║  ██║╚██████╔╝███████╗    ███████║   ██║   ╚██████╔╝██║     ██║
+╚══════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝    ╚══════╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝
+---------------------------------------------------------------------------------------------------------
+*/
+
 app.post('/storage/logs/', (req, res) => {
     res.status(200).json({ success: true });
 })
@@ -171,6 +232,18 @@ app.post('/storage/replay-cloud/', replayCloud.single('file'), (req, res) => {
 app.post('/storage/image/', (req, res) => {
     res.status(200).json({ success: true });
 })
+
+
+/*
+---------------------------------------
+██╗      ██████╗  ██████╗ ██╗███╗   ██╗
+██║     ██╔═══██╗██╔════╝ ██║████╗  ██║
+██║     ██║   ██║██║  ███╗██║██╔██╗ ██║
+██║     ██║   ██║██║   ██║██║██║╚██╗██║
+███████╗╚██████╔╝╚██████╔╝██║██║ ╚████║
+╚══════╝ ╚═════╝  ╚═════╝ ╚═╝╚═╝  ╚═══╝
+---------------------------------------
+*/
 
 app.post('/v2/login', (req, res) => {
     let body = '';
@@ -229,42 +302,16 @@ app.post('/v2/login', (req, res) => {
     });
 });
 
-app.get('/time/', (req, res) => {
-    res.status(200).json({ success: true, data: getTimeBase64() });
-})
-
-app.get('/progression/maps/', (req, res) => {
-    let progressionMaps = [
-    ];
-    for (let i = 0; i < Tracks.length; i++) {
-        let data = {
-            guid: Tracks[i].guid,
-            "name": Tracks[i]["map-title"],
-            "xp-value": Tracks[i]["xp-value"]
-        }
-        progressionMaps.push(data);
-    }
-
-    res.status(200).json({
-        success: true, data: progressionMaps
-    });
-})
-
-app.get('/state/game/', (req, res) => {
-    const payload = { lastState: null };
-    const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
-    res.status(200).json({ success: true, data: base64Data });
-})
-
-app.get('/maps/', (req, res) => {
-    console.log(req.headers);
-    res.status(200).json({ success: true, data: { data: Ctracks, "pagging": { "page": 1, "limit": 10, "page-total": 2 } } });
-})
-
-app.get('/tournaments/:guid/register', (req, res) => {
-    console.log("Tournament registration for:", req.headers['x-access-jsonwebtoken']);
-    res.status(200).json({ success: true });
-})
+/*
+-------------------------------------------------
+██████╗ ██╗      █████╗ ██╗   ██╗███████╗██████╗
+██╔══██╗██║     ██╔══██╗╚██╗ ██╔╝██╔════╝██╔══██╗
+██████╔╝██║     ███████║ ╚████╔╝ █████╗  ██████╔╝
+██╔═══╝ ██║     ██╔══██║  ╚██╔╝  ██╔══╝  ██╔══██╗
+██║     ███████╗██║  ██║   ██║   ███████╗██║  ██║
+╚═╝     ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝
+-------------------------------------------------
+*/
 
 app.get('/social/profile/', (req, res) => {
     console.log("social profile for:", req.headers);
@@ -284,6 +331,136 @@ app.get('/social/profile/', (req, res) => {
     res.status(200).json({
         success: true, data: base64Data
     });
+})
+
+app.get('/state/game/', (req, res) => {
+    const payload = { lastState: null };
+    const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
+    res.status(200).json({ success: true, data: base64Data });
+})
+
+app.get('/state/', (req, res) => {
+    const token = req.headers['x-access-jsonwebtoken'];
+    console.log("state TOKEN:", token);
+    let jsondata;
+    db.serialize(() => {
+        db.get(`SELECT uid FROM user WHERE token = ?`, [token], (err, row) => {
+            if (err || !row) {
+                console.error("Error fetching UID:", err);
+                res.status(404).json({ success: false });
+                return;
+            }
+
+            const uid = row.uid;
+            console.log("UID:", uid);
+
+            db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
+                if (err) {
+                    console.error("Error fetching JSON:", err);
+                    res.status(500).json({ success: false });
+                    return;
+                }
+
+                if (!row) {
+                    console.log("No player state found for UID:", uid);
+                    jsondata = { lastState: null };
+                    const base64Data = Buffer.from(JSON.stringify(jsondata)).toString('base64');
+                    res.status(200).json({ success: true, data: base64Data });
+                } else {
+                    try {
+                        jsondata = JSON.parse(row.json);
+                    } catch {
+                        jsondata = row.json; // fallback
+                    }
+                    const base64Data = Buffer.from(JSON.stringify(jsondata)).toString('base64');
+                    res.status(200).json({ success: true, data: base64Data });
+                }
+            });
+        });
+    });
+})
+
+app.post('/state/', (req, res) => {
+    const token = decodeURIComponent(req.query.token).replace(/ /g, "+");
+    console.log("TOKEN:", token);
+
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+        const raw = body.startsWith('state=') ? body.slice(6) : body;
+        const parsed = JSON.parse(decodeURIComponent(raw));
+        db.get(`SELECT name FROM user WHERE token = ?`, [token], (err, row) => {
+            console.log("Player", row ? row.name : "unknown", "is saving state.");
+        });
+
+        db.get(`SELECT uid, name FROM user WHERE token = ?`, [token], (err, row) => {
+            if (err || !row) {
+                console.error("Error fetching UID:", err);
+                res.status(404).json({ success: false });
+                return;
+            }
+
+            const uid = row.uid;
+            parsed['profile-name'] = row.name;
+            parsed['player-id'] = row.uid;
+
+
+            db.serialize(() => {
+                const stmt = db.prepare(
+                    `INSERT INTO playerstate (uid, json) VALUES (?, ?)
+                    ON CONFLICT(uid) DO UPDATE SET json = excluded.json;`
+                );
+
+                stmt.run(uid, JSON.stringify(parsed), (err) => {
+                    if (err) {
+                        console.error("SQLite insert failed:", err);
+                        return;
+                    }
+
+
+                    db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
+                        if (err) {
+                            console.error("Error fetching JSON:", err);
+                            return;
+                        }
+
+                        if (!row) {
+                        } else {
+                            let jsondata;
+                            try {
+                                jsondata = JSON.parse(row.json);
+                            } catch {
+                                jsondata = row.json;
+                            }
+                        }
+
+                        stmt.finalize(err => {
+                            if (err) console.error("Error finalizing statement:", err);
+                        });
+                    });
+                });
+            });
+
+            res.status(200).json({ success: true });
+        });
+    });
+});
+
+/*
+---------------------------------------------------------------------------------------------------
+████████╗ ██████╗ ██╗   ██╗██████╗ ███╗   ██╗ █████╗ ███╗   ███╗███████╗███╗   ██╗████████╗███████╗
+╚══██╔══╝██╔═══██╗██║   ██║██╔══██╗████╗  ██║██╔══██╗████╗ ████║██╔════╝████╗  ██║╚══██╔══╝██╔════╝
+   ██║   ██║   ██║██║   ██║██████╔╝██╔██╗ ██║███████║██╔████╔██║█████╗  ██╔██╗ ██║   ██║   ███████╗
+   ██║   ██║   ██║██║   ██║██╔══██╗██║╚██╗██║██╔══██║██║╚██╔╝██║██╔══╝  ██║╚██╗██║   ██║   ╚════██║
+   ██║   ╚██████╔╝╚██████╔╝██║  ██║██║ ╚████║██║  ██║██║ ╚═╝ ██║███████╗██║ ╚████║   ██║   ███████║
+   ╚═╝    ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝
+---------------------------------------------------------------------------------------------------
+*/
+
+
+app.get('/tournaments/:guid/register', (req, res) => {
+    console.log("Tournament registration for:", req.headers['x-access-jsonwebtoken']);
+    res.status(200).json({ success: true });
 })
 
 app.get('/tournaments/', (req, res) => {
@@ -366,46 +543,16 @@ app.get('/tournaments/', (req, res) => {
     });
 })
 
-app.get('/state/', (req, res) => {
-    const token = req.headers['x-access-jsonwebtoken'];
-    console.log("state TOKEN:", token);
-    let jsondata;
-    db.serialize(() => {
-        db.get(`SELECT uid FROM user WHERE token = ?`, [token], (err, row) => {
-            if (err || !row) {
-                console.error("Error fetching UID:", err);
-                res.status(404).json({ success: false });
-                return;
-            }
-
-            const uid = row.uid;
-            console.log("UID:", uid);
-
-            db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
-                if (err) {
-                    console.error("Error fetching JSON:", err);
-                    res.status(500).json({ success: false });
-                    return;
-                }
-
-                if (!row) {
-                    console.log("No player state found for UID:", uid);
-                    jsondata = { lastState: null };
-                    const base64Data = Buffer.from(JSON.stringify(jsondata)).toString('base64');
-                    res.status(200).json({ success: true, data: base64Data });
-                } else {
-                    try {
-                        jsondata = JSON.parse(row.json);
-                    } catch {
-                        jsondata = row.json; // fallback
-                    }
-                    const base64Data = Buffer.from(JSON.stringify(jsondata)).toString('base64');
-                    res.status(200).json({ success: true, data: base64Data });
-                }
-            });
-        });
-    });
-})
+/*
+-------------------------------------------------------------------------------------------------
+██╗     ███████╗ █████╗ ██████╗ ███████╗██████╗ ██████╗  ██████╗  █████╗ ██████╗ ██████╗ ███████╗
+██║     ██╔════╝██╔══██╗██╔══██╗██╔════╝██╔══██╗██╔══██╗██╔═══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝
+██║     █████╗  ███████║██║  ██║█████╗  ██████╔╝██████╔╝██║   ██║███████║██████╔╝██║  ██║███████╗
+██║     ██╔══╝  ██╔══██║██║  ██║██╔══╝  ██╔══██╗██╔══██╗██║   ██║██╔══██║██╔══██╗██║  ██║╚════██║
+███████╗███████╗██║  ██║██████╔╝███████╗██║  ██║██████╔╝╚██████╔╝██║  ██║██║  ██║██████╔╝███████║
+╚══════╝╚══════╝╚═╝  ╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚══════╝
+-------------------------------------------------------------------------------------------------
+*/
 
 app.post('/leaderboards/', (req, res) => {
     token = req.headers['x-access-jsonwebtoken']
@@ -668,115 +815,18 @@ app.get('/leaderboards/', (req, res) => {
     });
 });
 
-app.post('/state/', (req, res) => {
-    const token = decodeURIComponent(req.query.token).replace(/ /g, "+");
-    console.log("TOKEN:", token);
-
-    let body = '';
-    req.on('data', c => body += c);
-    req.on('end', () => {
-        const raw = body.startsWith('state=') ? body.slice(6) : body;
-        const parsed = JSON.parse(decodeURIComponent(raw));
-        db.get(`SELECT name FROM user WHERE token = ?`, [token], (err, row) => {
-            console.log("Player", row ? row.name : "unknown", "is saving state.");
-        });
-
-        db.get(`SELECT uid, name FROM user WHERE token = ?`, [token], (err, row) => {
-            if (err || !row) {
-                console.error("Error fetching UID:", err);
-                res.status(404).json({ success: false });
-                return;
-            }
-
-            const uid = row.uid;
-            parsed['profile-name'] = row.name;
-            parsed['player-id'] = row.uid;
 
 
-            db.serialize(() => {
-                const stmt = db.prepare(
-                    `INSERT INTO playerstate (uid, json) VALUES (?, ?)
-                    ON CONFLICT(uid) DO UPDATE SET json = excluded.json;`
-                );
-
-                stmt.run(uid, JSON.stringify(parsed), (err) => {
-                    if (err) {
-                        console.error("SQLite insert failed:", err);
-                        return;
-                    }
-
-
-                    db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
-                        if (err) {
-                            console.error("Error fetching JSON:", err);
-                            return;
-                        }
-
-                        if (!row) {
-                        } else {
-                            let jsondata;
-                            try {
-                                jsondata = JSON.parse(row.json);
-                            } catch {
-                                jsondata = row.json;
-                            }
-                        }
-
-                        stmt.finalize(err => {
-                            if (err) console.error("Error finalizing statement:", err);
-                        });
-                    });
-                });
-            });
-
-            res.status(200).json({ success: true });
-        });
-    });
-});
-
-app.get('/maps/updated/', (req, res) => {
-    console.log("/maps/updated/ MAPS")
-    const payload = Tracks;
-    res.status(200).json({ success: true, data: payload });
-})
-
-
-app.get('/maps/user/updated/', (req, res) => {
-    console.log("/maps/user/updated/ MAPS")
-    const payload = Ctracks;
-    const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
-    res.status(200).json({ success: true, data: Ctracks });
-})
-
-
-function getStartOfNextISOWeek() {
-    const today = new Date();
-
-    const todayISODay = today.getDay() === 0 ? 7 : today.getDay();
-
-    const daysUntilNextMonday = 8 - todayISODay;
-
-    today.setDate(today.getDate() + daysUntilNextMonday);
-    today.setHours(0, 0, 0, 0);
-
-
-    return today.toISOString().split('T')[0];
-}
-
-
-function getEndOfLastISOWeek() {
-    const today = new Date();
-
-    const daysSinceLastSunday = today.getDay() === 0 ? 7 : today.getDay();
-
-    const lastSunday = new Date(today.setDate(today.getDate() - daysSinceLastSunday));
-
-    lastSunday.setHours(23, 59, 59, 999);
-
-    const isoString = lastSunday.toISOString();
-
-    return isoString;
-}
+/*
+----------------------------------------------------------------------------------------
+██████╗ ██████╗  ██████╗  ██████╗ ██████╗ ███████╗███████╗███████╗██╗ ██████╗ ███╗   ██╗
+██╔══██╗██╔══██╗██╔═══██╗██╔════╝ ██╔══██╗██╔════╝██╔════╝██╔════╝██║██╔═══██╗████╗  ██║
+██████╔╝██████╔╝██║   ██║██║  ███╗██████╔╝█████╗  ███████╗███████╗██║██║   ██║██╔██╗ ██║
+██╔═══╝ ██╔══██╗██║   ██║██║   ██║██╔══██╗██╔══╝  ╚════██║╚════██║██║██║   ██║██║╚██╗██║
+██║     ██║  ██║╚██████╔╝╚██████╔╝██║  ██║███████╗███████║███████║██║╚██████╔╝██║ ╚████║
+╚═╝     ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝
+----------------------------------------------------------------------------------------
+*/
 
 app.get('/experience-points/ranking/', (req, res) => {
     console.log(req.headers);
@@ -884,6 +934,24 @@ app.get('/experience-points/progression/', (req, res) => {
     });
 })
 
+
+
+/*
+------------------------------------------------------
+██████╗  █████╗ ███╗   ██╗██████╗  ██████╗ ███╗   ███╗
+██╔══██╗██╔══██╗████╗  ██║██╔══██╗██╔═══██╗████╗ ████║
+██████╔╝███████║██╔██╗ ██║██║  ██║██║   ██║██╔████╔██║
+██╔══██╗██╔══██║██║╚██╗██║██║  ██║██║   ██║██║╚██╔╝██║
+██║  ██║██║  ██║██║ ╚████║██████╔╝╚██████╔╝██║ ╚═╝ ██║
+╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝  ╚═════╝ ╚═╝     ╚═╝
+------------------------------------------------------
+*/
+
+app.get('/time/', (req, res) => {
+    res.status(200).json({ success: true, data: getTimeBase64() });
+})
+
+
 app.get('/circuits/', (req, res) => {
     const payload = [];
     const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
@@ -906,6 +974,59 @@ function getTimeBase64() {
     const base64Data = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64');
     return base64Data;
 }
+
+function getStartOfNextISOWeek() {
+    const today = new Date();
+
+    const todayISODay = today.getDay() === 0 ? 7 : today.getDay();
+
+    const daysUntilNextMonday = 8 - todayISODay;
+
+    today.setDate(today.getDate() + daysUntilNextMonday);
+    today.setHours(0, 0, 0, 0);
+
+
+    return today.toISOString().split('T')[0];
+}
+
+
+function getEndOfLastISOWeek() {
+    const today = new Date();
+
+    const daysSinceLastSunday = today.getDay() === 0 ? 7 : today.getDay();
+
+    const lastSunday = new Date(today.setDate(today.getDate() - daysSinceLastSunday));
+
+    lastSunday.setHours(23, 59, 59, 999);
+
+    const isoString = lastSunday.toISOString();
+
+    return isoString;
+}
+
+app.use(rateLimit({
+    windowMs: 60_000,
+    max: 1000
+}));
+
+function decryptDRL(token, keyString, ivString) {
+    const key = Buffer.from(keyString, 'utf8');    // matches C# Encoding.UTF8.GetBytes
+    const iv = Buffer.from(ivString, 'utf8');      // matches C# Encoding.UTF8.GetBytes
+    const encrypted = Buffer.from(token, 'base64');
+
+    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+    let decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+
+    // Remove BOM if present
+    if (decrypted[0] === 0xEF && decrypted[1] === 0xBB && decrypted[2] === 0xBF) {
+        decrypted = decrypted.slice(3);
+    }
+
+    const decryptedText = decrypted.toString('utf8');
+    return JSON.parse(decryptedText);
+}
+
+app.use(express.json());
 
 app.listen(PORT, () => {
     console.log(`Server is running on [http://localhost:${PORT}](http://localhost:${PORT})`);
