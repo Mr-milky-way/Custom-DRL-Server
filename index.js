@@ -136,12 +136,22 @@ db.serialize(() => {
 //something here is broken i think
 
 
-//path for track downloads 
-app.use('/tracks', express.static(path.join(__dirname, 'tracks')));
+//path for track downloads
+app.get('/tracks/:id', (req, res) => {
+    const filename = req.params.id + '.cmp'; // or .map / .bin
+    const filePath = path.join(__dirname, 'tracks', filename);
 
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).end();
+    }
+
+    res.sendFile(filePath);
+});
+
+/*
 app.get('/maps/:guid', (req, res) => {
     const guid = req.params.guid;
-    console.log("/maps/ MAPS", guid);
+    console.log("what? /maps/ MAPS", guid);
 
     const mapData = Tracks.filter(track => track.guid === guid);
 
@@ -158,7 +168,7 @@ app.get('/maps/:guid', (req, res) => {
         }
     });
 });
-
+*/
 app.get('/progression/maps/', (req, res) => {
     let progressionMaps = [
     ];
@@ -185,7 +195,7 @@ app.get('/maps/', (req, res) => {
 app.get('/maps/updated/', (req, res) => {
     console.log("req sent to /maps/updated/")
     const payload = Tracks;
-    res.status(200).json({ success: true, data: payload });
+    res.status(200).json(payload);
 })
 
 
@@ -193,7 +203,7 @@ app.get('/maps/user/updated/', (req, res) => {
     console.log("req sent to /maps/user/updated/")
     const payload = Ctracks;
     const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
-    res.status(200).json({ success: true, data: Ctracks });
+    res.status(200).json({ data: Ctracks });
 })
 
 
@@ -1074,7 +1084,7 @@ function decryptDRL(token, keyString, ivString) {
     return JSON.parse(decryptedText);
 }
 
-app.use(express.json());
+//app.use(express.json());
 
 app.listen(PORT, () => {
     console.log(`Server is running on [http://localhost:${PORT}](http://localhost:${PORT})`);
