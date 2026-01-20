@@ -204,6 +204,7 @@ app.get('/maps/user/updated/', (req, res) => {
     res.status(200).json({ data: Ctracks });
 })
 
+//this bugs out some endpoints
 //app.use(express.urlencoded({ extended: false }));
 
 app.post('/maps/:guid/rate/', (req, res) => {
@@ -562,6 +563,42 @@ app.get('/tournaments/', (req, res) => {
 ╚══════╝╚══════╝╚═╝  ╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚══════╝
 -------------------------------------------------------------------------------------------------
 */
+
+app.get('/leaderboards/user/', (req, res) => {
+    token = req.headers['x-access-jsonwebtoken']
+    console.log(req.body)
+    console.log(req.query)
+    console.log(token)
+    console.log(req.headers)
+    //This is fake data, should make the name change to something tho. 
+    data = {
+        leaderboard: [
+            {
+                playerId: "abc123",
+                username: "PilotOne",
+                platformPlayerId: "steam_001",
+                score: 123456,
+                position: 1,
+                gameType: "Race",
+                matchId: "match_001",
+                map: "Desert",
+                track: "TrackA",
+                lapTimes: [40000, 41000, 39500],
+                topSpeed: 98.5,
+                timeInFirst: 120000,
+                totalDistance: 1500,
+                progression: null,
+                "high-score": false,
+                diameter: 7,
+                "drl-official": true
+            }
+        ]
+    };
+    console.log(data)
+    res.status(200).json({
+        success: true, data: data
+    });
+});
 
 app.post('/leaderboards/', (req, res) => {
     token = req.headers['x-access-jsonwebtoken']
@@ -930,7 +967,7 @@ app.get('/leaderboards/', (req, res) => {
                                 "tryouts": row[i].tryouts,
                                 "battery-resistance": row[i].battery_resistance,
                                 "controller-type": row[i].controller_type,
-                                "position": i+1,
+                                "position": i + 1,
                                 "score": row[i].score,
                                 "score-check": row[i].score_check,
                                 "score-double-check": row[i].score_double_check,
@@ -951,7 +988,7 @@ app.get('/leaderboards/', (req, res) => {
                                 "race-id": row[i].race_id,
                                 "limit-col": row[i].limit_col,
                                 "heat": row[i].heat,
-                                "custom-physics": row[i].custom-physics,
+                                "custom-physics": row[i].custom - physics,
                                 "drl-pilot-mode": row[i].drl_pilot_mode,
                                 "drone-rig": row[i].drone_rig,
                                 "drone-hash": row[i].drone_hash
@@ -1152,6 +1189,11 @@ app.get('/experience-points/progression/', (req, res) => {
 app.get('/time/', (req, res) => {
     res.status(200).json({ success: true, data: getTimeBase64() });
 })
+
+//filler data
+app.get('/crash-settings', (req, res) => {
+    res.status(200).json({ success: true, data: null });
+});
 
 
 app.get('/circuits/', (req, res) => {
