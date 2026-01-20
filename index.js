@@ -139,8 +139,8 @@ db.serialize(() => {
 
 //path for track downloads
 app.get('/tracks/:id', (req, res) => {
-    const filename = req.params.id + '.cmp'; // or .map / .bin
-    const filePath = path.join(__dirname, 'tracks', filename);
+    const safeId = path.basename(req.params.id);
+    const filePath = path.join(__dirname, 'tracks', safeId + '.cmp');
 
     if (!fs.existsSync(filePath)) {
         return res.status(404).end();
@@ -187,11 +187,8 @@ app.get('/progression/maps/', (req, res) => {
     });
 })
 
-//might be a duplicate
-app.get('/maps/', (req, res) => {
-    console.log("req sent to /maps/ headers are: ", req.headers);
-    res.status(200).json({ success: true, data: { data: Ctracks, "pagging": { "page": 1, "limit": 10, "page-total": 2 } } });
-})
+
+
 
 app.get('/maps/updated/', (req, res) => {
     console.log("req sent to /maps/updated/")
@@ -207,6 +204,18 @@ app.get('/maps/user/updated/', (req, res) => {
     res.status(200).json({ data: Ctracks });
 })
 
+//app.use(express.urlencoded({ extended: false }));
+
+app.post('/maps/:guid/rate/', (req, res) => {
+    console.log("Body:", req.body);
+    res.status(200).json({ success: true });
+})
+
+//might be a duplicate
+app.get('/maps/', (req, res) => {
+    console.log("req sent to /maps/ headers are: ", req.headers);
+    res.status(200).json({ success: true, data: { data: Ctracks, "pagging": { "page": 1, "limit": 10, "page-total": 2 } } });
+})
 
 /*
 ---------------------------------------------------------------------------------------------------------
@@ -557,22 +566,17 @@ app.get('/tournaments/', (req, res) => {
 app.post('/leaderboards/', (req, res) => {
     token = req.headers['x-access-jsonwebtoken']
 
-    db.get(`SELECT name FROM user WHERE token = ?`, [token], (err, row) => {
-        console.log("Player", row ? row.name : "unknown", "is sending leaderboard");
-    });
-
 
     console.log("NEW LEADERBOARD POST:\n")
-    console.log("Headers:", req.headers);
     let body = '';
     req.on('data', c => body += c);
     req.on('end', () => {
         const raw = body.startsWith('list=') ? body.slice(5) : body;
         const parsed = JSON.parse(decodeURIComponent(raw));
-        console.log("LEADERBOARDS BODY:", parsed);
         db.serialize(() => {
             db.get(`SELECT uid FROM user WHERE token = ?`, [token], (err, row) => {
                 if (err || !row) {
+                    console.error("Error uid FROM user:", err);
                     res.status(500).json({ success: false });
                     return;
                 }
@@ -721,28 +725,30 @@ app.post('/leaderboards/', (req, res) => {
                             getEndOfLastISOWeek(),
                             getStartOfNextISOWeek()
                         );
+                        data = [
+                            {
+                                playerId: "abc123",
+                                username: "PilotOne",
+                                platformPlayerId: "steam_001",
+                                score: 123456,
+                                position: 1,
+                                gameType: "Race",
+                                matchId: "match_001",
+                                map: "Desert",
+                                track: "TrackA",
+                                lapTimes: [40000, 41000, 39500],
+                                topSpeed: 98.5,
+                                timeInFirst: 120000,
+                                totalDistance: 1500,
+                                progression: progression,
+                                "high-score": highscore,
+                                diameter: parsed[0].diameter,
+                                "drl-official": parsed[0]['drl-official']
+                            }
+                        ]
+                        console.log(data)
                         res.status(200).json({
-                            success: true, data: [
-                                {
-                                    playerId: "abc123",
-                                    username: "PilotOne",
-                                    platformPlayerId: "steam_001",
-                                    score: 123456,
-                                    position: 1,
-                                    gameType: "Race",
-                                    matchId: "match_001",
-                                    map: "Desert",
-                                    track: "TrackA",
-                                    lapTimes: [40000, 41000, 39500],
-                                    topSpeed: 98.5,
-                                    timeInFirst: 120000,
-                                    totalDistance: 1500,
-                                    progression: progression,
-                                    "high-score": highscore,
-                                    diameter: parsed[0].diameter,
-                                    "drl-official": parsed[0]['drl-official']
-                                }
-                            ]
+                            success: true, data: data
                         });
                     });
                 });
@@ -755,7 +761,6 @@ app.post('/leaderboards/', (req, res) => {
 app.get('/leaderboards/rivals/', (req, res) => {
     token = req.headers['x-access-jsonwebtoken']
     console.log("req sent to /leaderboards/rivals/ headers are:", req.headers);
-    console.log(req.query)
     db.serialize(() => {
         db.get(`SELECT uid FROM user WHERE token = ?`, [token], (err, row) => {
             if (err || !row) {
@@ -765,6 +770,40 @@ app.get('/leaderboards/rivals/', (req, res) => {
             const uid = row.uid;
             const diameter = Number(req.query.diameter);
             const drlOfficial = req.query["drl-official"] === "true" ? 1 : 0;
+            db.all(`SELECT * FROM leaderboard WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? ORDER BY score ASC`, [req.query.map, req.query.track, diameter, drlOfficial], (err, row) => {
+                if (err || row.length === 0) {
+                    console.error("Error fetching leaderboard:", err);
+                } else {
+                    rivals = []
+                    row[0].position = 1
+                    for (let i = 0; i < row.length; i++) {
+                        console.log(row[i].uid)
+                        if (row[i].player_id == uid) {
+                            if (row[i - 1] && row[i + 1]) {
+                                row[i - 1].position = i
+                                row[i].position = i + 1
+                                row[i + 1].position = i + 2
+                                rivals.push(row[i - 1])
+                                rivals.push(row[i])
+                                rivals.push(row[i + 1])
+                            }
+                        }
+                    }
+                    jsondata = {
+                        "top": [
+                            row[0]
+                        ],
+                        "player": 1,
+                        "rivals": rivals,
+                        "past": null
+                    }
+                    res.status(200).json({
+                        success: true, data: jsondata
+                    });
+                }
+                console.log(jsondata)
+            });
+            /*
             db.get(`SELECT * FROM leaderboard WHERE player_id = ? AND map = ? AND track = ? AND diameter = ? AND drl_official = ?`, [uid, req.query.map, req.query.track, diameter, drlOfficial], (err, row) => {
                 if (err || !row) {
                     console.error("Error fetching leaderboard:", err);
@@ -793,29 +832,27 @@ app.get('/leaderboards/rivals/', (req, res) => {
                     });
                 }
             });
+            */
         });
     });
 });
 
 
 app.get('/leaderboards/', (req, res) => {
-    console.log(req.query)
     if (!req.query.limit) {
-            limit = 10
-        } else {
-            limit = req.query.limit
-        }
-        if (!req.query.page || req.query.page == 0) {
-            page = 1
-        } else {
-            page = req.query.page
-        }
+        limit = 10
+    } else {
+        limit = req.query.limit
+    }
+    if (!req.query.page || req.query.page == 0) {
+        page = 1
+    } else {
+        page = req.query.page
+    }
 
     db.serialize(() => {
         const diameter = Number(req.query.diameter);
         const drlOfficial = req.query["drl-official"] === "true" ? 1 : 0;
-        console.log(page, limit)
-        console.log(req.query.map, req.query.track, diameter, drlOfficial)
         if (req.query["is-custom-map"]) {
             db.all(`SELECT * FROM leaderboard WHERE custom_map = ? AND diameter = ? AND drl_official = ? ORDER BY score ASC`, [req.query["custom-map"], diameter, drlOfficial], (err, row) => {
                 if (err || row.length === 0) {
@@ -830,7 +867,7 @@ app.get('/leaderboards/', (req, res) => {
                     jsondata = []
                     for (let i = 0; i < row.length; i++) {
                         if (i < (limit * page)) {
-                            row[i].position = i+1
+                            row[i].position = i + 1
                             jsondata.push(row[i])
                         } else {
                             break
@@ -839,7 +876,7 @@ app.get('/leaderboards/', (req, res) => {
                     res.status(200).json({
                         success: true, data: {
                             "leaderboard": jsondata,
-                            "pagging": { "page": page, "limit": limit, "total": 2 }
+                            "pagging": { "page": page, "limit": limit, "total": row.length / limit }
                         }
                     });
                 }
@@ -848,7 +885,6 @@ app.get('/leaderboards/', (req, res) => {
         } else {
             db.all(`SELECT * FROM leaderboard WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? ORDER BY score ASC`, [req.query.map, req.query.track, diameter, drlOfficial], (err, row) => {
                 if (err || row.length === 0) {
-                    console.log(row.length)
                     console.error("Error fetching leaderboard:", err);
                     res.status(200).json({
                         success: true, data: {
@@ -859,9 +895,68 @@ app.get('/leaderboards/', (req, res) => {
                 } else {
                     jsondata = []
                     for (let i = 0; i < row.length; i++) {
-                        console.log(row[i])
                         if (i < (limit * page)) {
-                            jsondata.push(row[i])
+                            data = {
+                                "player-id": row[i].player_id,
+                                "map": row[i].map,
+                                "track": row[i].track,
+                                "diameter": row[i].diameter,
+                                "drl-official": row[i].drl_official,
+                                "drone-name": row[i].drone_name,
+                                "drone-guid": row[i].drone_guid,
+                                "profile-platform-id": row[i].profile_platform_id,
+                                "username": row[i].username,
+                                "profile-color": row[i].profile_color,
+                                "profile-thumb": row[i].profile_thumb,
+                                "profile-name": row[i].profile_name,
+                                "profile-platform": row[i].profile_platform,
+                                "is-custom-map": row[i].is_custom_map,
+                                "custom-map": row[i].custom_map,
+                                "mission": row[i].mission,
+                                "group-id": row[i].group_id,
+                                "region": row[i].region,
+                                "replay-url": row[i].replay_url,
+                                "game-type": row[i].game_type,
+                                "drone-thumb": row[i].drone_thumb,
+                                "multiplayer": row[i].multiplayer,
+                                "multiplayer-room-id": row[i].multiplayer_room_id,
+                                "multiplayer-room-size": row[i].multiplayer_room_size,
+                                "multiplayer-player-id": row[i].multiplayer_player_id,
+                                "multiplayer-master-id": row[i].multiplayer_master_id,
+                                "multiplayer-player-position": row[i].multiplayer_player_position,
+                                "flag-url": row[i].flag_url,
+                                "score-type": row[i].score_type,
+                                "match-id": row[i].match_id,
+                                "tryouts": row[i].tryouts,
+                                "battery-resistance": row[i].battery_resistance,
+                                "controller-type": row[i].controller_type,
+                                "position": i+1,
+                                "score": row[i].score,
+                                "score-check": row[i].score_check,
+                                "score-double-check": row[i].score_double_check,
+                                "score-cheat": row[i].score_cheat,
+                                "score-cheat-ratio": row[i].score_cheat_ratio,
+                                "score-cheat-samples": row[i].score_cheat_samples,
+                                "crash-count": row[i].crash_count,
+                                "top-speed": row[i].top_speed,
+                                "time-in-first": row[i].time_in_first,
+                                "lap-times": row[i].lap_times,
+                                "gate-times": row[i].gate_times,
+                                "fastest-lap": row[i].fastest_lap,
+                                "slowest-lap": row[i].slowest_lap,
+                                "total-distance": row[i].total_distance,
+                                "percentile": row[i].percentile,
+                                "order-col": row[i].order_col,
+                                "high-score": row[i].high_score,
+                                "race-id": row[i].race_id,
+                                "limit-col": row[i].limit_col,
+                                "heat": row[i].heat,
+                                "custom-physics": row[i].custom-physics,
+                                "drl-pilot-mode": row[i].drl_pilot_mode,
+                                "drone-rig": row[i].drone_rig,
+                                "drone-hash": row[i].drone_hash
+                            }
+                            jsondata.push(data)
                         } else {
                             break
                         }
@@ -869,7 +964,7 @@ app.get('/leaderboards/', (req, res) => {
                     res.status(200).json({
                         success: true, data: {
                             "leaderboard": jsondata,
-                            "pagging": { "page": page, "limit": limit, "total": 2 }
+                            "pagging": { "page": page, "limit": limit, "total": row.length / limit }
                         }
                     });
                 }
