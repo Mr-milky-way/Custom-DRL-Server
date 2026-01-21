@@ -215,7 +215,8 @@ app.post('/maps/:guid/rate/', (req, res) => {
 //might be a duplicate
 app.get('/maps/', (req, res) => {
     console.log("req sent to /maps/ headers are: ", req.headers);
-    res.status(200).json({ success: true, data: { data: Ctracks, "pagging": { "page": 1, "limit": 10, "page-total": 2 } } });
+    console.log(req.query)
+    res.status(200).json({ success: true, data: { data: Ctracks, "pagging": { "page": 1, "limit": 10, "page-total": Ctracks.length/10 } } });
 })
 
 /*
@@ -567,7 +568,18 @@ app.get('/tournaments/', (req, res) => {
 
 app.get('/leaderboards/user/', (req, res) => {
     token = req.headers['x-access-jsonwebtoken']
-    //This is fake data, should make the name change to something tho. 
+    console.log(req.query)
+    db.get(`SELECT uid FROM user WHERE token = ?`, [token], (err, row) => {
+        if (err || !row) {
+            console.error("Error uid FROM user:", err);
+            res.status(500).json({ success: false });
+            return;
+        }
+        const uid = row.uid;
+        const diameter = Number(req.query.diameter);
+        const drlOfficial = req.query["drl-official"] === "true" ? 1 : 0;
+
+    });
     data = {
         leaderboard: [
             {
@@ -826,14 +838,319 @@ app.get('/leaderboards/rivals/', (req, res) => {
                     for (let i = 0; i < row.length; i++) {
                         if (row[i].player_id == uid) {
                             if (row[i - 1] && row[i + 1]) {
-                                row[i - 1].position = i
-                                row[i].position = i + 1
-                                row[i + 1].position = i + 2
-                                rivals.push(row[i - 1])
-                                rivals.push(row[i])
-                                rivals.push(row[i + 1])
+                                i = i - 1
+                                data = {
+                                    "player-id": row[i].player_id,
+                                    "map": row[i].map,
+                                    "track": row[i].track,
+                                    "diameter": row[i].diameter,
+                                    "drl-official": row[i].drl_official,
+                                    "drone-name": row[i].drone_name,
+                                    "drone-guid": row[i].drone_guid,
+                                    "profile-platform-id": row[i].profile_platform_id,
+                                    "username": row[i].username,
+                                    "profile-color": row[i].profile_color,
+                                    "profile-thumb": row[i].profile_thumb,
+                                    "profile-name": row[i].profile_name,
+                                    "profile-platform": row[i].profile_platform,
+                                    "is-custom-map": row[i].is_custom_map,
+                                    "custom-map": row[i].custom_map,
+                                    "mission": row[i].mission,
+                                    "group-id": row[i].group_id,
+                                    "region": row[i].region,
+                                    "replay-url": row[i].replay_url,
+                                    "game-type": row[i].game_type,
+                                    "drone-thumb": row[i].drone_thumb,
+                                    "multiplayer": row[i].multiplayer,
+                                    "multiplayer-room-id": row[i].multiplayer_room_id,
+                                    "multiplayer-room-size": row[i].multiplayer_room_size,
+                                    "multiplayer-player-id": row[i].multiplayer_player_id,
+                                    "multiplayer-master-id": row[i].multiplayer_master_id,
+                                    "multiplayer-player-position": row[i].multiplayer_player_position,
+                                    "flag-url": row[i].flag_url,
+                                    "score-type": row[i].score_type,
+                                    "match-id": row[i].match_id,
+                                    "tryouts": row[i].tryouts,
+                                    "battery-resistance": row[i].battery_resistance,
+                                    "controller-type": row[i].controller_type,
+                                    "position": i + 1,
+                                    "score": row[i].score,
+                                    "score-check": row[i].score_check,
+                                    "score-double-check": row[i].score_double_check,
+                                    "score-cheat": row[i].score_cheat,
+                                    "score-cheat-ratio": row[i].score_cheat_ratio,
+                                    "score-cheat-samples": row[i].score_cheat_samples,
+                                    "crash-count": row[i].crash_count,
+                                    "top-speed": row[i].top_speed,
+                                    "time-in-first": row[i].time_in_first,
+                                    "lap-times": row[i].lap_times,
+                                    "gate-times": row[i].gate_times,
+                                    "fastest-lap": row[i].fastest_lap,
+                                    "slowest-lap": row[i].slowest_lap,
+                                    "total-distance": row[i].total_distance,
+                                    "percentile": row[i].percentile,
+                                    "order-col": row[i].order_col,
+                                    "high-score": row[i].high_score,
+                                    "race-id": row[i].race_id,
+                                    "limit-col": row[i].limit_col,
+                                    "heat": row[i].heat,
+                                    "custom-physics": row[i].custom_physics,
+                                    "drl-pilot-mode": row[i].drl_pilot_mode,
+                                    "drone-rig": row[i].drone_rig,
+                                    "drone-hash": row[i].drone_hash
+                                }
+                                rivals.push(data)
+                                i++
+                                data = {
+                                    "player-id": row[i].player_id,
+                                    "map": row[i].map,
+                                    "track": row[i].track,
+                                    "diameter": row[i].diameter,
+                                    "drl-official": row[i].drl_official,
+                                    "drone-name": row[i].drone_name,
+                                    "drone-guid": row[i].drone_guid,
+                                    "profile-platform-id": row[i].profile_platform_id,
+                                    "username": row[i].username,
+                                    "profile-color": row[i].profile_color,
+                                    "profile-thumb": row[i].profile_thumb,
+                                    "profile-name": row[i].profile_name,
+                                    "profile-platform": row[i].profile_platform,
+                                    "is-custom-map": row[i].is_custom_map,
+                                    "custom-map": row[i].custom_map,
+                                    "mission": row[i].mission,
+                                    "group-id": row[i].group_id,
+                                    "region": row[i].region,
+                                    "replay-url": row[i].replay_url,
+                                    "game-type": row[i].game_type,
+                                    "drone-thumb": row[i].drone_thumb,
+                                    "multiplayer": row[i].multiplayer,
+                                    "multiplayer-room-id": row[i].multiplayer_room_id,
+                                    "multiplayer-room-size": row[i].multiplayer_room_size,
+                                    "multiplayer-player-id": row[i].multiplayer_player_id,
+                                    "multiplayer-master-id": row[i].multiplayer_master_id,
+                                    "multiplayer-player-position": row[i].multiplayer_player_position,
+                                    "flag-url": row[i].flag_url,
+                                    "score-type": row[i].score_type,
+                                    "match-id": row[i].match_id,
+                                    "tryouts": row[i].tryouts,
+                                    "battery-resistance": row[i].battery_resistance,
+                                    "controller-type": row[i].controller_type,
+                                    "position": i + 1,
+                                    "score": row[i].score,
+                                    "score-check": row[i].score_check,
+                                    "score-double-check": row[i].score_double_check,
+                                    "score-cheat": row[i].score_cheat,
+                                    "score-cheat-ratio": row[i].score_cheat_ratio,
+                                    "score-cheat-samples": row[i].score_cheat_samples,
+                                    "crash-count": row[i].crash_count,
+                                    "top-speed": row[i].top_speed,
+                                    "time-in-first": row[i].time_in_first,
+                                    "lap-times": row[i].lap_times,
+                                    "gate-times": row[i].gate_times,
+                                    "fastest-lap": row[i].fastest_lap,
+                                    "slowest-lap": row[i].slowest_lap,
+                                    "total-distance": row[i].total_distance,
+                                    "percentile": row[i].percentile,
+                                    "order-col": row[i].order_col,
+                                    "high-score": row[i].high_score,
+                                    "race-id": row[i].race_id,
+                                    "limit-col": row[i].limit_col,
+                                    "heat": row[i].heat,
+                                    "custom-physics": row[i].custom_physics,
+                                    "drl-pilot-mode": row[i].drl_pilot_mode,
+                                    "drone-rig": row[i].drone_rig,
+                                    "drone-hash": row[i].drone_hash
+                                }
+                                rivals.push(data)
+                                i++
+                                data = {
+                                    "player-id": row[i].player_id,
+                                    "map": row[i].map,
+                                    "track": row[i].track,
+                                    "diameter": row[i].diameter,
+                                    "drl-official": row[i].drl_official,
+                                    "drone-name": row[i].drone_name,
+                                    "drone-guid": row[i].drone_guid,
+                                    "profile-platform-id": row[i].profile_platform_id,
+                                    "username": row[i].username,
+                                    "profile-color": row[i].profile_color,
+                                    "profile-thumb": row[i].profile_thumb,
+                                    "profile-name": row[i].profile_name,
+                                    "profile-platform": row[i].profile_platform,
+                                    "is-custom-map": row[i].is_custom_map,
+                                    "custom-map": row[i].custom_map,
+                                    "mission": row[i].mission,
+                                    "group-id": row[i].group_id,
+                                    "region": row[i].region,
+                                    "replay-url": row[i].replay_url,
+                                    "game-type": row[i].game_type,
+                                    "drone-thumb": row[i].drone_thumb,
+                                    "multiplayer": row[i].multiplayer,
+                                    "multiplayer-room-id": row[i].multiplayer_room_id,
+                                    "multiplayer-room-size": row[i].multiplayer_room_size,
+                                    "multiplayer-player-id": row[i].multiplayer_player_id,
+                                    "multiplayer-master-id": row[i].multiplayer_master_id,
+                                    "multiplayer-player-position": row[i].multiplayer_player_position,
+                                    "flag-url": row[i].flag_url,
+                                    "score-type": row[i].score_type,
+                                    "match-id": row[i].match_id,
+                                    "tryouts": row[i].tryouts,
+                                    "battery-resistance": row[i].battery_resistance,
+                                    "controller-type": row[i].controller_type,
+                                    "position": i + 1,
+                                    "score": row[i].score,
+                                    "score-check": row[i].score_check,
+                                    "score-double-check": row[i].score_double_check,
+                                    "score-cheat": row[i].score_cheat,
+                                    "score-cheat-ratio": row[i].score_cheat_ratio,
+                                    "score-cheat-samples": row[i].score_cheat_samples,
+                                    "crash-count": row[i].crash_count,
+                                    "top-speed": row[i].top_speed,
+                                    "time-in-first": row[i].time_in_first,
+                                    "lap-times": row[i].lap_times,
+                                    "gate-times": row[i].gate_times,
+                                    "fastest-lap": row[i].fastest_lap,
+                                    "slowest-lap": row[i].slowest_lap,
+                                    "total-distance": row[i].total_distance,
+                                    "percentile": row[i].percentile,
+                                    "order-col": row[i].order_col,
+                                    "high-score": row[i].high_score,
+                                    "race-id": row[i].race_id,
+                                    "limit-col": row[i].limit_col,
+                                    "heat": row[i].heat,
+                                    "custom-physics": row[i].custom_physics,
+                                    "drl-pilot-mode": row[i].drl_pilot_mode,
+                                    "drone-rig": row[i].drone_rig,
+                                    "drone-hash": row[i].drone_hash
+                                }
+                                rivals.push(data)
+                                break
                             } else if (row[i - 1]) {
-
+                                i = i - 1
+                                data = {
+                                    "player-id": row[i].player_id,
+                                    "map": row[i].map,
+                                    "track": row[i].track,
+                                    "diameter": row[i].diameter,
+                                    "drl-official": row[i].drl_official,
+                                    "drone-name": row[i].drone_name,
+                                    "drone-guid": row[i].drone_guid,
+                                    "profile-platform-id": row[i].profile_platform_id,
+                                    "username": row[i].username,
+                                    "profile-color": row[i].profile_color,
+                                    "profile-thumb": row[i].profile_thumb,
+                                    "profile-name": row[i].profile_name,
+                                    "profile-platform": row[i].profile_platform,
+                                    "is-custom-map": row[i].is_custom_map,
+                                    "custom-map": row[i].custom_map,
+                                    "mission": row[i].mission,
+                                    "group-id": row[i].group_id,
+                                    "region": row[i].region,
+                                    "replay-url": row[i].replay_url,
+                                    "game-type": row[i].game_type,
+                                    "drone-thumb": row[i].drone_thumb,
+                                    "multiplayer": row[i].multiplayer,
+                                    "multiplayer-room-id": row[i].multiplayer_room_id,
+                                    "multiplayer-room-size": row[i].multiplayer_room_size,
+                                    "multiplayer-player-id": row[i].multiplayer_player_id,
+                                    "multiplayer-master-id": row[i].multiplayer_master_id,
+                                    "multiplayer-player-position": row[i].multiplayer_player_position,
+                                    "flag-url": row[i].flag_url,
+                                    "score-type": row[i].score_type,
+                                    "match-id": row[i].match_id,
+                                    "tryouts": row[i].tryouts,
+                                    "battery-resistance": row[i].battery_resistance,
+                                    "controller-type": row[i].controller_type,
+                                    "position": i + 1,
+                                    "score": row[i].score,
+                                    "score-check": row[i].score_check,
+                                    "score-double-check": row[i].score_double_check,
+                                    "score-cheat": row[i].score_cheat,
+                                    "score-cheat-ratio": row[i].score_cheat_ratio,
+                                    "score-cheat-samples": row[i].score_cheat_samples,
+                                    "crash-count": row[i].crash_count,
+                                    "top-speed": row[i].top_speed,
+                                    "time-in-first": row[i].time_in_first,
+                                    "lap-times": row[i].lap_times,
+                                    "gate-times": row[i].gate_times,
+                                    "fastest-lap": row[i].fastest_lap,
+                                    "slowest-lap": row[i].slowest_lap,
+                                    "total-distance": row[i].total_distance,
+                                    "percentile": row[i].percentile,
+                                    "order-col": row[i].order_col,
+                                    "high-score": row[i].high_score,
+                                    "race-id": row[i].race_id,
+                                    "limit-col": row[i].limit_col,
+                                    "heat": row[i].heat,
+                                    "custom-physics": row[i].custom_physics,
+                                    "drl-pilot-mode": row[i].drl_pilot_mode,
+                                    "drone-rig": row[i].drone_rig,
+                                    "drone-hash": row[i].drone_hash
+                                }
+                                rivals.push(data)
+                                i++;
+                                data = {
+                                    "player-id": row[i].player_id,
+                                    "map": row[i].map,
+                                    "track": row[i].track,
+                                    "diameter": row[i].diameter,
+                                    "drl-official": row[i].drl_official,
+                                    "drone-name": row[i].drone_name,
+                                    "drone-guid": row[i].drone_guid,
+                                    "profile-platform-id": row[i].profile_platform_id,
+                                    "username": row[i].username,
+                                    "profile-color": row[i].profile_color,
+                                    "profile-thumb": row[i].profile_thumb,
+                                    "profile-name": row[i].profile_name,
+                                    "profile-platform": row[i].profile_platform,
+                                    "is-custom-map": row[i].is_custom_map,
+                                    "custom-map": row[i].custom_map,
+                                    "mission": row[i].mission,
+                                    "group-id": row[i].group_id,
+                                    "region": row[i].region,
+                                    "replay-url": row[i].replay_url,
+                                    "game-type": row[i].game_type,
+                                    "drone-thumb": row[i].drone_thumb,
+                                    "multiplayer": row[i].multiplayer,
+                                    "multiplayer-room-id": row[i].multiplayer_room_id,
+                                    "multiplayer-room-size": row[i].multiplayer_room_size,
+                                    "multiplayer-player-id": row[i].multiplayer_player_id,
+                                    "multiplayer-master-id": row[i].multiplayer_master_id,
+                                    "multiplayer-player-position": row[i].multiplayer_player_position,
+                                    "flag-url": row[i].flag_url,
+                                    "score-type": row[i].score_type,
+                                    "match-id": row[i].match_id,
+                                    "tryouts": row[i].tryouts,
+                                    "battery-resistance": row[i].battery_resistance,
+                                    "controller-type": row[i].controller_type,
+                                    "position": i + 1,
+                                    "score": row[i].score,
+                                    "score-check": row[i].score_check,
+                                    "score-double-check": row[i].score_double_check,
+                                    "score-cheat": row[i].score_cheat,
+                                    "score-cheat-ratio": row[i].score_cheat_ratio,
+                                    "score-cheat-samples": row[i].score_cheat_samples,
+                                    "crash-count": row[i].crash_count,
+                                    "top-speed": row[i].top_speed,
+                                    "time-in-first": row[i].time_in_first,
+                                    "lap-times": row[i].lap_times,
+                                    "gate-times": row[i].gate_times,
+                                    "fastest-lap": row[i].fastest_lap,
+                                    "slowest-lap": row[i].slowest_lap,
+                                    "total-distance": row[i].total_distance,
+                                    "percentile": row[i].percentile,
+                                    "order-col": row[i].order_col,
+                                    "high-score": row[i].high_score,
+                                    "race-id": row[i].race_id,
+                                    "limit-col": row[i].limit_col,
+                                    "heat": row[i].heat,
+                                    "custom-physics": row[i].custom_physics,
+                                    "drl-pilot-mode": row[i].drl_pilot_mode,
+                                    "drone-rig": row[i].drone_rig,
+                                    "drone-hash": row[i].drone_hash
+                                }
+                                rivals.push(data)
+                                break
                             } else {
                                 data = {
                                     "player-id": row[i].player_id,
@@ -896,6 +1213,7 @@ app.get('/leaderboards/rivals/', (req, res) => {
                                     "drone-hash": row[i].drone_hash
                                 }
                                 rivals.push(data)
+                                break
                             }
                         }
                     }
