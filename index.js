@@ -99,6 +99,38 @@ db.serialize(() => {
     PRIMARY KEY (player_id, map, track, diameter, drl_official)
     );`);
 
+    db.run(`CREATE TABLE IF NOT EXISTS drone (
+        guid TEXT UNIQUE,
+        player_id TEXT,
+        profile_platform_id TEXT,
+        profile_platform TEXT,
+        profile_color TEXT,
+        profile_thumb TEXT,
+        profile_name TEXT,
+        score FLOAT,
+        rating FLOAT,
+        rating_count INT,
+        thumb_url TEXT,
+        name TEXT,
+        is_public BOOLEAN,
+        is_official BOOLEAN,
+        is_custom_physics BOOLEAN,
+        flight_time FLOAT,
+        flight_total FLOAT,
+        size INT,
+        thrust FLOAT,
+        speed FLOAT,
+        weight FLOAT,
+        rpm FLOAT,
+        frame_id TEXT,
+        motor_id TEXT,
+        prop_id TEXT,
+        battery_id TEXT,
+        rig_data TEXT,
+        profile_data TEXT,
+        physics_data TEXT
+        );`);
+
     db.run(`CREATE TABLE IF NOT EXISTS playerprogression (
         uid TEXT UNIQUE,
         xp INT,
@@ -216,7 +248,7 @@ app.post('/maps/:guid/rate/', (req, res) => {
 app.get('/maps/', (req, res) => {
     console.log("req sent to /maps/ headers are: ", req.headers);
     console.log(req.query)
-    res.status(200).json({ success: true, data: { data: Ctracks, "pagging": { "page": 1, "limit": 10, "page-total": Ctracks.length/10 } } });
+    res.status(200).json({ success: true, data: { data: Ctracks, "pagging": { "page": req.query.page, "limit": req.query.limit, "page-total": Math.ceil(Ctracks.length / req.query.limit) } } });
 })
 
 /*
@@ -395,7 +427,6 @@ app.get('/state/', (req, res) => {
 app.post('/state/', (req, res) => {
     const token = decodeURIComponent(req.query.token).replace(/ /g, "+");
     console.log("post sent to /state/ TOKEN:", token);
-
     let body = '';
     req.on('data', c => body += c);
     req.on('end', () => {
@@ -1221,7 +1252,7 @@ app.get('/leaderboards/rivals/', (req, res) => {
                         "top": [
                             row[0]
                         ],
-                        "player": 1,
+                        "player": 2,
                         "rivals": rivals,
                         "past": null
                     }
@@ -1633,6 +1664,184 @@ app.get('/experience-points/progression/', (req, res) => {
 ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝  ╚═════╝ ╚═╝     ╚═╝
 ------------------------------------------------------
 */
+
+
+app.post('/drones/', express.urlencoded({ extended: true }), (req, res) => {
+    token = req.headers['x-access-jsonwebtoken'];
+    console.log("req sent to /drones/ headers are: ", req.headers);
+    console.log(req.body);
+    db.serialize(() => {
+        db.get(`SELECT uid FROM user WHERE token = ?`, [token], (err, row) => {
+            console.log("Player", row ? row.uid : "unknown", "is requesting progression");
+            if (err || !row) {
+                console.error("Error fetching UID:", err);
+                res.status(404).json({ success: false });
+                return;
+            }
+            uid = row.uid;
+            db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
+                if (err) {
+                    console.error("Error fetching JSON:", err);
+                    res.status(500).json({ success: false });
+                    return;
+                }
+                if (!row) {
+                } else {
+                    jsondata = JSON.parse(row.json);
+                }
+                const stmt = db.prepare(
+                    `INSERT INTO drone (
+                    guid,
+                    player_id,
+                    profile_platform_id,
+                    profile_platform,
+                    profile_color,
+                    profile_thumb,
+                    profile_name,
+                    score,
+                    rating,
+                    rating_count,
+                    thumb_url,
+                    name,
+                    is_public,
+                    is_official,
+                    is_custom_physics,
+                    flight_time,
+                    flight_total,
+                    size,
+                    thrust,
+                    speed,
+                    weight,
+                    rpm,
+                    frame_id,
+                    motor_id,
+                    prop_id,
+                    battery_id,
+                    rig_data,
+                    profile_data,
+                    physics_data
+                )
+                VALUES (
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                )
+                ON CONFLICT (guid) DO UPDATE SET
+                    player_id           = excluded.player_id,
+                    profile_platform_id = excluded.profile_platform_id,
+                    profile_platform    = excluded.profile_platform,
+                    profile_color       = excluded.profile_color,
+                    profile_thumb       = excluded.profile_thumb,
+                    profile_name        = excluded.profile_name,
+                    score               = excluded.score,
+                    rating              = excluded.rating,
+                    rating_count        = excluded.rating_count,
+                    thumb_url           = excluded.thumb_url,
+                    name                = excluded.name,
+                    is_public            = excluded.is_public,
+                    is_official          = excluded.is_official,
+                    is_custom_physics    = excluded.is_custom_physics,
+                    flight_time          = excluded.flight_time,
+                    flight_total         = excluded.flight_total,
+                    size                 = excluded.size,
+                    thrust               = excluded.thrust,
+                    speed                = excluded.speed,
+                    weight               = excluded.weight,
+                    rpm                  = excluded.rpm,
+                    frame_id             = excluded.frame_id,
+                    motor_id             = excluded.motor_id,
+                    prop_id              = excluded.prop_id,
+                    battery_id           = excluded.battery_id,
+                    rig_data             = excluded.rig_data,
+                    profile_data         = excluded.profile_data,
+                    physics_data         = excluded.physics_data;`
+                );
+                stmt.run(
+                    req.body.guid,
+                    uid,
+                    jsondata['profile-platform-id'],
+                    jsondata['profile-platform'],
+                    jsondata['profile-color'],
+                    jsondata['profile-thumb'],
+                    req.body['profile-name'],
+                    req.body.score,
+                    req.body.rating,
+                    req.body['rating-count'],
+                    req.body['thumb-url'],
+                    req.body.name,
+                    req.body['is-public'],
+                    req.body['is-official'],
+                    req.body['is-custom-physics'],
+                    req.body['flight-time'],
+                    req.body['flight-total'],
+                    req.body.size,
+                    req.body.thrust,
+                    req.body.speed,
+                    req.body.weight,
+                    req.body.rpm,
+                    req.body['frame-id'],
+                    req.body['motor-id'],
+                    req.body['prop-id'],
+                    req.body['battery-id'],
+                    JSON.stringify(req.body['rig-data']),
+                    JSON.stringify(req.body['profile-data']),
+                    JSON.stringify(req.body['physics-data'])
+                );
+                res.status(200).json({ success: true, data: req.body })
+            });
+        });
+    });
+});
+
+app.get('/drones/', (req, res) => {
+    console.log(req.query)
+    db.all(`SELECT * FROM drone`, (err, row) => {
+        if (err || row.length === 0) {
+            console.error("Error fetching leaderboard:", err);
+        } else {
+            let data = []
+            for (let i = 0; i < row.length; i++) {
+                let dat = {
+                    "guid": row[i].guid,
+                    "player-id": row[i].player_id,
+                    "profile-platform-id": row[i].profile_platform_id,
+                    "profile-platform": row[i].profile_platform,
+                    "profile-color": row[i].profile_color,
+                    "profile-thumb": row[i].profile_thumb,
+                    "profile-name": row[i].profile_name,
+                    "score": row[i].score,
+                    "rating": row[i].rating,
+                    "rating-count": row[i].rating_count,
+                    "thumb-url": row[i].thumb_url,
+                    "name": row[i].name,
+                    "is-public": row[i].is_public,
+                    "is-official": row[i].is_official,
+                    "is-custom-physics": row[i].is_custom_physics,
+                    "flight-time": row[i].flight_time,
+                    "flight-total": row[i].flight_total,
+                    "size": row[i].size,
+                    "thrust": row[i].thrust,
+                    "speed": row[i].speed,
+                    "weight": row[i].weight,
+                    "rpm": row[i].rpm,
+                    "frame-id": row[i].frame_id,
+                    "motor-id": row[i].motor_id,
+                    "prop-id": row[i].prop_id,
+                    "battery-id": row[i].battery_id,
+                    "rig-data": JSON.parse(row[i].rig_data),
+                    "profile-data": JSON.parse(row[i].profile_data),
+                    "physics-data": JSON.parse(row[i].physics_data),
+                }
+                data.push(dat);
+            }
+            res.status(200).json({ 
+                success: true,
+                "data": {
+                    "data": data, 
+                    pagging: { page: req.query.page, limit: req.query.limit, total: row.length } 
+                }
+            });
+        }
+    });
+});
 
 app.get('/time/', (req, res) => {
     res.status(200).json({ success: true, data: getTimeBase64() });
