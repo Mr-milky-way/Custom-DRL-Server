@@ -307,11 +307,11 @@ app.post('/v2/login', (req, res) => {
             return
         }
         const responseData = {
-            "player-id": 'offline-user',
+            "player-id": decToken,
             permissions: [],
             expires: Math.floor(Date.now() / 1000) + 3600
         };
-        
+
         const base64Data = Buffer
             .from(JSON.stringify(responseData))
             .toString('base64');
@@ -1795,13 +1795,45 @@ app.post('/drones/', express.urlencoded({ extended: true }), (req, res) => {
     });
 });
 
+app.get('/drones/:guid/remove/', (req, res) => {
+    token = req.headers['x-access-jsonwebtoken'];
+    db.serialize(() => {
+        db.get(`SELECT uid FROM user WHERE token = ?`, [token], (err, row) => {
+            console.log("Player", row ? row.uid : "unknown", "is requesting progression");
+            if (err || !row) {
+                console.error("Error fetching UID:", err);
+                res.status(404).json({ success: false });
+                return;
+            }
+            uid = row.uid;
+            db.run(`DELETE FROM drone WHERE guid = ? AND player_id = ?`, [req.params.guid, uid], function (err) {
+                if (err) {
+                    console.error("Error deleting drone:", err);
+                }
+            });
+            res.status(200).json({ success: true });
+        });
+    });
+});
+
 app.get('/drones/', (req, res) => {
     console.log(req.query)
-    db.all(`SELECT * FROM drone`, (err, row) => {
+    let data = []
+    let sql = "SELECT * FROM drone";
+    let params = [];
+
+    if (req.query["is-public"] != null) {
+        // only filter if is-public is specified
+        const isPublic = req.query["is-public"] === "true" ? "true" : "false";
+        sql += " WHERE is_public = ?";
+        params.push(isPublic);
+    } else {
+        pub = true
+    }
+    db.all(sql, params, (err, row) => {
         if (err || row.length === 0) {
-            console.error("Error fetching leaderboard:", err);
+            console.error("Error fetching drones:", err);
         } else {
-            let data = []
             for (let i = 0; i < row.length; i++) {
                 let dat = {
                     "guid": row[i].guid,
@@ -1836,14 +1868,14 @@ app.get('/drones/', (req, res) => {
                 }
                 data.push(dat);
             }
-            res.status(200).json({
-                success: true,
-                "data": {
-                    "data": data,
-                    pagging: { page: req.query.page, limit: req.query.limit, total: row.length }
-                }
-            });
         }
+        res.status(200).json({
+            success: true,
+            "data": {
+                "data": data,
+                pagging: { page: req.query.page, limit: req.query.limit, total: row.length }
+            }
+        });
     });
 });
 
