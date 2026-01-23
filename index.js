@@ -299,18 +299,6 @@ app.post('/v2/login', (req, res) => {
     req.on('end', () => {
         const parsed = querystring.parse(body);
 
-
-        const responseData = {
-            userId: 'offline-user',
-            permissions: [],
-            expires: Math.floor(Date.now() / 1000) + 3600
-        };
-
-        const base64Data = Buffer
-            .from(JSON.stringify(responseData))
-            .toString('base64');
-
-
         try {
             decToken = decryptDRL(parsed.token, "09e027edfde3212431a8758576807083", parsed.time.padStart(16, '0'));
         } catch (E) {
@@ -318,6 +306,15 @@ app.post('/v2/login', (req, res) => {
             res.status(400).json({ success: false });
             return
         }
+        const responseData = {
+            "player-id": 'offline-user',
+            permissions: [],
+            expires: Math.floor(Date.now() / 1000) + 3600
+        };
+        
+        const base64Data = Buffer
+            .from(JSON.stringify(responseData))
+            .toString('base64');
         db.serialize(() => {
             const stmt = db.prepare(
                 `INSERT INTO user (uid, token, expires) VALUES (?, ?, ?)
@@ -359,21 +356,28 @@ app.post('/v2/login', (req, res) => {
 
 app.get('/social/profile/', (req, res) => {
     console.log("social profile header for:", req.headers);
-    payload = [{
-        "platform-id": "Epic",
-        "player-id": "b9365d125935475b8327162c66a25e12",
-        "profile-color": "FFAA33",
-        "profile-secondary-color": "33FFAA",
-        "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64",
-        "profile-rank": 12,
-        "profile-name": "AcePilot",
-        "username": "AcePilot007",
-        "has-game": true,
-        "is-drl-pilot": false,
-    }];
-    const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
-    res.status(200).json({
-        success: true, data: payload
+    console.log(req.query)
+    token = req.headers['x-access-jsonwebtoken']
+    db.serialize(() => {
+        db.get(`SELECT uid, name FROM user WHERE token = ?`, [token], (err, row) => {
+            uid = row.uid
+            db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
+                jsondata = JSON.parse(row.json);
+                payload = [{
+                    "platform-id": "epic-id",
+                    "player-id": row.uid,
+                    "profile-color": jsondata["profile-color"],
+                    "profile-rank": 1,
+                    "profile-name": jsondata["profile-name"],
+                    "username": jsondata["profile-name"],
+                    "has-game": true,
+                }];
+                const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
+                res.status(200).json({
+                    success: true, data: base64Data
+                });
+            });
+        });
     });
 })
 
@@ -1832,11 +1836,11 @@ app.get('/drones/', (req, res) => {
                 }
                 data.push(dat);
             }
-            res.status(200).json({ 
+            res.status(200).json({
                 success: true,
                 "data": {
-                    "data": data, 
-                    pagging: { page: req.query.page, limit: req.query.limit, total: row.length } 
+                    "data": data,
+                    pagging: { page: req.query.page, limit: req.query.limit, total: row.length }
                 }
             });
         }
