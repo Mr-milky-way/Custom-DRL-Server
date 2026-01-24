@@ -154,6 +154,20 @@ db.serialize(() => {
         weekstart TEXT,
         weekend TEXT
         );`);
+        /*
+    db.run(`CREATE TABLE IF NOT EXISTS tournaments (
+        guid TEXT UNIQUE,
+        players_size INT,
+        max_players INT,
+        id TEXT,
+        title TEXT,
+        region TEXT,
+        lan_support BOOLEAN,
+        server_ip TEXT,
+        call_to_action TEXT,
+        description TEXT,
+
+        );`);*/
     //db.run("DROP TABLE leaderboard")
 });
 
@@ -511,7 +525,7 @@ app.get('/tournaments/:guid/register', (req, res) => {
 })
 
 app.get('/tournaments/', (req, res) => {
-    let StartTime = new Date(2026, 0, 11, 11, 0, 0, 0);
+    let StartTime = new Date(2026, 0, 25, 11, 0, 0, 0);
     const now = new Date();
     let yyyy = now.getFullYear();
     let MM = String(now.getMonth() + 1).padStart(2, '0');
@@ -539,9 +553,9 @@ app.get('/tournaments/', (req, res) => {
             "region": "EU",
             "type": "normal",
 
-            "players-size": 0,
+            "players-size": 1,
             "max-players": 16,
-            "player-ids": [],
+            "player-ids": ["b9365d125935475b8327162c66a25e12"],
 
             "status": "active",
             "progression": "auto",
@@ -567,14 +581,19 @@ app.get('/tournaments/', (req, res) => {
                 {
                     "title": "Qualifiers",
                     "state": "active",
-                    "mode": "matchTimeSum",
+                    "mode": "sudden_death",
                     "game-mode": "race",
                     "is-custom-map": false,
+                    "start-at" : timeStr,
+                    "map": "MP-95a",
+                    "track": "MT-964",
                     "matches": [
                         {
                             "id": "match-001",
+                            "map": "MP-95a",
+                    "track": "MT-964",
                             "player-ids": [
-                                "player_steam_001",
+                                "b9365d125935475b8327162c66a25e12",
                                 "player_steam_002"
                             ]
                         }
@@ -640,6 +659,54 @@ app.get('/leaderboards/user/', (req, res) => {
     };
     res.status(200).json({
         success: true, data: data
+    });
+});
+
+app.post('/leaderboards/user/reset/', express.urlencoded({ extended: true }), (req, res) => {
+    token = req.headers['x-access-jsonwebtoken']
+    db.get(`SELECT uid FROM user WHERE token = ?`, [token], (err, row) => {
+        if (err || !row) {
+            console.error("Error uid FROM user:", err);
+            res.status(500).json({ success: false });
+            return;
+        }
+        const uid = row.uid;
+        db.run(`DELETE FROM leaderboard WHERE player_id = ?`, [uid], function (err) {
+            if (err) {
+                res.status(500).json({ success: false });
+            } else {
+                res.status(200).json({ success: true });
+                console.log(`Deleted ${this.changes} leaderboard entries for user ${uid}`);
+            }
+        });
+    });
+});
+
+app.post('/leaderboards/user/reset/track/', express.urlencoded({ extended: true }), (req, res) => {
+    token = req.headers['x-access-jsonwebtoken']
+    console.log(req.body)
+    if (req.body.isCustom === 'true') { 
+        sql = `AND custom_map = ?`
+        args = [uid, req.body.mapID, req.body.customMapId]
+    } else {
+        sql = `AND track = ?`
+        args = [uid, req.body.mapID, req.body.trackID]
+    }
+    db.get(`SELECT uid FROM user WHERE token = ?`, [token], (err, row) => {
+        if (err || !row) {
+            console.error("Error uid FROM user:", err);
+            res.status(500).json({ success: false });
+            return;
+        }
+        const uid = row.uid;
+        db.run(`DELETE FROM leaderboard WHERE player_id = ? AND map = ?` + sql, args, function (err) {
+            if (err) {
+                res.status(500).json({ success: false });
+            } else {
+                res.status(200).json({ success: true });
+                console.log(`Deleted ${this.changes} leaderboard entries for user ${uid}`);
+            }
+        });
     });
 });
 
