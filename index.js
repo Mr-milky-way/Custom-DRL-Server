@@ -154,21 +154,63 @@ db.serialize(() => {
         weekstart TEXT,
         weekend TEXT
         );`);
-        /*
-    db.run(`CREATE TABLE IF NOT EXISTS tournaments (
-        guid TEXT UNIQUE,
-        players_size INT,
-        max_players INT,
-        id TEXT,
-        title TEXT,
-        region TEXT,
-        lan_support BOOLEAN,
-        server_ip TEXT,
-        call_to_action TEXT,
-        description TEXT,
 
-        );`);*/
-    //db.run("DROP TABLE leaderboard")
+    db.run(`CREATE TABLE IF NOT EXISTS communitytracks (
+            guid TEXT UNIQUE,
+            root TEXT,
+            prefs TEXT,
+            allow_copy BOOLEAN,
+            base_assets_enabled BOOLEAN,
+            exclusive_by_platform TEXT,
+            is_race_allowed BOOLEAN,
+            is_public BOOLEAN,
+            is_public_for_drlpilots BOOLEAN,
+            is_drl_official BOOLEAN,
+            is_featured BOOLEAN,
+            is_multigp BOOLEAN,
+            is_tryouts BOOLEAN,
+            is_virtual_season BOOLEAN,
+            map_category TEXT,
+            map_difficulty INT,
+            map_distance FLOAT,
+            map_dirty BOOLEAN,
+            map_lighting INT,
+            map_laps INT,
+            map_stats_triangle_count INT,
+            map_stats_object_count INT,
+            map_asset_layers TEXT,
+            map_styles TEXT,
+            categories TEXT,
+            prefs_auto_save BOOLEAN,
+            rating_count INT,
+            score INT,
+            track_id TEXT,
+            xp_value INT,
+            xp_min_time INT,
+            cm_collectable_count INT,
+            collaborators TEXT,
+            map_mode_type TEXT,
+            map_id TEXT,
+            map_title TEXT,
+            steam_id TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME,
+            version INT,
+            title_translations TEXT,
+            images TEXT,
+            map_thumb TEXT,
+            avatar TEXT,
+            player_id TEXT,
+            profile_name TEXT,
+            profile_thumb TEXT,
+            profile_color TEXT,
+            profile_platform TEXT,
+            profile_platform_id TEXT,
+            flag_url TEXT,
+            is_avatar_blocked BOOLEAN,
+            full_track_url TEXT
+            );`);
+    //db.run("DROP TABLE communitytracks")
 });
 
 /*
@@ -181,6 +223,84 @@ db.serialize(() => {
 ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝     ╚══════╝    ╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝        ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝
 ----------------------------------------------------------------------------------------------------------------------
 */
+
+
+
+app.post('/maps/', express.urlencoded({ extended: false }), (req, res) => {
+    token = req.headers['x-access-jsonwebtoken']
+    console.log("req sent to /maps/ via POST")
+    console.log(req.headers)
+    console.log(req.body)
+    db.serialize(() => {
+        db.get(`SELECT uid FROM user WHERE token = ?`, [token], (err, row) => {
+            if (err || !row) {
+                console.error("Error fetching UID:", err);
+                res.status(404).json({ success: false });
+                return;
+            }
+            uid = row.uid
+            payload = {
+                "success": true,
+                "message": null,
+                "token": null,
+                "webtoken": null,
+                "encoded": false,
+                "data": {
+                    "pagging": {
+                        "page": 1,
+                        "page-total": 1,
+                        "total": 1,
+                        "previous-page-url": null,
+                        "next-page-url": null
+                    },
+                    "data": [req.body]
+                }
+            }
+            fs.writeFile('tracks/' + req.body.guid + '.cmp', JSON.stringify(payload), err => {
+                if (err) {
+                    console.error(err);
+                } else {
+                }
+            });
+            db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
+                jsondata = JSON.parse(row.json);
+                root = {
+                    "id": req.body.root.id,
+                    "children": [],
+                    "type": req.body.root.type,
+                    "name": "$root"
+                }
+                const stmt = db.prepare(
+                    `INSERT INTO communitytracks (guid, root, prefs, map_dirty, map_title, map_mode_type, map_id, map_stats_triangle_count, map_stats_object_count, is_race_allowed, player_id, profile_name, full_track_url, map_difficulty, map_lighting, is_public, allow_copy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(guid) DO UPDATE SET root = excluded.root, prefs = excluded.prefs, map_title = excluded.map_title, map_stats_triangle_count = excluded.map_stats_triangle_count, map_stats_object_count = excluded.map_stats_object_count, is_race_allowed = excluded.is_race_allowed, full_track_url = excluded.full_track_url, map_difficulty = excluded.map_difficulty, map_lighting = excluded.map_lighting, is_public = excluded.is_public, allow_copy = excluded.allow_copy;`
+                );
+
+                stmt.run(
+                    req.body.guid,
+                    root,
+                    req.body.prefs,
+                    req.body["map-dirty"],
+                    req.body["map-title"],
+                    req.body["map-mode-type"],
+                    req.body["map-id"],
+                    req.body["map-stats-triangle-count"],
+                    req.body["map-stats-object-count"],
+                    req.body["is-race-allowed"],
+                    uid,
+                    jsondata["profile-name"],
+                    `http://localhost:${PORT}/tracks/${req.body.guid}`,
+                    req.body["map-difficulty"],
+                    req.body["map-lighting"],
+                    req.body["is-public"],
+                    req.body["allow-copy"]
+                );
+
+                stmt.finalize();
+                res.status(200).json({ success: true, data: req.body });
+            });
+        });
+    });
+})
 
 
 //path for track downloads
@@ -243,10 +363,13 @@ app.get('/maps/updated/', (req, res) => {
 })
 
 
+app.post('/maps/updated/', express.urlencoded({ extended: false }), (req, res) => {
+    console.log("req sent to /maps/updated/ via POST")
+    res.status(200).json({ success: true });
+})
+
 app.get('/maps/user/updated/', (req, res) => {
     console.log("req sent to /maps/user/updated/")
-    const payload = Ctracks;
-    const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
     res.status(200).json({ data: Ctracks });
 })
 
@@ -262,7 +385,57 @@ app.post('/maps/:guid/rate/', (req, res) => {
 app.get('/maps/', (req, res) => {
     console.log("req sent to /maps/ headers are: ", req.headers);
     console.log(req.query)
-    res.status(200).json({ success: true, data: { data: Ctracks, "pagging": { "page": req.query.page, "limit": req.query.limit, "page-total": Math.ceil(Ctracks.length / req.query.limit) } } });
+    let payload = Array.isArray(Ctracks)
+        ? [...Ctracks]
+        : [];
+    db.all(`SELECT * FROM communitytracks`, (err, row) => {
+        if (err) {
+            console.error("Error fetching community tracks:", err);
+        }
+        for (let i = 0; i < row.length; i++) {
+            let data = {
+                guid: row[i].guid,
+                root: row[i].root,
+                prefs: row[i].prefs,
+                "full-track-url": row[i].full_track_url,
+                "allow-copy": row[i].allow_copy ? true : false,
+                "base-assets-enabled": false,
+                "exclusive-by-platform": [],
+                "is-race-allowed": row[i].is_race_allowed,
+                "is-public": row[i].is_public ? true : false,
+                "is-public-for-drlpilots": false,
+                "is-drl-official": true,
+                "is-featured": false,
+                "is-multigp": false,
+                "is-tryouts": false,
+                "is-virtual-season": false,
+                "map-category": "MapCommon",
+                "map-difficulty": 3,
+                "map-distance": 641.2644,
+                "map-dirty": true,
+                "map-lighting": row[i].map_lighting,
+                "map-laps": 2,
+                "map-stats-triangle-count": row[i].map_stats_triangle_count,
+                "map-stats-object-count": 1113,
+                "prefs-auto-save": true,
+                "track-id": "freestyle",
+                "xp-value": 0,
+                "xp-min-time": 0,
+                "cm-collectable-count": 0,
+                "collaborators": [],
+                "map-mode-type": row[i].map_mode_type,
+                "map-id": row[i].map_id,
+                "map-title": row[i].map_title,
+                "map-thumb": "https://drl-game-api.s3.amazonaws.com/storage/629fdc1c6b1092601af12c93/1656280775885.png",
+                "avatar": "https://avatars.steamstatic.com/6d6ccc63d22e35f262daf4b872212ac63b8eb722_full.jpg",
+                "player-id": row[i].player_id,
+                "profile-name": row[i].profile_name,
+            }
+            console.log(row[i])
+            payload.push(data);
+        }
+        res.status(200).json({ success: true, data: { data: payload, "pagging": { "page": req.query.page, "limit": req.query.limit, "page-total": Math.ceil(payload.length / req.query.limit) } } });
+    });
 })
 
 /*
@@ -279,6 +452,10 @@ app.get('/maps/', (req, res) => {
 //replays is the only thing stored at the moment but it needs to be changed to save file endings and stuff
 
 app.post('/storage/logs/', (req, res) => {
+    console.log("replay sent to /storage/logs/ here is data:", req.headers);
+    console.log(req.query)
+    console.log(req.body);
+    console.log(req.file);
     res.status(200).json({ success: true });
 })
 
@@ -291,6 +468,10 @@ app.post('/storage/replay-cloud/', replayCloud.single('file'), (req, res) => {
 })
 
 app.post('/storage/image/', (req, res) => {
+    console.log("replay sent to /storage/image/ here is data:", req.headers);
+    console.log(req.query)
+    console.log(req.body);
+    console.log(req.file);
     res.status(200).json({ success: true });
 })
 
@@ -373,7 +554,7 @@ app.get('/social/profile/', (req, res) => {
     console.log(req.query)
     token = req.headers['x-access-jsonwebtoken']
     db.serialize(() => {
-        db.get(`SELECT uid, name FROM user WHERE token = ?`, [token], (err, row) => {
+        db.get(`SELECT uid FROM user WHERE token = ?`, [token], (err, row) => {
             uid = row.uid
             db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
                 jsondata = JSON.parse(row.json);
@@ -584,14 +765,14 @@ app.get('/tournaments/', (req, res) => {
                     "mode": "sudden_death",
                     "game-mode": "race",
                     "is-custom-map": false,
-                    "start-at" : timeStr,
+                    "start-at": timeStr,
                     "map": "MP-95a",
                     "track": "MT-964",
                     "matches": [
                         {
                             "id": "match-001",
                             "map": "MP-95a",
-                    "track": "MT-964",
+                            "track": "MT-964",
                             "player-ids": [
                                 "b9365d125935475b8327162c66a25e12",
                                 "player_steam_002"
@@ -685,7 +866,7 @@ app.post('/leaderboards/user/reset/', express.urlencoded({ extended: true }), (r
 app.post('/leaderboards/user/reset/track/', express.urlencoded({ extended: true }), (req, res) => {
     token = req.headers['x-access-jsonwebtoken']
     console.log(req.body)
-    if (req.body.isCustom === 'true') { 
+    if (req.body.isCustom === 'true') {
         sql = `AND custom_map = ?`
         args = [uid, req.body.mapID, req.body.customMapId]
     } else {
