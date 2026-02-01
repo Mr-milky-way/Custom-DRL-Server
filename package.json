@@ -24,6 +24,7 @@
     "express-rate-limit": "^8.2.1",
     "multer": "^2.0.2",
     "sqlite3": "^5.1.7",
-    "unique-username-generator": "^1.5.1"
+    "unique-username-generator": "^1.5.1",
+    "uuid": "^13.0.0"
   }
 }
