@@ -381,116 +381,6 @@ app.post('/maps/:guid/duplicate', express.urlencoded({ limit: "100mb", extended:
     res.sendFile(finalPath);
 });
 
-app.post('/maps/', express.urlencoded({ limit: "1000mb", extended: true }), (req, res) => {
-    const token = req.headers['x-access-jsonwebtoken']
-    console.log("req sent to /maps/ via POST")
-    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
-        if (err || !row) {
-            console.error("Error fetching UID:", err);
-            res.status(404).json({ success: false });
-            return;
-        } else if (row.expires < Math.floor(Date.now() / 1000)) {
-            console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false });
-            return;
-        } else {
-            const uid = row.uid
-            let payload = {
-                "success": true,
-                "message": null,
-                "token": null,
-                "webtoken": null,
-                "encoded": false,
-                "data": {
-                    "pagging": {
-                        "page": 1,
-                        "page-total": 1,
-                        "total": 1,
-                        "previous-page-url": null,
-                        "next-page-url": null
-                    },
-                    "data": [req.body]
-                }
-            }
-            const baseDir = path.join(__dirname, 'tracks');
-            const finalPath = path.resolve(baseDir, req.params.guid + '.cmp');
-
-            if (!finalPath.startsWith(baseDir)) {
-                return res.status(403).send('Forbidden: Invalid path');
-            }
-            fs.writeFile(finalPath, JSON.stringify(payload), err => {
-                if (err) {
-                    console.error(err);
-                } else {
-                }
-            });
-            db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
-                let jsondata = JSON.parse(row.json);
-                let root = {
-                    "id": req.body.root.id,
-                    "children": [],
-                    "type": req.body.root.type,
-                    "name": "$root"
-                }
-                db.run(`INSERT INTO communitytracks (guid, root, prefs, map_dirty, map_title, map_mode_type, map_id, map_stats_triangle_count, map_stats_object_count, is_race_allowed, player_id, profile_name, full_track_url, map_difficulty, map_lighting, is_public, allow_copy, cm_collectable_count, map_thumb) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ON CONFLICT(guid) DO UPDATE SET root = excluded.root, prefs = excluded.prefs, map_title = excluded.map_title, map_stats_triangle_count = excluded.map_stats_triangle_count, map_stats_object_count = excluded.map_stats_object_count, is_race_allowed = excluded.is_race_allowed, full_track_url = excluded.full_track_url, map_difficulty = excluded.map_difficulty, map_lighting = excluded.map_lighting, is_public = excluded.is_public, allow_copy = excluded.allow_copy, cm_collectable_count = excluded.cm_collectable_count, map_thumb = excluded.map_thumb;`, [
-                    req.body.guid,
-                    JSON.stringify(root),
-                    JSON.stringify(req.body.prefs),
-                    req.body["map-dirty"],
-                    req.body["map-title"],
-                    req.body["map-mode-type"],
-                    req.body["map-id"],
-                    req.body["map-stats-triangle-count"],
-                    req.body["map-stats-object-count"],
-                    req.body["is-race-allowed"],
-                    uid,
-                    jsondata["profile-name"],
-                    `/tracks/${req.body.guid}`,
-                    req.body["map-difficulty"],
-                    req.body["map-lighting"],
-                    req.body["is-public"],
-                    req.body["allow-copy"],
-                    req.body["cm-collectable-count"],
-                    req.body["map-thumb"]
-                ], err => {
-                    if (err) {
-                        console.error("Error inserting/updating community track:", err);
-                        res.status(500).json({ success: false });
-                        return;
-                    } else {
-                        db.run(`INSERT OR IGNORE INTO trackcolab (uid, guid) VALUES (?, ?)`, [uid, req.body.guid], function (err) {
-                            if (err) {
-                                console.error("Error inserting into trackcolab:", err);
-                            } else {
-                                db.all(`SELECT * FROM trackcolab WHERE guid = ?`, [req.body.guid], (err, row) => {
-                                    const existingUids = row.map(r => r.uid);
-                                    console.log(req.body.collaborators)
-                                    const incomingUids = JSON.parse(req.body.collaborators).map(c => c['player-id']);
-
-                                    incomingUids.forEach(uid => {
-                                        if (!existingUids.includes(uid)) {
-                                            db.run(`INSERT INTO trackcolab (uid, guid) VALUES (?, ?)`, [uid, req.body.guid]);
-                                        }
-                                    });
-
-                                    existingUids.forEach(uid => {
-                                        if (!incomingUids.includes(uid)) {
-                                            db.run(`DELETE FROM trackcolab WHERE uid = ? AND guid = ?`, [uid, req.body.guid]);
-                                        }
-                                    });
-
-                                    res.status(200).json({ success: true, data: req.body });
-                                });
-                            }
-                        });
-                    }
-                })
-            });
-        }
-    });
-});
-
 //path for track downloads
 app.get('/tracks/:id', (req, res) => {
     console.log("req sent to /tracks/ for id:", req.params.id)
@@ -780,8 +670,8 @@ app.get('/maps/', (req, res) => {
         filters.push(sqlSort)
     }
 
-console.log("Final filters:", filters);
-console.log("Final filter parameters:", filtersP);
+    console.log("Final filters:", filters);
+    console.log("Final filter parameters:", filtersP);
     db.get(
         `SELECT COUNT(*) as total FROM communitytracks WHERE is_public = 1 AND map_category = 'MapCommon'`,
         [],
@@ -810,6 +700,122 @@ console.log("Final filter parameters:", filtersP);
             );
         }
     );
+});
+
+app.post('/maps/', express.urlencoded({ limit: "50mb", extended: true }), (req, res) => {
+    const token = req.headers['x-access-jsonwebtoken']
+    console.log("req sent to /maps/ via POST", req.body);
+    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
+        if (err || !row) {
+            console.error("Error fetching UID:", err);
+            res.status(404).json({ success: false });
+            return;
+        } else if (row.expires < Math.floor(Date.now() / 1000)) {
+            console.error("Error fetching UID: Token expired");
+            res.status(401).json({ success: false });
+            return;
+        } else {
+            const uid = row.uid
+            let payload = {
+                "success": true,
+                "message": null,
+                "token": null,
+                "webtoken": null,
+                "encoded": false,
+                "data": {
+                    "pagging": {
+                        "page": 1,
+                        "page-total": 1,
+                        "total": 1,
+                        "previous-page-url": null,
+                        "next-page-url": null
+                    },
+                    "data": [req.body]
+                }
+            }
+            const baseDir = path.join(__dirname, 'tracks');
+            const finalPath = path.resolve(baseDir, req.params.guid + '.cmp');
+
+            if (!finalPath.startsWith(baseDir)) {
+                return res.status(403).send('Forbidden: Invalid path');
+            }
+            fs.writeFile(finalPath, JSON.stringify(payload), err => {
+                if (err) {
+                    console.error(err);
+                } else {
+                }
+            });
+            db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
+                if (!row) {
+                    return res.status(500).json({ success: false, error: 'Player state not found' });
+                }
+                let jsondata = JSON.parse(row.json);
+                let root = {
+                    "id": req.body.root.id,
+                    "children": [],
+                    "type": req.body.root.type,
+                    "name": "$root"
+                }
+                db.run(`INSERT INTO communitytracks (guid, root, prefs, map_dirty, map_title, map_mode_type, map_id, map_stats_triangle_count, map_stats_object_count, is_race_allowed, player_id, profile_name, full_track_url, map_difficulty, map_lighting, is_public, allow_copy, cm_collectable_count, map_thumb) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(guid) DO UPDATE SET root = excluded.root, prefs = excluded.prefs, map_title = excluded.map_title, map_stats_triangle_count = excluded.map_stats_triangle_count, map_stats_object_count = excluded.map_stats_object_count, is_race_allowed = excluded.is_race_allowed, full_track_url = excluded.full_track_url, map_difficulty = excluded.map_difficulty, map_lighting = excluded.map_lighting, is_public = excluded.is_public, allow_copy = excluded.allow_copy, cm_collectable_count = excluded.cm_collectable_count, map_thumb = excluded.map_thumb;`, [
+                    req.body.guid,
+                    JSON.stringify(root),
+                    JSON.stringify(req.body.prefs),
+                    req.body["map-dirty"],
+                    req.body["map-title"],
+                    req.body["map-mode-type"],
+                    req.body["map-id"],
+                    req.body["map-stats-triangle-count"],
+                    req.body["map-stats-object-count"],
+                    req.body["is-race-allowed"],
+                    uid,
+                    jsondata["profile-name"],
+                    `/tracks/${req.body.guid}`,
+                    req.body["map-difficulty"],
+                    req.body["map-lighting"],
+                    req.body["is-public"],
+                    req.body["allow-copy"],
+                    req.body["cm-collectable-count"],
+                    req.body["map-thumb"]
+                ], err => {
+                    if (err) {
+                        console.error("Error inserting/updating community track:", err);
+                        res.status(500).json({ success: false });
+                        return;
+                    } else {
+                        db.run(`INSERT OR IGNORE INTO trackcolab (uid, guid) VALUES (?, ?)`, [uid, req.body.guid], function (err) {
+                            if (err) {
+                                console.error("Error inserting into trackcolab:", err);
+                            } else {
+
+                                db.all(`SELECT * FROM trackcolab WHERE guid = ?`, [req.body.guid], (err, row) => {
+
+                                    const existingUids = row.map(r => r.uid);
+                                    console.log(req.body.collaborators)
+                                    const incomingUids = JSON.parse(req.body.collaborators).map(c => c['player-id']);
+
+                                    incomingUids.forEach(uid => {
+                                        if (!existingUids.includes(uid)) {
+                                            db.run(`INSERT INTO trackcolab (uid, guid) VALUES (?, ?)`, [uid, req.body.guid]);
+                                        }
+                                    });
+
+                                    existingUids.forEach(uid => {
+                                        if (!incomingUids.includes(uid)) {
+                                            db.run(`DELETE FROM trackcolab WHERE uid = ? AND guid = ?`, [uid, req.body.guid]);
+                                        }
+                                    });
+
+
+                                    res.status(200).json({ success: true, data: req.body });
+                                });
+                            }
+                        });
+                    }
+                })
+            });
+        }
+    });
 });
 
 
@@ -920,6 +926,8 @@ app.get('/replay/:uid/:guid', (req, res) => {
     if (!fs.existsSync(finalPath)) {
         return res.status(404).end();
     }
+
+    console.log("GETTING REPLAY FROM:", finalPath);
     res.sendFile(finalPath);
 });
 
@@ -1150,13 +1158,76 @@ app.post('/state/', (req, res) => {
 
 
 app.get('/tournaments/:guid/register', (req, res) => {
-    console.log("Tournament registration token for:", req.headers['x-access-jsonwebtoken']);
+    console.log("/tournaments/:guid/register");
     res.status(200).json({ success: true });
 })
 
-app.get('/tournaments/', (req, res) => {
-    let StartTime = new Date(2026, 0, 25, 11, 0, 0, 0);
+app.get(`/tournaments/:guid/subscription`, (req, res) => {
+    console.log("/tournaments/:guid/subscription");
+    res.status(200).json({
+        success: true, data:
+        {
+            "tournament-id": "tournament-001",
+            "player-id": "b9365d125935475b8327162c66a25e12"
+        }
+    });
+})
+
+app.get(`/tournaments/subscription`, (req, res) => {
+    console.log("/tournaments/subscription");
+    res.status(200).json({ success: true, data: [] });
+})
+
+
+app.get(`/player/tournaments/`, (req, res) => {
+    console.log("/player/tournaments/");
+    res.status(200).json({ success: true, data: [] });
+})
+
+app.get(`/tournaments/:guid/matches/:mid`, (req, res) => {
+    console.log("/tournaments/:guid/matches/:mid");
     const now = new Date();
+    let yyyy = now.getFullYear();
+    let MM = String(now.getMonth() + 1).padStart(2, '0');
+    let dd = String(now.getDate()).padStart(2, '0');
+    let HH = String(now.getHours()).padStart(2, '0');
+    let mm = String(now.getMinutes()).padStart(2, '0');
+    let ss = String(now.getSeconds()).padStart(2, '0');
+
+    const timeStr = `${yyyy}-${MM}-${dd}T${HH}:${mm}:${ss}-00`;
+    res.status(200).json({
+        success: true, data: [
+            {
+                "id": "match-001",
+                "map": "MP-95a",
+                "track": "MT-964",
+                "status": "active",
+                "start-at": timeStr,
+                "mode": "match_points",
+                "players-size": 2,
+                "heats": 4,
+                "active-heat": 1,
+                "current-heat": 1,
+                "num-winners": 1,
+                "players": [{
+                    "player-id": "b9365d125935475b8327162c66a25e12",
+                    "profile-name": "Ninety9prob",
+                    "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64"
+                }],
+                "player-ids": [
+                    "b9365d125935475b8327162c66a25e12",
+                    "player_steam_002"
+                ]
+            }
+        ]
+    });
+})
+
+app.get(`/tournaments/:guid`, (req, res) => {
+    console.log("/tournaments/:guid");
+    let StartTime = new Date(2026, 2, 27, 15, 30, 0, 0);
+    const now = new Date();
+    now.setSeconds(now.getSeconds() + 10);
     let yyyy = now.getFullYear();
     let MM = String(now.getMonth() + 1).padStart(2, '0');
     let dd = String(now.getDate()).padStart(2, '0');
@@ -1169,7 +1240,7 @@ app.get('/tournaments/', (req, res) => {
     yyyy = StartTime.getFullYear();
     MM = String(StartTime.getMonth() + 1).padStart(2, '0');
     dd = String(StartTime.getDate()).padStart(2, '0');
-    HH = String(StartTime.getHours()).padStart(2, '0');
+    HH = String(StartTime.getHours() + 1).padStart(2, '0');
     mm = String(StartTime.getMinutes()).padStart(2, '0');
     ss = String(StartTime.getSeconds()).padStart(2, '0');
     StartTime = `${yyyy}-${MM}-${dd}T${HH}:${mm}:${ss}-00`;
@@ -1180,8 +1251,8 @@ app.get('/tournaments/', (req, res) => {
             "guid": "550e8400-e29b-41d4-a716-446655440000",
             "title": "Sunday Session EU",
             "description": "Community Tournament featuring a recent community-made track",
-            "region": "EU",
-            "type": "normal",
+            "region": "eu", //needs to be lowercase (default is us)
+            "type": "Simple", //this is not even used
 
             "players-size": 1,
             "max-players": 16,
@@ -1211,28 +1282,132 @@ app.get('/tournaments/', (req, res) => {
                 {
                     "title": "Qualifiers",
                     "state": "active",
-                    "mode": "sudden_death",
+                    "norder": 1,
+                    "mode": "match_points",
                     "game-mode": "race",
                     "is-custom-map": false,
                     "start-at": timeStr,
                     "map": "MP-95a",
                     "track": "MT-964",
                     "matches": [
-                        {
-                            "id": "match-001",
-                            "map": "MP-95a",
-                            "track": "MT-964",
-                            "player-ids": [
-                                "b9365d125935475b8327162c66a25e12",
-                                "player_steam_002"
-                            ]
-                        }
-                    ]
-                },
+            {
+                "id": "match-001",
+                "map": "MP-95a",
+                "track": "MT-964",
+                "status": "active",
+                "start-at": timeStr,
+                "mode": "match_points",
+                "players-size": 2,
+                "heats": 4,
+                "active-heat": 1,
+                "current-heat": 1,
+                "num-winners": 1,
+                "players": [{
+                    "player-id": "b9365d125935475b8327162c66a25e12",
+                    "profile-name": "Ninety9prob",
+                    "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64"
+                }],
+                "player-ids": [
+                    "b9365d125935475b8327162c66a25e12",
+                    "player_steam_002"
+                ]
+            }
+        ]
+                }
+            ]
+        }]
+    });
+})
+
+app.get('/tournaments/', (req, res) => {
+    let StartTime = new Date(2026, 2, 27, 15, 30, 0, 0);
+    const now = new Date();
+    now.setSeconds(now.getSeconds() + 10);
+    let yyyy = now.getFullYear();
+    let MM = String(now.getMonth() + 1).padStart(2, '0');
+    let dd = String(now.getDate()).padStart(2, '0');
+    let HH = String(now.getHours()).padStart(2, '0');
+    let mm = String(now.getMinutes()).padStart(2, '0');
+    let ss = String(now.getSeconds()).padStart(2, '0');
+
+    const timeStr = `${yyyy}-${MM}-${dd}T${HH}:${mm}:${ss}-00`;
+
+    yyyy = StartTime.getFullYear();
+    MM = String(StartTime.getMonth() + 1).padStart(2, '0');
+    dd = String(StartTime.getDate()).padStart(2, '0');
+    HH = String(StartTime.getHours() + 1).padStart(2, '0');
+    mm = String(StartTime.getMinutes()).padStart(2, '0');
+    ss = String(StartTime.getSeconds()).padStart(2, '0');
+    StartTime = `${yyyy}-${MM}-${dd}T${HH}:${mm}:${ss}-00`;
+
+    res.status(200).json({
+        success: true, data: [{
+            "id": "tournament-001",
+            "guid": "550e8400-e29b-41d4-a716-446655440000",
+            "title": "Sunday Session EU",
+            "description": "Community Tournament featuring a recent community-made track",
+            "region": "eu", //needs to be lowercase (default is us)
+            "type": "Simple", //this is not even used
+
+            "players-size": 1,
+            "max-players": 16,
+            "player-ids": ["b9365d125935475b8327162c66a25e12"],
+
+            "status": "active",
+            "progression": "auto",
+
+            "allow-new-registration": true,
+            "disable-public-spectators": false,
+            "private": false,
+
+            "register-start": "2026-01-01T00:00:00Z",
+            "register-end": StartTime,
+            "current-time": timeStr,
+
+            "penalty": false,
+
+            "drl-pilot-mode": true,
+
+            "dawc-seeding": false,
+            "countdown": true,
+
+            "ranking": [],
+
+            "rounds": [
                 {
-                    "state": "pending",
+                    "title": "Qualifiers",
+                    "state": "active",
+                    "norder": 1,
+                    "mode": "match_points",
                     "game-mode": "race",
-                    "matches": []
+                    "is-custom-map": false,
+                    "start-at": timeStr,
+                    "map": "MP-95a",
+                    "track": "MT-964",
+                    "matches": [
+            {
+                "id": "match-001",
+                "map": "MP-95a",
+                "track": "MT-964",
+                "status": "active",
+                "start-at": timeStr,
+                "mode": "match_points",
+                "players-size": 2,
+                "heats": 4,
+                "active-heat": 1,
+                "current-heat": 1,
+                "num-winners": 1,
+                "players": [{
+                    "player-id": "b9365d125935475b8327162c66a25e12",
+                    "profile-name": "Ninety9prob",
+                    "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64"
+                }],
+                "player-ids": [
+                    "b9365d125935475b8327162c66a25e12",
+                    "player_steam_002"
+                ]
+            }
+        ]
                 }
             ]
         }]
@@ -1295,8 +1470,8 @@ function mapLeaderboardSqlToJson(row, i) {
         "crash-count": row[i].crash_count,
         "top-speed": row[i].top_speed,
         "time-in-first": row[i].time_in_first,
-        "lap-times": row[i].lap_times,
-        "gate-times": row[i].gate_times,
+        "lap-times": TOJSON(row[i].lap_times),
+        "gate-times": TOJSON(row[i].gate_times),
         "fastest-lap": row[i].fastest_lap,
         "slowest-lap": row[i].slowest_lap,
         "total-distance": row[i].total_distance,
@@ -1536,8 +1711,8 @@ app.post('/leaderboards/', (req, res) => {
                                     parsed[0]['crash-count'] ? parsed[0]['crash-count'] : null,
                                     parsed[0]['top-speed'] ? parsed[0]['top-speed'] : null,
                                     parsed[0]['time-in-first'] ? parsed[0]['time-in-first'] : null,
-                                    parsed[0]['lap-times'] ? parsed[0]['lap-times'] : null,
-                                    parsed[0]['gate-times'] ? parsed[0]['gate-times'] : null,
+                                    parsed[0]['lap-times'] ? JSON.stringify(parsed[0]['lap-times']) : null,
+                                    parsed[0]['gate-times'] ? JSON.stringify(parsed[0]['gate-times']) : null,
                                     parsed[0]['fastest-lap'] ? parsed[0]['fastest-lap'] : null,
                                     parsed[0]['slowest-lap'] ? parsed[0]['slowest-lap'] : null,
                                     parsed[0]['total-distance'] ? parsed[0]['total-distance'] : null,
@@ -1797,7 +1972,86 @@ app.get('/leaderboards/rivals/', (req, res) => {
     });
 });
 
-
+app.get(`/replay/rivals/`, (req, res) => {
+    const token = req.headers['x-access-jsonwebtoken']
+    console.log("req sent to /leaderboards/rivals/ headers are:", req.headers);
+    console.log(req.query)
+    const uid = req.query['player-id'];
+    const diameter = Number(req.query.diameter);
+    const drlOfficial = req.query["drl-official"] === "true" ? 1 : 0;
+    let query;
+    let inputs;
+    if (req.query['is-custom-map'] == `true`) {
+        query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? AND custom_map = ? `
+        inputs = [req.query.map, req.query.track, diameter, drlOfficial, req.query['custom-map']]
+    } else {
+        query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? `
+        inputs = [req.query.map, req.query.track, diameter, drlOfficial]
+    }
+    let player_pos = 0
+    db.all(`SELECT * FROM leaderboard ` + query + `ORDER BY score ASC`, inputs, (err, row) => {
+        if (err || row.length === 0) {
+            console.error("Error fetching leaderboard:", err);
+            let jsondata = {
+                "top": [
+                    null
+                ],
+                "player": -1,
+                "rivals": [null],
+                "past": null
+            }
+            res.status(200).json({
+                success: true, data: jsondata
+            });
+        } else {
+            let rivals = []
+            let past = null
+            row[0].position = 1
+            for (let i = 0; i < row.length; i++) {
+                if (row[i].player_id == uid) {
+                    player_pos = i
+                    past = mapLeaderboardSqlToJson(row, i)
+                    if (row[i - 1] && row[i + 1]) {
+                        i = i - 1
+                        let data = mapLeaderboardSqlToJson(row, i)
+                        rivals.push(data)
+                        i++
+                        data = mapLeaderboardSqlToJson(row, i)
+                        rivals.push(data)
+                        i++
+                        data = mapLeaderboardSqlToJson(row, i)
+                        rivals.push(data)
+                        break
+                    } else if (row[i - 1]) {
+                        i = i - 1
+                        let data = mapLeaderboardSqlToJson(row, i)
+                        rivals.push(data)
+                        i++;
+                        data = mapLeaderboardSqlToJson(row, i)
+                        rivals.push(data)
+                        break
+                    } else {
+                        let data = mapLeaderboardSqlToJson(row, i)
+                        rivals.push(data)
+                        break
+                    }
+                }
+            }
+            let jsondata = {
+                "top": [
+                    row[0]
+                ],
+                "player": player_pos,
+                "rivals": rivals,
+                "past": past
+            }
+            console.log(jsondata)
+            res.status(200).json({
+                success: true, data: jsondata
+            });
+        }
+    });
+})
 app.get('/leaderboards/', (req, res) => {
     let limit = 10
     let page = 1
@@ -2101,8 +2355,8 @@ app.post('/drones/', express.urlencoded({ extended: true }), (req, res) => {
                     res.status(500).json({ success: false });
                     return;
                 }
-                if (!row) {
-                } else {
+                let jsondata = {};
+                if (row) {
                     jsondata = JSON.parse(row.json);
                 }
                 db.run(`INSERT INTO drone (
@@ -2249,7 +2503,7 @@ app.get('/drones/', (req, res) => {
         sql += " WHERE is_public = ?";
         params.push(isPublic);
     } else {
-        pub = true
+        const pub = true
     }
     db.all(sql, params, (err, row) => {
         if (err || row.length === 0) {
