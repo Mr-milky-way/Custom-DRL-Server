@@ -2112,7 +2112,7 @@ app.get('/leaderboards/rivals/', (req, res) => {
 
                     const RIVAL_WINDOW = 3;
                     let start = player_pos - 1;
-                    let end = start + RIVAL_WINDOW;
+                    let end = player_pos + RIVAL_WINDOW;
 
                     if (start < 0) {
                         end += -start;
@@ -2124,9 +2124,11 @@ app.get('/leaderboards/rivals/', (req, res) => {
                     }
 
                     for (let i = start; i < end; i++) {
-                        console.log(i)
-                        console.log(row[i])
-                        rivals.push(mapLeaderboardSqlToJson(row, i));
+                        if (row[i]) {
+                            console.log(i)
+                            console.log(row[i])
+                            rivals.push(mapLeaderboardSqlToJson(row, i));
+                        }
                     }
                     break;
                 }
