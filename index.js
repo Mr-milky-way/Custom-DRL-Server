@@ -2100,8 +2100,8 @@ app.get('/leaderboards/rivals/', (req, res) => {
                 if (row[i].player_id == uid) {
                     player_pos = i
 
-                    let start = playerIndex - 1
-                    let end = playerIndex + 2
+                    let start = player_pos - 1
+                    let end = player_pos + 2
 
                     if (start < 0) {
 
