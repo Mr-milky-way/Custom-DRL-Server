@@ -408,11 +408,21 @@ db.serialize(() => {
 ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝     ╚══════╝    ╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝        ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚══════╝
 ----------------------------------------------------------------------------------------------------------------------
 */
+
 function TOJSON(value) {
     if (!value) return [];
+    
     if (typeof value === "string") {
-        if ("[]" == value) { return [] } else return JSON.parse(value);
+        value = value.trim();
+        if (value === "[]" || value === "{}" || value === "null") return [];
+        try {
+            return JSON.parse(value);
+        } catch (e) {
+            console.warn("TOJSON failed to parse string, returning original value:", value);
+            return value;
+        }
     }
+
     return value;
 }
 
