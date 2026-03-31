@@ -2108,9 +2108,9 @@ app.get('/leaderboards/rivals/', (req, res) => {
                         end += -start
                         start = 0
                     }
-                    if (end > rows.length) {
+                    if (end > row.length) {
 
-                        start -= (end - rows.length)
+                        start -= (end - row.length)
                         start = Math.max(0, start)
                     }
 
