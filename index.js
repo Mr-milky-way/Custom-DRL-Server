@@ -2124,6 +2124,8 @@ app.get('/leaderboards/rivals/', (req, res) => {
                     }
 
                     for (let i = start; i < end; i++) {
+                        console.log(i)
+                        console.log(row[i])
                         rivals.push(mapLeaderboardSqlToJson(row, i));
                     }
                     break;
