@@ -204,10 +204,13 @@ db.serialize(() => {
     players TEXT,
     scores TEXT,
     replay-urls TEXT,
+
+    PRIMARY KEY (roundNumber, guid, id)
     )`);
     
-    db.run("CREATE TABLE IF NOT EXISTS tournamentsregistered (uid TEXT, Tguid TEXT, PRIMARY KEY (uid, Tguid))");
-    db.run("CREATE TABLE IF NOT EXISTS tournamentsregistered (uid TEXT, Tguid TEXT, PRIMARY KEY (uid, Tguid))");
+    db.run("CREATE TABLE IF NOT EXISTS tournamentsregistered (uid TEXT, guid TEXT, PRIMARY KEY (uid, guid))");
+
+    db.run("CREATE TABLE IF NOT EXISTS tournamentsubscribed (uid TEXT, guid TEXT, PRIMARY KEY (uid, guid))");
     */
     // Login
     db.run("CREATE TABLE IF NOT EXISTS user (uid TEXT UNIQUE, token TEXT, expires INTEGER, name TEXT)");
@@ -1276,7 +1279,45 @@ app.post('/state/', (req, res) => {
 
 app.get('/tournaments/:guid/register', (req, res) => {
     console.log("/tournaments/:guid/register");
-    res.status(200).json({ success: true });
+    const token = req.headers['x-access-jsonwebtoken'];
+    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
+            if (err || !row) {
+                console.error("Error fetching UID:", err);
+                res.status(404).json({ success: false });
+                return;
+            } else if (row.expires < Math.floor(Date.now() / 1000)) {
+                console.error("Error fetching UID: Token expired");
+                res.status(401).json({ success: false });
+                return;
+            } else {
+                const uid = row.uid;
+                db.run(`INSERT INTO tournamentsregistered (uid, guid) VALUES ON CONFLICT (uid, guid) DO NOTHING`, [uid, req.params.guid], (err) =>{
+                    res.status(200).json({ success: true });
+                })
+            }
+        });
+})
+
+
+app.get('/tournaments/:guid/unregister', (req, res) => {
+    console.log("/tournaments/:guid/register");
+    const token = req.headers['x-access-jsonwebtoken'];
+    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
+            if (err || !row) {
+                console.error("Error fetching UID:", err);
+                res.status(404).json({ success: false });
+                return;
+            } else if (row.expires < Math.floor(Date.now() / 1000)) {
+                console.error("Error fetching UID: Token expired");
+                res.status(401).json({ success: false });
+                return;
+            } else {
+                const uid = row.uid;
+                db.run(`DELETE FROM tournamentsregistered WHERE uid = ? AND guid = ?`, [uid, req.params.guid], (err) =>{
+                    res.status(200).json({ success: true });
+                })
+            }
+        });
 })
 
 app.get(`/tournaments/:guid/subscription`, (req, res) => {
