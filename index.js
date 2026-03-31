@@ -2099,52 +2099,17 @@ app.get('/leaderboards/rivals/', (req, res) => {
             for (let i = 0; i < row.length; i++) {
                 if (row[i].player_id == uid) {
                     player_pos = i
-                    if (row[i - 1] && row[i + 1]) {
-                        i = i - 1
-                        let data = mapLeaderboardSqlToJson(row, i)
-                        rivals.push(data)
-                        i++
-                        data = mapLeaderboardSqlToJson(row, i)
-                        rivals.push(data)
-                        i++
-                        data = mapLeaderboardSqlToJson(row, i)
-                        rivals.push(data)
-                        break
-                    } else if (row[i - 1]) {
-                        i = i - 1
-                        let data = mapLeaderboardSqlToJson(row, i)
-                        rivals.push(data)
-                        i++;
-                        data = mapLeaderboardSqlToJson(row, i)
-                        rivals.push(data)
-                        break
-                    } else if (row[i + 1] && row[i + 2]) {
-                        let data = mapLeaderboardSqlToJson(row, i)
-                        rivals.push(data)
-                        i++;
-                        data = mapLeaderboardSqlToJson(row, i)
-                        rivals.push(data)
-                        i++;
-                        data = mapLeaderboardSqlToJson(row, i)
-                        rivals.push(data)
-                        break
-                    } else if (row[i + 1]) {
-                        let data = mapLeaderboardSqlToJson(row, i)
-                        rivals.push(data)
-                        i++;
-                        data = mapLeaderboardSqlToJson(row, i)
-                        rivals.push(data)
-                        break
-                    } else {
-                        let data = mapLeaderboardSqlToJson(row, i)
-                        rivals.push(data)
-                        break
+                    const start = Math.max(0, player_pos - 2);
+                    const end = Math.min(row.length, player_pos + 1);
+
+                    for (let i = start; i < end; i++) {
+                        rivals.push(mapLeaderboardSqlToJson(row, i));
                     }
                 }
             }
             let jsondata = {
                 "top": [
-                    row[0]
+                    mapLeaderboardSqlToJson(row, 0)
                 ],
                 "player": player_pos,
                 "rivals": rivals,
