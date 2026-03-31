@@ -107,10 +107,115 @@ app.use((req, res, next) => {
 
 db.serialize(() => {
     db.run("PRAGMA journal_mode=WAL;");
+
+
+    //tournaments
+
+    /*db.run(`CREATE TABLE IF NOT EXISTS tournaments (
+        players-size INT,
+        max-players INT,
+        id TEXT,
+        guid TEXT UNIQUE,
+        title TEXT,
+        region TEXT,
+        lan-support BOOLEAN,
+        server-ip TEXT,
+        call-to-action TEXT,
+        description TEXT,
+        prize-description TEXT,
+        prize-url TEXT,
+        image-url TEXT,
+        video-url TEXT,
+        allow-new-registration BOOLEAN,
+        disable-public-spectators BOOLEAN,
+        register-start DATETIME,
+        register-end DATETIME,
+        current-time DATETIME,
+        penalty BOOLEAN,
+        status TEXT,
+        progression TEXT,
+        drone-guid TEXT,
+        drl-pilot-mode BOOLEAN,
+        default-drone-class INT,
+        minimum-skill INT,
+        streaming-url TEXT,
+        private BOOLEAN,
+        dawc-seeding BOOLEAN,
+        countdown BOOLEAN,
+        rounds TEXT,
+        rankings TEXT,
+        age-check BOOLEAN,
+        age-check-number INT,
+        terms-and-conditions-url TEXT,
+        type TEXT,
+        player-ids TEXT,
+        ranking TEXT,
+        )`);
+
+
+        db.run(`CREATE TABLE IF NOT EXISTS tournamentrounds (
+        guid TEXT,
+        roundNumber INT,
+        status TEXT,
+        norder INT,
+        title TEXT,
+        start-at DATETIME,
+        end-at DATETIME,
+        map TEXT,
+        track TEXT,
+        is-custom-map BOOLEAN,
+        custom-map TEXT,
+        custom-map-title TEXT,
+        multiplayer-countdown BOOLEAN,
+        mode TEXT,
+        timeout INT,
+        matches TEXT,
+        PRIMARY KEY (roundNumber, guid)
+        )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS tournamentroundmatches (
+    id TEXT,
+    round-id TEXT,
+    round-norder INT,
+    map TEXT,
+    track TEXT,
+    is-custom-map TEXT,
+    custom-map TEXT,
+    custom-map-title TEXT,
+    multiplayer-room-timer BOOLEAN,
+    is-under-review BOOLEAN,
+    players-size INT,
+    throttle-cap FLOAT,
+    current-heat INT,
+    active-heat INT,
+    status TEXT,
+    norder INT,
+    heats INT,
+    num-winners INT,
+    start-at DATETIME,
+    end-at DATETIME,
+    current-time DATETIME,
+    progress INT,
+    default-drone-class INT,
+    mode TEXT,
+    parents TEXT,
+    player-ids TEXT,
+    player-order TEXT,
+    players TEXT,
+    scores TEXT,
+    replay-urls TEXT,
+    )`);
+    
+    db.run("CREATE TABLE IF NOT EXISTS tournamentsregistered (uid TEXT, Tguid TEXT, PRIMARY KEY (uid, Tguid))");
+    db.run("CREATE TABLE IF NOT EXISTS tournamentsregistered (uid TEXT, Tguid TEXT, PRIMARY KEY (uid, Tguid))");
+    */
+    // Login
     db.run("CREATE TABLE IF NOT EXISTS user (uid TEXT UNIQUE, token TEXT, expires INTEGER, name TEXT)");
     db.run("CREATE TABLE IF NOT EXISTS trackcolab (uid TEXT, guid TEXT, PRIMARY KEY (uid, guid))");
+    //tracks
     db.run("CREATE TABLE IF NOT EXISTS trackupdates (uid TEXT UNIQUE, tracks TEXT)");
     db.run("CREATE TABLE IF NOT EXISTS playerstate (uid TEXT UNIQUE, json TEXT)");
+    //leaderboard
     db.run(`CREATE TABLE IF NOT EXISTS leaderboard (
     player_id TEXT NOT NULL,
     map TEXT NOT NULL,
@@ -176,7 +281,7 @@ db.serialize(() => {
 
     PRIMARY KEY (player_id, map, track, diameter, drl_official, custom_map)
     );`);
-
+    //drones
     db.run(`CREATE TABLE IF NOT EXISTS drone (
         guid TEXT UNIQUE,
         player_id TEXT,
@@ -208,7 +313,7 @@ db.serialize(() => {
         profile_data TEXT,
         physics_data TEXT
         );`);
-
+    //player info
     db.run(`CREATE TABLE IF NOT EXISTS playerprogression (
         uid TEXT UNIQUE,
         xp INT,
@@ -233,6 +338,8 @@ db.serialize(() => {
         weekend TEXT
         );`);
 
+
+    //tracks
     db.run(`CREATE TABLE IF NOT EXISTS communitytracks (
             guid TEXT UNIQUE,
             root TEXT,
@@ -1173,6 +1280,15 @@ app.get(`/tournaments/:guid/subscription`, (req, res) => {
     });
 })
 
+
+app.get(`/tournaments/:guid/matches/:mid/countdown`, (req, res) => {
+    console.log("/tournaments/:guid/matches/:mid/countdown");
+    const base64Data = Buffer.from(JSON.stringify(true)).toString('base64');
+    res.status(200).json({
+        success: true, data: base64Data
+    });
+})
+
 app.get(`/tournaments/subscription`, (req, res) => {
     console.log("/tournaments/subscription");
     res.status(200).json({ success: true, data: [] });
@@ -1227,7 +1343,7 @@ app.get(`/tournaments/:guid`, (req, res) => {
     console.log("/tournaments/:guid");
     let StartTime = new Date(2026, 2, 27, 15, 30, 0, 0);
     const now = new Date();
-    now.setSeconds(now.getSeconds() + 10);
+    now.setSeconds(now.getSeconds());
     let yyyy = now.getFullYear();
     let MM = String(now.getMonth() + 1).padStart(2, '0');
     let dd = String(now.getDate()).padStart(2, '0');
@@ -1236,6 +1352,18 @@ app.get(`/tournaments/:guid`, (req, res) => {
     let ss = String(now.getSeconds()).padStart(2, '0');
 
     const timeStr = `${yyyy}-${MM}-${dd}T${HH}:${mm}:${ss}-00`;
+
+
+    const now2 = new Date();
+    now2.setSeconds(now2.getSeconds() + 1000);
+    yyyy = now2.getFullYear();
+    MM = String(now2.getMonth() + 1).padStart(2, '0');
+    dd = String(now2.getDate()).padStart(2, '0');
+    HH = String(now2.getHours()).padStart(2, '0');
+    mm = String(now2.getMinutes()).padStart(2, '0');
+    ss = String(now2.getSeconds()).padStart(2, '0');
+
+    const timeStr2 = `${yyyy}-${MM}-${dd}T${HH}:${mm}:${ss}-00`;
 
     yyyy = StartTime.getFullYear();
     MM = String(StartTime.getMonth() + 1).padStart(2, '0');
@@ -1259,7 +1387,7 @@ app.get(`/tournaments/:guid`, (req, res) => {
             "player-ids": ["b9365d125935475b8327162c66a25e12"],
 
             "status": "active",
-            "progression": "auto",
+            "progression": "manual",
 
             "allow-new-registration": true,
             "disable-public-spectators": false,
@@ -1280,8 +1408,45 @@ app.get(`/tournaments/:guid`, (req, res) => {
 
             "rounds": [
                 {
+                    "title": "Qualifiers 2",
+                    "status": "idle",
+                    "norder": 0,
+                    "mode": "match_points",
+                    "game-mode": "race",
+                    "is-custom-map": false,
+                    "start-at": timeStr,
+                    "map": "MP-95a",
+                    "track": "MT-964",
+                    "matches": [
+                        {
+                            "id": "match-001",
+                            "map": "MP-95a",
+                            "track": "MT-964",
+                            "status": "idle",
+                            "start-at": timeStr,
+                            "end-at": timeStr2,
+                            "current-time": timeStr,
+                            "mode": "match_points",
+                            "players-size": 2,
+                            "heats": 4,
+                            "active-heat": 1,
+                            "current-heat": 1,
+                            "num-winners": 1,
+                            "players": [{
+                                "player-id": "b9365d125935475b8327162c66a25e12",
+                                "profile-name": "Ninety9prob",
+                                "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64"
+                            }],
+                            "player-ids": [
+                                "b9365d125935475b8327162c66a25e12",
+                                "player_steam_002"
+                            ]
+                        }
+                    ]
+                },
+                {
                     "title": "Qualifiers",
-                    "state": "active",
+                    "status": "active",
                     "norder": 1,
                     "mode": "match_points",
                     "game-mode": "race",
@@ -1290,29 +1455,31 @@ app.get(`/tournaments/:guid`, (req, res) => {
                     "map": "MP-95a",
                     "track": "MT-964",
                     "matches": [
-            {
-                "id": "match-001",
-                "map": "MP-95a",
-                "track": "MT-964",
-                "status": "active",
-                "start-at": timeStr,
-                "mode": "match_points",
-                "players-size": 2,
-                "heats": 4,
-                "active-heat": 1,
-                "current-heat": 1,
-                "num-winners": 1,
-                "players": [{
-                    "player-id": "b9365d125935475b8327162c66a25e12",
-                    "profile-name": "Ninety9prob",
-                    "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64"
-                }],
-                "player-ids": [
-                    "b9365d125935475b8327162c66a25e12",
-                    "player_steam_002"
-                ]
-            }
-        ]
+                        {
+                            "id": "match-001",
+                            "map": "MP-95a",
+                            "track": "MT-964",
+                            "status": "active",
+                            "start-at": timeStr,
+                            "end-at": timeStr2,
+                            "current-time": timeStr,
+                            "mode": "match_points",
+                            "players-size": 2,
+                            "heats": 2,
+                            "active-heat": 1,
+                            "current-heat": 1,
+                            "num-winners": 1,
+                            "players": [{
+                                "player-id": "b9365d125935475b8327162c66a25e12",
+                                "profile-name": "Ninety9prob",
+                                "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64"
+                            }],
+                            "player-ids": [
+                                "b9365d125935475b8327162c66a25e12",
+                                "player_steam_002"
+                            ]
+                        }
+                    ]
                 }
             ]
         }]
@@ -1320,6 +1487,7 @@ app.get(`/tournaments/:guid`, (req, res) => {
 })
 
 app.get('/tournaments/', (req, res) => {
+    console.log("/tournaments/");
     let StartTime = new Date(2026, 2, 27, 15, 30, 0, 0);
     const now = new Date();
     now.setSeconds(now.getSeconds() + 10);
@@ -1354,7 +1522,7 @@ app.get('/tournaments/', (req, res) => {
             "player-ids": ["b9365d125935475b8327162c66a25e12"],
 
             "status": "active",
-            "progression": "auto",
+            "progression": "manual",
 
             "allow-new-registration": true,
             "disable-public-spectators": false,
@@ -1376,7 +1544,7 @@ app.get('/tournaments/', (req, res) => {
             "rounds": [
                 {
                     "title": "Qualifiers",
-                    "state": "active",
+                    "status": "active",
                     "norder": 1,
                     "mode": "match_points",
                     "game-mode": "race",
@@ -1385,29 +1553,29 @@ app.get('/tournaments/', (req, res) => {
                     "map": "MP-95a",
                     "track": "MT-964",
                     "matches": [
-            {
-                "id": "match-001",
-                "map": "MP-95a",
-                "track": "MT-964",
-                "status": "active",
-                "start-at": timeStr,
-                "mode": "match_points",
-                "players-size": 2,
-                "heats": 4,
-                "active-heat": 1,
-                "current-heat": 1,
-                "num-winners": 1,
-                "players": [{
-                    "player-id": "b9365d125935475b8327162c66a25e12",
-                    "profile-name": "Ninety9prob",
-                    "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64"
-                }],
-                "player-ids": [
-                    "b9365d125935475b8327162c66a25e12",
-                    "player_steam_002"
-                ]
-            }
-        ]
+                        {
+                            "id": "match-001",
+                            "map": "MP-95a",
+                            "track": "MT-964",
+                            "status": "active",
+                            "start-at": timeStr,
+                            "mode": "match_points",
+                            "players-size": 2,
+                            "heats": 4,
+                            "active-heat": 1,
+                            "current-heat": 1,
+                            "num-winners": 1,
+                            "players": [{
+                                "player-id": "b9365d125935475b8327162c66a25e12",
+                                "profile-name": "Ninety9prob",
+                                "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64"
+                            }],
+                            "player-ids": [
+                                "b9365d125935475b8327162c66a25e12",
+                                "player_steam_002"
+                            ]
+                        }
+                    ]
                 }
             ]
         }]
@@ -1944,6 +2112,23 @@ app.get('/leaderboards/rivals/', (req, res) => {
                         break
                     } else if (row[i - 1]) {
                         i = i - 1
+                        let data = mapLeaderboardSqlToJson(row, i)
+                        rivals.push(data)
+                        i++;
+                        data = mapLeaderboardSqlToJson(row, i)
+                        rivals.push(data)
+                        break
+                    } else if (row[i + 1] && row[i + 2]) {
+                        let data = mapLeaderboardSqlToJson(row, i)
+                        rivals.push(data)
+                        i++;
+                        data = mapLeaderboardSqlToJson(row, i)
+                        rivals.push(data)
+                        i++;
+                        data = mapLeaderboardSqlToJson(row, i)
+                        rivals.push(data)
+                        break
+                    } else if (row[i + 1]) {
                         let data = mapLeaderboardSqlToJson(row, i)
                         rivals.push(data)
                         i++;
