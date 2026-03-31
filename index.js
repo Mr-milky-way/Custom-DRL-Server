@@ -411,7 +411,7 @@ db.serialize(() => {
 
 function TOJSON(value) {
     if (!value) return [];
-    
+
     if (typeof value === "string") {
         value = value.trim();
         if (value === "[]" || value === "{}" || value === "null") return [];
@@ -2110,23 +2110,23 @@ app.get('/leaderboards/rivals/', (req, res) => {
                 if (row[i].player_id == uid) {
                     player_pos = i
 
-                    let start = player_pos - 1
-                    let end = player_pos + 2
+                    const RIVAL_WINDOW = 3;
+                    let start = player_pos - 1;
+                    let end = start + RIVAL_WINDOW;
 
                     if (start < 0) {
-
-                        end += -start
-                        start = 0
+                        end += -start;
+                        start = 0;
                     }
                     if (end > row.length) {
-
-                        start -= (end - row.length)
-                        start = Math.max(0, start)
+                        start -= (end - row.length);
+                        start = Math.max(0, start);
                     }
 
                     for (let i = start; i < end; i++) {
                         rivals.push(mapLeaderboardSqlToJson(row, i));
                     }
+                    break;
                 }
             }
             let jsondata = {
