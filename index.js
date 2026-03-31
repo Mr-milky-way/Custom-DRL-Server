@@ -2099,8 +2099,20 @@ app.get('/leaderboards/rivals/', (req, res) => {
             for (let i = 0; i < row.length; i++) {
                 if (row[i].player_id == uid) {
                     player_pos = i
-                    const start = Math.max(0, player_pos - 2);
-                    const end = Math.min(row.length, player_pos + 1);
+
+                    let start = playerIndex - 1
+                    let end = playerIndex + 2
+
+                    if (start < 0) {
+
+                        end += -start
+                        start = 0
+                    }
+                    if (end > rows.length) {
+
+                        start -= (end - rows.length)
+                        start = Math.max(0, start)
+                    }
 
                     for (let i = start; i < end; i++) {
                         rivals.push(mapLeaderboardSqlToJson(row, i));
