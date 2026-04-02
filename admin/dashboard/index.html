@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/admin/main.css">
+    <script src="/admin/index.js"></script>
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h2>Admin Panel</h2>
+        </div>
+        <ul class="nav-links">
+            <li class="active"><a href="/admin/dashboard/">Dashboard</a></li>
+            <li><a href="/admin/tournaments/">Tournaments</a></li>
+            <li><a href="/admin/users/">Admin Users</a></li>
+            <li><a href="/admin/settings/">Settings</a></li>
+            <li class="logout"><a href="/admin/logout">Logout</a></li>
+        </ul>
+    </nav>
+    <main class="main-content">
+        <header class="top-bar">
+            <h1>Dashboard</h1>
+        </header>
+        <script>
+            UpdateMapNumber();
+            UpdateUserNumber();
+            UpdateLeaderboardEntriesNumber();
+        </script>
+        <section class="stats-grid">
+            <div class="stat-card">
+                <h3>Total Maps</h3>
+                <p id="totalMapsNum" class="number">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Total Users</h3>
+                <p id="totalUsersNum" class="number">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Number of Leaderboard entries</h3>
+                <p id="leaderboardEntriesNum" class="number">0</p>
+            </div>
+        </section>
+
+        <section class="data-section">
+            <h2>Recent Activity</h2>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>John Doe</td>
+                        <td>Login</td>
+                        <td>2023-10-01</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+</body>
+</html>

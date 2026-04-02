@@ -141,7 +141,9 @@ vite.config.ts.timestamp-*
 
 
 # dbs
-main.*
+main.db
+main.db-shm
+main.db-wal
 
 new.txt
 lastworking.js

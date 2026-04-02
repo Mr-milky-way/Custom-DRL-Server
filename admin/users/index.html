@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/admin/main.css">
+    <script src="/admin/index.js"></script>
+</head>
+
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h2>Admin Panel</h2>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/admin/dashboard/">Dashboard</a></li>
+            <li><a href="/admin/tournaments/">Tournaments</a></li>
+            <li class="active"><a href="/admin/users/">Admin Users</a></li>
+            <li><a href="/admin/settings/">Settings</a></li>
+            <li class="logout"><a href="/admin/logout">Logout</a></li>
+        </ul>
+    </nav>
+    <main class="main-content">
+        <header class="top-bar">
+            <h1>Admin Users</h1>
+        </header>
+        <section class="data-section">
+            <h3>Change Password/Username</h3>
+            <form class="login-form" action="/admin/changepassword" method="POST">
+                <label for="username">Current Username</label>
+
+                <input type="text" name="username" id="username" required>
+
+                <label for="new_username">New Username</label>
+                <input type="text" name="new_username" id="new_username">
+
+                <label for="password">Current Password</label>
+                <input type="password" name="password" id="password" required>
+
+                <label for="new_password">New Password</label>
+                <input type="password" name="new_password" id="new_password">
+
+                <button type="submit">Change Password/username</button>
+            </form>
+        </section>
+    </main>
+</body>
+
+</html>

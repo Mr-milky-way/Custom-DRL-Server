@@ -20,10 +20,14 @@
   },
   "homepage": "https://github.com/Mr-milky-way/Custom-DRL-Server#readme",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "crypto-js": "^4.2.0",
+    "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "express-rate-limit": "^8.2.2",
+    "express-session": "^1.19.0",
     "multer": "^2.1.1",
+    "pm2": "^6.0.14",
     "sqlite3": "^6.0.1",
     "unique-username-generator": "^1.5.1",
     "uuid": "^13.0.0"

@@ -1,8 +1,13 @@
+require('dotenv').config();
+const pm2 = require('pm2');
+const { exec } = require('child_process');
 const rateLimit = require('express-rate-limit');
 const fs = require('fs');
 const crypto = require('crypto');
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
+const bcrypt = require('bcrypt');
+const session = require('express-session')
 const path = require('path');
 const querystring = require('querystring');
 
@@ -15,6 +20,7 @@ const db = new sqlite3.Database('main.db', err => {
 });
 
 const multer = require('multer');
+const { env } = require('process');
 const replayCloud = multer({ dest: 'replay-cloud/' });
 
 process.on("uncaughtException", err => {
@@ -213,7 +219,13 @@ db.serialize(() => {
     db.run("CREATE TABLE IF NOT EXISTS tournamentsubscribed (uid TEXT, guid TEXT, PRIMARY KEY (uid, guid))");
     */
     // Login
+    db.run(`CREATE TABLE IF NOT EXISTS adminusers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,
+        password TEXT
+    )`);
     db.run("CREATE TABLE IF NOT EXISTS user (uid TEXT UNIQUE, token TEXT, expires INTEGER, name TEXT)");
+
     db.run("CREATE TABLE IF NOT EXISTS trackcolab (uid TEXT, guid TEXT, PRIMARY KEY (uid, guid))");
     //tracks
     db.run("CREATE TABLE IF NOT EXISTS trackupdates (uid TEXT UNIQUE, tracks TEXT)");
@@ -541,7 +553,6 @@ app.get('/maps/:guid', (req, res) => {
 });
 */
 
-// TODO: Make own json just for this ()
 app.get('/progression/maps/', (req, res) => {
     let progressionMaps = [];
     db.all(`SELECT * FROM communitytracks WHERE map_category != 'MapCommon'`, (err, Track) => {
@@ -1281,21 +1292,21 @@ app.get('/tournaments/:guid/register', (req, res) => {
     console.log("/tournaments/:guid/register");
     const token = req.headers['x-access-jsonwebtoken'];
     db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
-            if (err || !row) {
-                console.error("Error fetching UID:", err);
-                res.status(404).json({ success: false });
-                return;
-            } else if (row.expires < Math.floor(Date.now() / 1000)) {
-                console.error("Error fetching UID: Token expired");
-                res.status(401).json({ success: false });
-                return;
-            } else {
-                const uid = row.uid;
-                db.run(`INSERT INTO tournamentsregistered (uid, guid) VALUES ON CONFLICT (uid, guid) DO NOTHING`, [uid, req.params.guid], (err) =>{
-                    res.status(200).json({ success: true });
-                })
-            }
-        });
+        if (err || !row) {
+            console.error("Error fetching UID:", err);
+            res.status(404).json({ success: false });
+            return;
+        } else if (row.expires < Math.floor(Date.now() / 1000)) {
+            console.error("Error fetching UID: Token expired");
+            res.status(401).json({ success: false });
+            return;
+        } else {
+            const uid = row.uid;
+            db.run(`INSERT INTO tournamentsregistered (uid, guid) VALUES ON CONFLICT (uid, guid) DO NOTHING`, [uid, req.params.guid], (err) => {
+                res.status(200).json({ success: true });
+            })
+        }
+    });
 })
 
 
@@ -1303,21 +1314,21 @@ app.get('/tournaments/:guid/unregister', (req, res) => {
     console.log("/tournaments/:guid/register");
     const token = req.headers['x-access-jsonwebtoken'];
     db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
-            if (err || !row) {
-                console.error("Error fetching UID:", err);
-                res.status(404).json({ success: false });
-                return;
-            } else if (row.expires < Math.floor(Date.now() / 1000)) {
-                console.error("Error fetching UID: Token expired");
-                res.status(401).json({ success: false });
-                return;
-            } else {
-                const uid = row.uid;
-                db.run(`DELETE FROM tournamentsregistered WHERE uid = ? AND guid = ?`, [uid, req.params.guid], (err) =>{
-                    res.status(200).json({ success: true });
-                })
-            }
-        });
+        if (err || !row) {
+            console.error("Error fetching UID:", err);
+            res.status(404).json({ success: false });
+            return;
+        } else if (row.expires < Math.floor(Date.now() / 1000)) {
+            console.error("Error fetching UID: Token expired");
+            res.status(401).json({ success: false });
+            return;
+        } else {
+            const uid = row.uid;
+            db.run(`DELETE FROM tournamentsregistered WHERE uid = ? AND guid = ?`, [uid, req.params.guid], (err) => {
+                res.status(200).json({ success: true });
+            })
+        }
+    });
 })
 
 app.get(`/tournaments/:guid/subscription`, (req, res) => {
@@ -2848,6 +2859,185 @@ function decryptDRL(token, keyString, ivString) {
     const decryptedText = decrypted.toString('utf8');
     return JSON.parse(decryptedText);
 }
+
+
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'secretKey',
+    resave: false,
+    saveUninitialized: true
+}));
+
+const protect = (req, res, next) => {
+    if (req.session && req.session.adminId) {
+        next();
+    } else {
+        res.redirect('/adminlogin');
+    }
+};
+
+app.use('/admin', protect);
+
+app.use('/admin', express.static('admin'));
+
+app.use('/adminlogin', express.static('adminlogin'));
+
+app.post(`/adminlogin`, express.urlencoded({ extended: true }), (req, res) => {
+    const { username, password } = req.body
+    db.get('SELECT * FROM adminusers WHERE username = ?', [username], async (err, user) => {
+        if (err) return res.status(500).send("Database error");
+        if (user) {
+            const match = await bcrypt.compare(password, user.password);
+            if (match) {
+                req.session.adminId = user.id;
+                return res.redirect(`/admin/dashboard`)
+            }
+        }
+        res.status(401).send("<h1>Invalid username or password</h1>");
+    });
+})
+
+
+app.post(`/admin/changepassword`, express.urlencoded({ extended: true }), (req, res) => {
+    const { username, new_username, password, new_password } = req.body
+    db.get('SELECT * FROM adminusers WHERE username = ?', [username], async (err, user) => {
+        if (err) return res.status(500).send("Database error");
+        if (user) {
+            const match = await bcrypt.compare(password, user.password);
+            if (match) {
+                const userId = user.id
+                if (new_username != "" && new_password != "") {
+                    db.run('UPDATE adminusers SET username = ?, password = ? WHERE id = ?', [new_username, await bcrypt.hash(new_password, 10), userId], function (err) {
+                        if (err) {
+                            console.error("Error updating admin user:", err);
+                            return res.status(500).send("Database error");
+                        }
+                        req.session.destroy(err => {
+                            if (err) {
+                                console.error("Error destroying session:", err);
+                                return res.status(500).send("Error updating credentials, please try again");
+                            }
+                            return res.redirect('/adminlogin');
+                        });
+                    })
+                } else if (new_username != "" && new_password == "") {
+                    db.run('UPDATE adminusers SET username = ? WHERE id = ?', [new_username, userId], function (err) {
+                        if (err) {
+                            console.error("Error updating admin user:", err);
+                            return res.status(500).send("Database error");
+                        }
+                        req.session.destroy(err => {
+                            if (err) {
+                                console.error("Error destroying session:", err);
+                                return res.status(500).send("Error updating credentials, please try again");
+                            }
+                            return res.redirect('/adminlogin');
+                        });
+                    })
+                } else if (new_username == "" && new_password != "") {
+                    db.run('UPDATE adminusers SET password = ? WHERE id = ?', [await bcrypt.hash(new_password, 10), userId], function (err) {
+                        if (err) {
+                            console.error("Error updating admin user:", err);
+                            return res.status(500).send("Database error");
+                        }
+                        req.session.destroy(err => {
+                            if (err) {
+                                console.error("Error destroying session:", err);
+                                return res.status(500).send("Error updating credentials, please try again");
+                            }
+                            return res.redirect('/adminlogin');
+                        });
+                    })
+                }
+            } else {
+                res.status(401).send("<h1>Invalid username or password</h1>");
+            }
+        } else {
+            res.status(401).send("<h1>Invalid username or password</h1>");
+        }
+    });
+})
+
+app.post(`/admin/reboot`, express.urlencoded({ extended: true }), (req, res) => {
+    pm2.connect((err) => {
+        if (err) {
+            res.status(500).json({ success: false, message: "Error connecting to pm2" });
+            return;
+        }
+
+        pm2.reload('all', (err, proc) => {
+            if (err) {
+                pm2.disconnect();
+                res.status(500).json({ success: false, message: "Error restarting process" });
+            } else {
+                res.status(200).json({ success: true, message: "Process restarted successfully" });
+            }
+
+            setTimeout(() => {
+                pm2.disconnect();
+            }, 1000);
+        });
+    });
+})
+
+app.post(`/admin/pull-updates`, express.urlencoded({ extended: true }), (req, res) => {
+    exec('git pull', (error, stdout, stderr) => {
+        if (error) {
+            res.status(500).json({ success: false, message: `Error: ${error.message}` });
+            return;
+        }
+        if (stderr) {
+            res.status(500).json({ success: false, message: `Stderr: ${stderr}` })
+        }
+        res.status(200).json({ success: true, message: `Stdout: ${stdout}` });
+    });
+})
+
+app.get(`/admin/maps-count`, (req, res) => {
+    db.get(`SELECT COUNT(*) as total FROM communitytracks`, (err, result) => {
+        if (err) {
+            res.status(500).json({ success: false, message: "Database error" });
+            return;
+        }
+        res.status(200).json({ success: true, count: result.total });
+    });
+});
+
+app.get(`/admin/users-count`, (req, res) => {
+    db.get(`SELECT COUNT(*) as total FROM user`, (err, result) => {
+        if (err) {
+            res.status(500).json({ success: false, message: "Database error" });
+            return;
+        }
+        res.status(200).json({ success: true, count: result.total });
+    });
+});
+
+app.get(`/admin/tournaments-count`, (req, res) => {
+    db.get(`SELECT COUNT(*) as total FROM tournaments`, (err, result) => {
+        if (err) {
+            res.status(500).json({ success: false, message: "Database error" });
+            return;
+        }
+        res.status(200).json({ success: true, count: result.total });
+    });
+});
+
+app.get(`/admin/leaderboard-entries-count`, (req, res) => {
+    db.get(`SELECT COUNT(*) as total FROM leaderboard`, (err, result) => {
+        if (err) {
+            res.status(500).json({ success: false, message: "Database error" });
+            return;
+        }
+        res.status(200).json({ success: true, count: result.total });
+    });
+});
+
+app.get('/admin/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) return res.send("Error logging out");
+        res.redirect('/adminlogin');
+    });
+});
 
 app.listen(PORT, () => {
     console.log(`Server is running on [${url}](${url})`);

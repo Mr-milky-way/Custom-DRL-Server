@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/admin/main.css">
+    <script src="/admin/index.js"></script>
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <h2>Admin Panel</h2>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/admin/dashboard/">Dashboard</a></li>
+            <li class="active"><a href="/admin/tournaments/">Tournaments</a></li>
+            <li><a href="/admin/users/">Admin Users</a></li>
+            <li><a href="/admin/settings/">Settings</a></li>
+            <li class="logout"><a href="/admin/logout">Logout</a></li>
+        </ul>
+    </nav>
+    <main class="main-content">
+        <header class="top-bar">
+            <h1>Tournaments</h1>
+        </header>
+        <script>
+            UpdateTournamentNumber();
+        </script>
+        <section class="stats-grid">
+            <div class="stat-card">
+                <h3>Tournament Count</h3>
+                <p id="totalTournamentsNum" class="number">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Modify Tournaments</h3>
+                <button onclick="window.location.href='/admin/tournaments/modify';">Modify Tournament</button>
+            </div>
+        </section>
+
+        <section class="data-section">
+            <h2>Tournaments</h2>
+            <script>loadTournaments();</script>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Current Player Count</th>
+                    </tr>
+                </thead>
+                <tbody id="tournament-data">
+                    <tr>
+                        <td>John Doe</td>
+                        <td>Login</td>
+                        <td>2023-10-01</td>
+                        <td>Active</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+</body>
+</html>
