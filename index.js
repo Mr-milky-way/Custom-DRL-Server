@@ -2865,7 +2865,12 @@ function decryptDRL(token, keyString, ivString) {
 app.use(session({
     secret: process.env.SESSION_SECRET || 'secretKey',
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: true,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        sameSite: 'lax'
+    }
 }));
 
 app.use(csrf());
