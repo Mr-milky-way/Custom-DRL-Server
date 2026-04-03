@@ -30,6 +30,7 @@
     "pm2": "^6.0.14",
     "sqlite3": "^6.0.1",
     "unique-username-generator": "^1.5.1",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "lusca": "^1.7.0"
   }
 }

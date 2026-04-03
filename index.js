@@ -10,6 +10,7 @@ const bcrypt = require('bcrypt');
 const session = require('express-session')
 const path = require('path');
 const querystring = require('querystring');
+const csrf = require('lusca').csrf;
 
 const db = new sqlite3.Database('main.db', err => {
     if (err) {
@@ -2866,6 +2867,8 @@ app.use(session({
     resave: false,
     saveUninitialized: true
 }));
+
+app.use(csrf());
 
 const protect = (req, res, next) => {
     if (req.session && req.session.adminId) {
