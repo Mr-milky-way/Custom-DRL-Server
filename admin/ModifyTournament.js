@@ -73,14 +73,29 @@ function loadTournamentRounds() {
                 tableBody.innerHTML = '<tr><td colspan="2">No Rounds available.</td></tr>';
                 return;
             }
-            const rows = data.data[0].rounds.map(round => `
-            <tr>
-                <td>${round.title}</td>
-                <td><button onclick="window.location.href='/admin/tournaments/modify/round/?RoundNumber=${round.roundNumber}&guid=${guid}';">Modify</button></td>
-            </tr>
-        `).join('');
 
-            tableBody.innerHTML = rows;
+            // Clear any existing rows
+            tableBody.innerHTML = '';
+
+            data.data[0].rounds.forEach(round => {
+                const tr = document.createElement('tr');
+
+                const titleTd = document.createElement('td');
+                titleTd.textContent = round.title;
+                tr.appendChild(titleTd);
+
+                const actionTd = document.createElement('td');
+                const button = document.createElement('button');
+                button.textContent = 'Modify';
+                button.addEventListener('click', () => {
+                    const targetUrl = `/admin/tournaments/modify/round/?RoundNumber=${encodeURIComponent(round.roundNumber)}&guid=${encodeURIComponent(guid)}`;
+                    window.location.href = targetUrl;
+                });
+                actionTd.appendChild(button);
+
+                tr.appendChild(actionTd);
+                tableBody.appendChild(tr);
+            });
         })
         .catch(error => {
             console.error('Error:', error);
