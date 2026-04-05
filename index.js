@@ -611,7 +611,7 @@ app.get('/maps/updated/', (req, res) => {
                 return;
             } else if (row.expires < Math.floor(Date.now() / 1000)) {
                 console.error("Error fetching UID: Token expired");
-                res.status(401).json({ success: false });
+                res.status(401).json({ success: false, message: "Token invalid" });
                 return;
             } else {
                 const uid = row.uid
@@ -657,7 +657,7 @@ app.post('/maps/updated/', express.urlencoded({ extended: false }), (req, res) =
             return;
         } else if (row.expires < Math.floor(Date.now() / 1000)) {
             console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false });
+            res.status(401).json({ success: false, message: "Token invalid" });
             return;
         } else {
             console.log(JSON.stringify(req.body))
@@ -686,7 +686,7 @@ app.get('/maps/user/updated/', (req, res) => {
             return;
         } else if (row.expires < Math.floor(Date.now() / 1000)) {
             console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false });
+            res.status(401).json({ success: false, message: "Token invalid" });
             return;
         } else {
             const uid = row.uid
@@ -727,7 +727,7 @@ app.get('/maps/:guid/remove/', (req, res) => {
             return;
         } else if (row.expires < Math.floor(Date.now() / 1000)) {
             console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false });
+            res.status(401).json({ success: false, message: "Token invalid" });
             return;
         } else {
             const uid = row.uid;
@@ -867,7 +867,7 @@ app.post('/maps/', express.urlencoded({ limit: "50mb", extended: true }), (req, 
             return;
         } else if (row.expires < Math.floor(Date.now() / 1000)) {
             console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false });
+            res.status(401).json({ success: false, message: "Token invalid" });
             return;
         } else {
             const uid = row.uid
@@ -1007,7 +1007,7 @@ app.post('/replay/', replay.single('replay-data'), (req, res) => {
             return;
         } else if (row.expires < Math.floor(Date.now() / 1000)) {
             console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false });
+            res.status(401).json({ success: false, message: "Token invalid" });
             return;
         } else {
             const uid = row.uid
@@ -1169,7 +1169,7 @@ app.get('/social/profile/', (req, res) => {
             return;
         } else if (row.expires < Math.floor(Date.now() / 1000)) {
             console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false });
+            res.status(401).json({ success: false, message: "Token invalid" });
             return;
         } else {
             const uid = row.uid
@@ -1214,7 +1214,7 @@ app.get('/state/', (req, res) => {
             return;
         } else if (row.expires < Math.floor(Date.now() / 1000)) {
             console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false });
+            res.status(401).json({ success: false, message: "Token invalid" });
             return;
         } else {
 
@@ -1266,7 +1266,7 @@ app.post('/state/', (req, res) => {
                 return;
             } else if (row.expires < Math.floor(Date.now() / 1000)) {
                 console.error("Error fetching UID: Token expired");
-                res.status(401).json({ success: false });
+                res.status(401).json({ success: false, message: "Token invalid" });
                 return;
             } else {
                 const uid = row.uid;
@@ -1322,7 +1322,7 @@ app.get('/tournaments/:guid/register', (req, res) => {
             return;
         } else if (row.expires < Math.floor(Date.now() / 1000)) {
             console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false });
+            res.status(401).json({ success: false, message: "Token invalid" });
             return;
         } else {
             const uid = row.uid;
@@ -1344,7 +1344,7 @@ app.get('/tournaments/:guid/unregister', (req, res) => {
             return;
         } else if (row.expires < Math.floor(Date.now() / 1000)) {
             console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false });
+            res.status(401).json({ success: false, message: "Token invalid" });
             return;
         } else {
             const uid = row.uid;
@@ -1791,7 +1791,7 @@ app.post('/leaderboards/user/reset/', express.urlencoded({ extended: true }), (r
             return;
         } else if (row.expires < Math.floor(Date.now() / 1000)) {
             console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false });
+            res.status(401).json({ success: false, message: "Token invalid" });
             return;
         } else {
             const uid = row.uid;
@@ -1835,7 +1835,7 @@ app.post('/leaderboards/user/reset/track/', express.urlencoded({ extended: true 
             return;
         } else if (row.expires < Math.floor(Date.now() / 1000)) {
             console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false });
+            res.status(401).json({ success: false, message: "Token invalid" });
             return;
         } else {
             const uid = row.uid;
@@ -1870,7 +1870,7 @@ app.post('/leaderboards/', (req, res) => {
                     return;
                 } else if (row.expires < Math.floor(Date.now() / 1000)) {
                     console.error("Error fetching UID: Token expired");
-                    res.status(401).json({ success: false });
+                    res.status(401).json({ success: false, message: "Token invalid" });
                     return;
                 } else {
                     const uid = row.uid;
@@ -2398,7 +2398,7 @@ app.get('/experience-points/ranking/', (req, res) => {
             return;
         } else if (row.expires < Math.floor(Date.now() / 1000)) {
             console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false });
+            res.status(401).json({ success: false, message: "Token invalid" });
             return;
         } else {
             const uid = row.uid;
@@ -2494,7 +2494,7 @@ app.get('/experience-points/progression/', (req, res) => {
             return;
         } else if (row.expires < Math.floor(Date.now() / 1000)) {
             console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false });
+            res.status(401).json({ success: false, message: "Token invalid" });
             return;
         } else {
             const uid = row.uid;
@@ -2597,7 +2597,7 @@ app.post('/drones/', express.urlencoded({ extended: true }), (req, res) => {
             return;
         } else if (row.expires < Math.floor(Date.now() / 1000)) {
             console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false });
+            res.status(401).json({ success: false, message: "Token invalid" });
             return;
         } else {
             const uid = row.uid;
@@ -2728,7 +2728,7 @@ app.get('/drones/:guid/remove/', (req, res) => {
             return;
         } else if (row.expires < Math.floor(Date.now() / 1000)) {
             console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false });
+            res.status(401).json({ success: false, message: "Token invalid" });
             return;
         } else {
             const uid = row.uid;
