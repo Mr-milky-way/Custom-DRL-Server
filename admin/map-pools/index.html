@@ -13,10 +13,10 @@
             <h2>Admin Panel</h2>
         </div>
         <ul class="nav-links">
-            <li class="active"><a href="/admin/dashboard/">Dashboard</a></li>
+            <li><a href="/admin/dashboard/">Dashboard</a></li>
             <li><a href="/admin/tournaments/">Tournaments</a></li>
             <li><a href="/admin/users/">Admin Users</a></li>
-            <li><a href="/admin/map-pools/">Map Pools</a></li>
+            <li class="active"><a href="/admin/map-pools/">Map Pools</a></li>
             <li><a href="/admin/settings/">Settings</a></li>
             <li class="logout"><a href="/admin/logout">Logout</a></li>
         </ul>
@@ -25,39 +25,45 @@
         <header class="top-bar">
             <h1>Dashboard</h1>
         </header>
-        <script>
-            UpdateMapNumber();
-            UpdateUserNumber();
-            UpdateLeaderboardEntriesNumber();
-        </script>
         <section class="stats-grid">
             <div class="stat-card">
-                <h3>Total Maps</h3>
-                <p id="totalMapsNum" class="number">0</p>
+                <label>Map Pool Name:</label>
+                <input type="text" id="mapPoolName">
+                <button onclick="createMapPool()">Create Map Pool</button>
+                <p id="addPoolResMes" class="number"></p>
             </div>
             <div class="stat-card">
-                <h3>Total Users</h3>
-                <p id="totalUsersNum" class="number">0</p>
-            </div>
-            <div class="stat-card">
-                <h3>Number of Leaderboard entries</h3>
-                <p id="leaderboardEntriesNum" class="number">0</p>
+                <h3>Add Map to pool</h3>
+                <input type="text" id="PoolName" placeholder="Map Pool Name">
+                <input type="text" id="MapSearchInput" placeholder="Search for maps...">
+                <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Map Name</th>
+                        <th>Creator Name</th>
+                        <th>Add</th>
+                    </tr>
+                </thead>
+                <tbody id="map-data">
+                </tbody>
+            </table>
             </div>
         </section>
-        <!--
         <section class="data-section">
-            <h2>Recent Activity</h2>
+            <h2>Map Pools</h2>
+            <script>loadMapPools();</script>
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>User</th>
-                        <th>Action</th>
-                        <th>Date</th>
+                        <th>Map Pool Name</th>
+                        <th>Map count</th>
+                        <th>Maps</th>
                     </tr>
                 </thead>
+                <tbody id="map-pool-data">
+                </tbody>
             </table>
         </section>
-        -->
     </main>
 </body>
 </html>

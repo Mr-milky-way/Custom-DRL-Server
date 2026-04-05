@@ -1,5 +1,5 @@
 function pullUpdates() {
-    const url = '/admin/pull-updates';
+    const url = '/admin/pull-updates/';
     fetch(url, {
         method: 'POST',
         headers: {
@@ -112,37 +112,169 @@ function UpdateTournamentNumber() {
 
 function loadTournaments() {
     const url = '/tournaments/';
-    
+
     fetch(url, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
     })
-    .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
-        return response.json();
-    })
-    .then(data => {
-        const tableBody = document.getElementById('tournament-data');
-        
-        if (data.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="4">No tournaments available.</td></tr>';
-            return;
-        }
-        const rows = data.data.map(tournament => `
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            const tableBody = document.getElementById('tournament-data');
+
+            if (data.data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4">No tournaments available.</td></tr>';
+                return;
+            }
+            const rows = data.data.map(tournament => `
             <tr>
                 <td>${tournament.title}</td>
                 <td>${tournament.status}</td>
                 <td>${tournament['register-end']}</td>
                 <td>${tournament['players-size']}</td>
+                <td><button onclick="window.location.href='/admin/tournaments/modify/?guid=${tournament.guid}';">Modify</button></td>
             </tr>
         `).join('');
 
-        tableBody.innerHTML = rows;
+            tableBody.innerHTML = rows;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(error)
+            document.getElementById('tournament-data').innerHTML =
+                '<tr><td colspan="4">Failed to load data. Please try again later.</td></tr>';
+        });
+}
+
+function createMapPool() {
+    const name = document.getElementById('mapPoolName').value.trim();
+    if (!name) {
+        alert('Please enter a name for the map pool.');
+        return;
+    }
+
+    const url = '/admin/add-map-pool';
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ pool_name: name })
     })
-    .catch(error => {
-        console.error('Error:', error);
-        alert(error)
-        document.getElementById('tournament-data').innerHTML = 
-            '<tr><td colspan="4">Failed to load data. Please try again later.</td></tr>';
+        .then(response => response.json())
+        .then(result => {
+            document.getElementById('addPoolResMes').textContent = result.message;
+        })
+        .catch(error => {
+            console.error('Error:', error)
+            document.getElementById('addPoolResMes').textContent = 'Error: ' + error;
+        });
+}
+
+
+function loadMapPools() {
+    const url = '/admin/map-pool/';
+
+    fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    })
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            const tableBody = document.getElementById('map-pool-data');
+
+            if (data.data.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4">No map pools available.</td></tr>';
+                return;
+            }
+            const rows = data.data.map(Pool => `
+            <tr>
+                <td>${Pool.pool_name}</td>
+                <td>${Pool.map_count}</td>
+                <td><button onclick="window.location.href='/admin/map-pools/modify/?name=${Pool.pool_name}';">Modify</button></td>
+            </tr>
+        `).join('');
+
+            tableBody.innerHTML = rows;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(error)
+            document.getElementById('map-pool-data').innerHTML =
+                '<tr><td colspan="4">Failed to load data. Please try again later.</td></tr>';
+        });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const MapSearchInput = document.getElementById('MapSearchInput');
+
+    MapSearchInput.addEventListener('input', (event) => {
+
+        const url = '/admin/maps/?q=' + encodeURIComponent(event.target.value);
+
+        fetch(url, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                const tableBody = document.getElementById('map-data');
+
+                if (data.data.data.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4">No maps available.</td></tr>';
+                    return;
+                }
+                const rows = data.data.data.map(Map => `
+            <tr>
+                <td>${Map['map-title']}</td>
+                <td>${Map['profile-name']}</td>
+                <td><button onclick="addMapToPool('${Map.guid}', '${Map['map-id']}', '${Map['track'] || null}')">Add</button></td>
+            </tr>
+        `).join('');
+
+                tableBody.innerHTML = rows;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error)
+                document.getElementById('map-data').innerHTML =
+                    '<tr><td colspan="4">Failed to load data. Please try again later.</td></tr>';
+            });
     });
+})
+
+
+function addMapToPool(mapGuid, map, track) {
+    const poolName = document.getElementById('PoolName').value;
+    if (!poolName || poolName.trim() === '') {
+        alert('Please select a map pool first.');
+        return;
+    }
+
+    const url = '/admin/add-map-to-map-pool';
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ map_guid: mapGuid, pool_name: poolName, map: map, track: track })
+    })
+        .then(response => response.json())
+        .then(result => {
+            alert(result.message);
+        })
+        .catch(error => {
+            console.error('Error:', error)
+            alert('Error: ' + error);
+        });
 }

@@ -119,43 +119,43 @@ db.serialize(() => {
     //tournaments
 
     /*db.run(`CREATE TABLE IF NOT EXISTS tournaments (
-        players-size INT,
-        max-players INT,
+        players_size INT,
+        max_players INT,
         id TEXT,
         guid TEXT UNIQUE,
         title TEXT,
         region TEXT,
-        lan-support BOOLEAN,
-        server-ip TEXT,
-        call-to-action TEXT,
+        lan_support BOOLEAN,
+        server_ip TEXT,
+        call_to_action TEXT,
         description TEXT,
-        prize-description TEXT,
-        prize-url TEXT,
-        image-url TEXT,
-        video-url TEXT,
-        allow-new-registration BOOLEAN,
-        disable-public-spectators BOOLEAN,
-        register-start DATETIME,
-        register-end DATETIME,
-        current-time DATETIME,
+        prize_description TEXT,
+        prize_url TEXT,
+        image_url TEXT,
+        video_url TEXT,
+        allow_new_registration BOOLEAN,
+        disable_public_spectators BOOLEAN,
+        register_start DATETIME,
+        register_end DATETIME,
+        current_time DATETIME,
         penalty BOOLEAN,
         status TEXT,
         progression TEXT,
-        drone-guid TEXT,
-        drl-pilot-mode BOOLEAN,
-        default-drone-class INT,
-        minimum-skill INT,
-        streaming-url TEXT,
+        drone_guid TEXT,
+        drl_pilot_mode BOOLEAN,
+        default_drone_class INT,
+        minimum_skill INT,
+        streaming_url TEXT,
         private BOOLEAN,
-        dawc-seeding BOOLEAN,
+        dawc_seeding BOOLEAN,
         countdown BOOLEAN,
         rounds TEXT,
         rankings TEXT,
-        age-check BOOLEAN,
-        age-check-number INT,
-        terms-and-conditions-url TEXT,
+        age_check BOOLEAN,
+        age_check_number INT,
+        terms_and_conditions_url TEXT,
         type TEXT,
-        player-ids TEXT,
+        player_ids TEXT,
         ranking TEXT,
         )`);
 
@@ -166,14 +166,14 @@ db.serialize(() => {
         status TEXT,
         norder INT,
         title TEXT,
-        start-at DATETIME,
-        end-at DATETIME,
+        start_at DATETIME,
+        end_at DATETIME,
         map TEXT,
         track TEXT,
-        is-custom-map BOOLEAN,
-        custom-map TEXT,
-        custom-map-title TEXT,
-        multiplayer-countdown BOOLEAN,
+        is_custom_map BOOLEAN,
+        custom_map TEXT,
+        custom_map_title TEXT,
+        multiplayer_countdown BOOLEAN,
         mode TEXT,
         timeout INT,
         matches TEXT,
@@ -182,35 +182,35 @@ db.serialize(() => {
 
     db.run(`CREATE TABLE IF NOT EXISTS tournamentroundmatches (
     id TEXT,
-    round-id TEXT,
-    round-norder INT,
+    round_id TEXT,
+    round_norder INT,
     map TEXT,
     track TEXT,
-    is-custom-map TEXT,
-    custom-map TEXT,
-    custom-map-title TEXT,
-    multiplayer-room-timer BOOLEAN,
-    is-under-review BOOLEAN,
-    players-size INT,
-    throttle-cap FLOAT,
-    current-heat INT,
-    active-heat INT,
+    is_custom_map TEXT,
+    custom_map TEXT,
+    custom_map_title TEXT,
+    multiplayer_room_timer BOOLEAN,
+    is_under_review BOOLEAN,
+    players_size INT,
+    throttle_cap FLOAT,
+    current_heat INT,
+    active_heat INT,
     status TEXT,
     norder INT,
     heats INT,
-    num-winners INT,
-    start-at DATETIME,
-    end-at DATETIME,
-    current-time DATETIME,
+    num_winners INT,
+    start_at DATETIME,
+    end_at DATETIME,
+    current_time DATETIME,
     progress INT,
-    default-drone-class INT,
+    default_drone_class INT,
     mode TEXT,
     parents TEXT,
-    player-ids TEXT,
-    player-order TEXT,
+    player_ids TEXT,
+    player_order TEXT,
     players TEXT,
     scores TEXT,
-    replay-urls TEXT,
+    replay_urls TEXT,
 
     PRIMARY KEY (roundNumber, guid, id)
     )`);
@@ -219,6 +219,29 @@ db.serialize(() => {
 
     db.run("CREATE TABLE IF NOT EXISTS tournamentsubscribed (uid TEXT, guid TEXT, PRIMARY KEY (uid, guid))");
     */
+
+    db.run(`
+    CREATE TABLE IF NOT EXISTS map_pools (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        pool_name TEXT NOT NULL UNIQUE
+    )
+    `);
+
+    db.run(`
+    CREATE TABLE IF NOT EXISTS poolmaps (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        map TEXT,
+        track TEXT,
+        is_custom_map TEXT,
+        custom_map TEXT,
+        custom_map_title TEXT,
+        pool_id INTEGER,
+        UNIQUE (custom_map, pool_id)
+        FOREIGN KEY (pool_id) REFERENCES map_pools(id)
+    )
+    `);
+
+
     // Login
     db.run(`CREATE TABLE IF NOT EXISTS adminusers (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2873,7 +2896,12 @@ app.use(session({
     }
 }));
 
-app.use(csrf());
+
+app.use(express.urlencoded({ extended: true }))
+
+app.use(csrf({
+    whitelist: ['/adminlogin'] 
+}));
 
 const protect = (req, res, next) => {
     if (req.session && req.session.adminId) {
@@ -2987,7 +3015,68 @@ app.post(`/admin/reboot`, express.urlencoded({ extended: true }), (req, res) => 
     });
 })
 
-app.post(`/admin/pull-updates`, express.urlencoded({ extended: true }), (req, res) => {
+
+app.post(`/admin/add-map-pool/`, express.json(), (req, res) => {
+    db.run("INSERT INTO map_pools (pool_name) VALUES (?)", [req.body.pool_name], function(err) {
+    if (err) {
+        res.status(500).json({ success: false, message: "Database error" });
+        return;
+    } else {
+        res.status(200).json({ success: true, message: "Map pool added successfully", poolId: this.lastID });
+    }
+    })
+})
+
+app.post(`/admin/add-map-to-map-pool/`, express.json(), (req, res) => {
+    const {map_guid, pool_name, map, track} = req.body
+    db.get("SELECT id FROM map_pools WHERE pool_name = ?", [pool_name], (err, row) => {
+        if (err || !row) {
+            res.status(404).json({ success: false, message: "Map pool not found" });
+            return;
+        } else {
+            const id = row.id
+            if (track != "null") {
+                console.log(track)
+                db.run(`INSERT INTO poolmaps (pool_id, map, track, is_custom_map) VALUES (?, ?, ?, ?)`, [id, map, track, false], (err) => {
+                    if (err) {
+                        res.status(500).json({ success: false, message: "Database error on hard coded maps: " + err });
+                        return;
+                    }
+                    res.status(200).json({ success: true, message: "Hard coded map added to pool successfully" });
+                });
+            } else {
+                db.get(`SELECT map_title FROM communitytracks WHERE guid = ?`, [map_guid], (err, row) => {
+                    if (err || !row) {
+                        res.status(500).json({ success: false, message: "Database error on finding map" })
+                        return
+                    } else {
+                        db.run(`INSERT INTO poolmaps (pool_id, map, is_custom_map, custom_map, custom_map_title) VALUES (?, ?, ?, ?, ?)`, [id, map, true, map_guid, row.map_title], (err) => {
+                            if (err) {
+                                res.status(500).json({ success: false, message: "Database error on inserting custom map" });
+                                return;
+                            }
+                            res.status(200).json({ success: true, message: "Map added to pool successfully" });
+                        });
+                    }
+                })
+            }
+        }
+    }) 
+})
+
+app.get(`/admin/map-pool/`, express.json(), (req, res) => {
+    db.all("SELECT map_pools.pool_name, COUNT(poolmaps.id) AS map_count FROM map_pools LEFT JOIN poolmaps ON map_pools.id = poolmaps.pool_id GROUP BY map_pools.id", [], (err, rows) => {
+        if (err) {
+            res.status(500).json({ success: false, message: "Database error" });
+            return;
+        } else {
+            res.status(200).json({ success: true, data: rows });
+        }
+    })
+})
+
+
+app.post(`/admin/pull-updates/`, express.urlencoded({ extended: true }), (req, res) => {
     exec('git pull', (error, stdout, stderr) => {
         if (error) {
             res.status(500).json({ success: false, message: `Error: ${error.message}` });
@@ -3028,6 +3117,73 @@ app.get(`/admin/tournaments-count`, (req, res) => {
         }
         res.status(200).json({ success: true, count: result.total });
     });
+});
+
+
+
+app.get('/admin/maps/', (req, res) => {
+    const limit = parseInt(req.query.limit) || 6;
+    const page = parseInt(req.query.page) || 1;
+    const offset = (page - 1) * limit;
+    let sqlSort = "";
+    let filters = []
+    let filtersP = []
+    filters.push(" AND is_race_allowed = 1");
+    if (req.query['map-difficulty']) {
+        filters.push(`AND map_difficulty = ?`);
+        filtersP.push(parseInt(req.query['map-difficulty']));
+    }
+    if (req.query['map-id']) {
+        filters.push("AND map_id = ?");
+        filtersP.push(req.query['map-id']);
+    }
+    if (req.query.q) {
+        if (req.query.q.startsWith("@")) {
+            filters.push("AND profile_name = ?");
+            filtersP.push(req.query.q.toLowerCase().substring(1));
+        } else {
+            filters.push("AND map_title LIKE ?");
+            filtersP.push(`%${req.query.q}%`);
+        }
+    }
+    if (req.query.sort && req.query.order) {
+        const normalizedSort = req.query.sort.replace(/-/g, '_');
+        const allowedSortFields = ['score', 'rating_count', 'created_at', 'updated_at'];
+        const sortField = allowedSortFields.includes(normalizedSort) ? normalizedSort : 'score';
+
+        const sortOrder = req.query.order?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+        sqlSort = `ORDER BY ${sortField} ${sortOrder}`;
+        filters.push(sqlSort)
+    }
+    db.get(
+        `SELECT COUNT(*) as total FROM communitytracks WHERE is_public = 1`,
+        [],
+        (err, countResult) => {
+            if (err) {
+                console.error("Error counting tracks:", err);
+                return res.status(500).json({ success: false });
+            }
+            const totalCount = countResult.total;
+            const totalPages = Math.ceil(totalCount / limit);
+            db.all(
+                `SELECT *
+                FROM communitytracks
+                WHERE is_public = 1
+                ${filters.join(' ')} LIMIT ? OFFSET ? `,
+                [...filtersP, limit, offset],
+                (err, rows) => {
+                    if (err) {
+                        console.error("Error fetching community tracks:", err);
+                        return res.status(500).json({ success: false });
+                    }
+                    const payload = rows.map(row => mapCTracksqlToJson(row));
+                    res.status(200).json({ success: true, data: { data: payload, pagging: { page: page, "page-total": totalPages } } });
+                    console.log("Returned", payload.length, "tracks for page", page, "of", totalPages);
+                }
+            );
+        }
+    );
 });
 
 app.get(`/admin/leaderboard-entries-count`, (req, res) => {

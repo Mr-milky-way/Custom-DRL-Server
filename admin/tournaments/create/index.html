@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="/admin/main.css">
+    <script src="/admin/index.js"></script>
+</head>
+
+<body>
+    <nav class="sidebar">
+        <ul class="nav-links">
+            <li><a href="/admin/tournaments/">&larr; Back to Tournaments</a></li>
+        </ul>
+    </nav>
+    <main class="main-content">
+        <header class="top-bar">
+            <h1>Modify Tournaments</h1>
+        </header>
+
+        <section class="data-section">
+            <h2>Tournaments</h2>
+            <script>loadTournaments();</script>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Current Player Count</th>
+                    </tr>
+                </thead>
+                <tbody id="tournament-data">
+                </tbody>
+            </table>
+        </section>
+    </main>
+</body>
+
+</html>
