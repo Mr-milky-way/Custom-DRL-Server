@@ -437,6 +437,32 @@ db.serialize(() => {
     //db.run("DROP TABLE communitytracks")
 });
 
+
+
+
+
+
+const badTokenAuthv2 = (req, res, next) => {
+    const token = req.headers['x-access-jsonwebtoken']
+    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
+        if (err || !row) {
+            console.error("Error fetching UID:", err);
+            res.status(404).json({ success: false });
+            return;
+        } else if (row.expires < Math.floor(Date.now() / 1000)) {
+            console.error("Error fetching UID: Token expired");
+            res.status(401).json({ success: false, message: "Token invalid" });
+            return;
+        } else {
+            req.uid = row.uid;
+            next()
+        }
+    })
+}
+
+
+
+
 /*
 ----------------------------------------------------------------------------------------------------------------------
 ███╗   ███╗ █████╗ ██████╗ ███████╗     █████╗ ███╗   ██╗██████╗     ████████╗██████╗  █████╗  ██████╗██╗  ██╗███████╗
@@ -559,9 +585,9 @@ app.get('/tracks/:id', (req, res) => {
 app.get('/maps/:guid', (req, res) => {
     const guid = req.params.guid;
     console.log("what? /maps/ MAPS", guid);
-
+ 
     const mapData = Tracks.filter(track => track.guid === guid);
-
+ 
     res.status(200).json({
         success: true,
         data: {
@@ -674,38 +700,25 @@ app.post('/maps/updated/', express.urlencoded({ extended: false }), (req, res) =
 });
 */
 
-app.get('/maps/user/updated/', (req, res) => {
+app.get('/maps/user/updated/', express.urlencoded({ extended: false }), badTokenAuthv2, (req, res) => {
     const token = req.headers['x-access-jsonwebtoken']
-
     console.log("req sent to /maps/user/updated/")
     let payload = []
-    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
-        if (err || !row) {
-            console.error("Error fetching UID:", err);
-            res.status(404).json({ success: false });
-            return;
-        } else if (row.expires < Math.floor(Date.now() / 1000)) {
-            console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false, message: "Token invalid" });
-            return;
-        } else {
-            const uid = row.uid
-            db.all(`SELECT ct.*
+    const uid = req.uid
+    db.all(`SELECT ct.*
                 FROM communitytracks ct
                 INNER JOIN trackcolab tc ON ct.guid = tc.guid
                 WHERE tc.uid = ?`, [uid], (err, row) => {
-                if (err) {
-                    console.error("Error fetching community tracks:", err);
-                    return res.status(500).json({ success: false });
-                }
-                for (let i = 0; i < row.length; i++) {
-                    let data = mapCTracksqlToJson(row[i]);
-                    payload.push(data);
-                }
-                console.log("Returned", payload, "tracks for user", uid);
-                res.status(200).json({ success: true, data: { data: payload, "pagging": { "page": req.query.page, "page-total": Math.ceil(payload.length / req.query.limit) }, success: true } });
-            });
+        if (err) {
+            console.error("Error fetching community tracks:", err);
+            return res.status(500).json({ success: false });
         }
+        for (let i = 0; i < row.length; i++) {
+            let data = mapCTracksqlToJson(row[i]);
+            payload.push(data);
+        }
+        console.log("Returned", payload, "tracks for user", uid);
+        res.status(200).json({ success: true, data: { data: payload, "pagging": { "page": req.query.page, "page-total": Math.ceil(payload.length / req.query.limit) }, success: true } });
     });
 })
 
@@ -715,59 +728,45 @@ app.post('/maps/:guid/rate/', (req, res) => {
     res.status(200).json({ success: true });
 })
 
-app.get('/maps/:guid/remove/', (req, res) => {
+app.get('/maps/:guid/remove/', express.urlencoded({ extended: false }), badTokenAuthv2, (req, res) => {
     const token = req.headers['x-access-jsonwebtoken']
     console.log("req sent to /maps/:guid/remove/ for guid:", req.params.guid)
-
-    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
-        console.log("Player", row ? row.uid : "unknown", "is requesting progression");
+    const uid = req.uid
+    db.get(`SELECT player_id FROM communitytracks WHERE guid = ?`, [req.params.guid], (err, row) => {
         if (err || !row) {
-            console.error("Error fetching UID:", err);
-            res.status(404).json({ success: false });
-            return;
-        } else if (row.expires < Math.floor(Date.now() / 1000)) {
-            console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false, message: "Token invalid" });
+            console.error("Error fetching drone:", err);
+            res.status(500).json({ success: false });
             return;
         } else {
-            const uid = row.uid;
-            db.get(`SELECT player_id FROM communitytracks WHERE guid = ?`, [req.params.guid], (err, row) => {
-                if (err || !row) {
-                    console.error("Error fetching drone:", err);
+            if (row.player_id == uid) {
+                try {
+                    const baseDir = path.join(__dirname, 'tracks');
+                    const finalPath = path.resolve(baseDir, req.params.guid + '.cmp');
+
+                    if (!finalPath.startsWith(baseDir)) {
+                        return res.status(403).send('Forbidden: Invalid path');
+                    }
+                    fs.unlinkSync(fs.realpathSync(finalPath));
+                    console.log('File deleted synchronously successfully');
+                } catch (err) {
+                    console.error('Error deleting file synchronously:', err);
                     res.status(500).json({ success: false });
                     return;
-                } else {
-                    if (row.player_id == uid) {
-                        try {
-                            const baseDir = path.join(__dirname, 'tracks');
-                            const finalPath = path.resolve(baseDir, req.params.guid + '.cmp');
-
-                            if (!finalPath.startsWith(baseDir)) {
-                                return res.status(403).send('Forbidden: Invalid path');
-                            }
-                            fs.unlinkSync(fs.realpathSync(finalPath));
-                            console.log('File deleted synchronously successfully');
-                        } catch (err) {
-                            console.error('Error deleting file synchronously:', err);
-                            res.status(500).json({ success: false });
-                            return;
-                        }
-                        db.run(`DELETE FROM communitytracks WHERE guid = ? AND player_id = ?`, [req.params.guid, uid], function (err) {
-                            if (err) {
-                                console.error("Error deleting community track:", err);
-                                res.status(500).json({ success: false });
-                                return;
-                            } else {
-                                console.log(`Deleted ${this.changes} row(s) from community tracks table.`);
-                                res.status(200).json({ success: true });
-                            }
-                        });
-                    } else {
-                        res.status(403).json({ success: false });
-                        return;
-                    }
                 }
-            });
+                db.run(`DELETE FROM communitytracks WHERE guid = ? AND player_id = ?`, [req.params.guid, uid], function (err) {
+                    if (err) {
+                        console.error("Error deleting community track:", err);
+                        res.status(500).json({ success: false });
+                        return;
+                    } else {
+                        console.log(`Deleted ${this.changes} row(s) from community tracks table.`);
+                        res.status(200).json({ success: true });
+                    }
+                });
+            } else {
+                res.status(403).json({ success: false });
+                return;
+            }
         }
     });
 });
@@ -828,8 +827,8 @@ app.get('/maps/', (req, res) => {
     console.log("Final filters:", filters);
     console.log("Final filter parameters:", filtersP);
     db.get(
-        `SELECT COUNT(*) as total FROM communitytracks WHERE is_public = 1 AND map_category = 'MapCommon'`,
-        [],
+        `SELECT COUNT(*) as total FROM communitytracks WHERE is_public = 1 AND map_category = 'MapCommon' ${filters.join(' ')}`,
+        [...filtersP],
         (err, countResult) => {
             if (err) {
                 console.error("Error counting tracks:", err);
@@ -857,119 +856,109 @@ app.get('/maps/', (req, res) => {
     );
 });
 
-app.post('/maps/', express.urlencoded({ limit: "50mb", extended: true }), (req, res) => {
+app.post('/maps/', express.urlencoded({ limit: "50mb", extended: true }), badTokenAuthv2, (req, res) => {
     const token = req.headers['x-access-jsonwebtoken']
     console.log("req sent to /maps/ via POST", req.body);
-    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
-        if (err || !row) {
-            console.error("Error fetching UID:", err);
-            res.status(404).json({ success: false });
-            return;
-        } else if (row.expires < Math.floor(Date.now() / 1000)) {
-            console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false, message: "Token invalid" });
-            return;
+    const uid = req.uid
+    let payload = {
+        "success": true,
+        "message": null,
+        "token": null,
+        "webtoken": null,
+        "encoded": false,
+        "data": {
+            "pagging": {
+                "page": 1,
+                "page-total": 1,
+                "total": 1,
+                "previous-page-url": null,
+                "next-page-url": null
+            },
+            "data": [req.body]
+        }
+    }
+    const baseDir = path.join(__dirname, 'tracks');
+    const finalPath = path.resolve(baseDir, req.params.guid + '.cmp');
+
+    if (!finalPath.startsWith(baseDir)) {
+        return res.status(403).send('Forbidden: Invalid path');
+    }
+    fs.writeFile(finalPath, JSON.stringify(payload), err => {
+        if (err) {
+            console.error(err);
         } else {
-            const uid = row.uid
-            let payload = {
-                "success": true,
-                "message": null,
-                "token": null,
-                "webtoken": null,
-                "encoded": false,
-                "data": {
-                    "pagging": {
-                        "page": 1,
-                        "page-total": 1,
-                        "total": 1,
-                        "previous-page-url": null,
-                        "next-page-url": null
-                    },
-                    "data": [req.body]
-                }
-            }
-            const baseDir = path.join(__dirname, 'tracks');
-            const finalPath = path.resolve(baseDir, req.params.guid + '.cmp');
+            console.log("File written successfully");
 
-            if (!finalPath.startsWith(baseDir)) {
-                return res.status(403).send('Forbidden: Invalid path');
-            }
-            fs.writeFile(finalPath, JSON.stringify(payload), err => {
-                if (err) {
-                    console.error(err);
-                } else {
-                }
-            });
-            db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
-                if (!row) {
-                    return res.status(500).json({ success: false, error: 'Player state not found' });
-                }
-                let jsondata = JSON.parse(row.json);
-                let root = {
-                    "id": req.body.root.id,
-                    "children": [],
-                    "type": req.body.root.type,
-                    "name": "$root"
-                }
-                db.run(`INSERT INTO communitytracks (guid, root, prefs, map_dirty, map_title, map_mode_type, map_id, map_stats_triangle_count, map_stats_object_count, is_race_allowed, player_id, profile_name, full_track_url, map_difficulty, map_lighting, is_public, allow_copy, cm_collectable_count, map_thumb) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        }
+    });
+    db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
+        if (!row) {
+            return res.status(500).json({ success: false, error: 'Player state not found' });
+        }
+        let jsondata = JSON.parse(row.json);
+        let root = {
+            "id": req.body.root.id,
+            "children": [],
+            "type": req.body.root.type,
+            "name": "$root"
+        }
+        db.run(`INSERT INTO communitytracks (guid, root, prefs, map_dirty, map_title, map_mode_type, map_id, map_stats_triangle_count, map_stats_object_count, is_race_allowed, player_id, profile_name, full_track_url, map_difficulty, map_lighting, is_public, allow_copy, cm_collectable_count, map_thumb) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT(guid) DO UPDATE SET root = excluded.root, prefs = excluded.prefs, map_title = excluded.map_title, map_stats_triangle_count = excluded.map_stats_triangle_count, map_stats_object_count = excluded.map_stats_object_count, is_race_allowed = excluded.is_race_allowed, full_track_url = excluded.full_track_url, map_difficulty = excluded.map_difficulty, map_lighting = excluded.map_lighting, is_public = excluded.is_public, allow_copy = excluded.allow_copy, cm_collectable_count = excluded.cm_collectable_count, map_thumb = excluded.map_thumb;`, [
-                    req.body.guid,
-                    JSON.stringify(root),
-                    JSON.stringify(req.body.prefs),
-                    req.body["map-dirty"],
-                    req.body["map-title"],
-                    req.body["map-mode-type"],
-                    req.body["map-id"],
-                    req.body["map-stats-triangle-count"],
-                    req.body["map-stats-object-count"],
-                    req.body["is-race-allowed"],
-                    uid,
-                    jsondata["profile-name"],
-                    `/tracks/${req.body.guid}`,
-                    req.body["map-difficulty"],
-                    req.body["map-lighting"],
-                    req.body["is-public"],
-                    req.body["allow-copy"],
-                    req.body["cm-collectable-count"],
-                    req.body["map-thumb"]
-                ], err => {
+            req.body.guid,
+            JSON.stringify(root),
+            JSON.stringify(req.body.prefs),
+            req.body["map-dirty"],
+            req.body["map-title"],
+            req.body["map-mode-type"],
+            req.body["map-id"],
+            req.body["map-stats-triangle-count"],
+            req.body["map-stats-object-count"],
+            req.body["is-race-allowed"],
+            uid,
+            jsondata["profile-name"],
+            `/tracks/${req.body.guid}`,
+            req.body["map-difficulty"],
+            req.body["map-lighting"],
+            req.body["is-public"],
+            req.body["allow-copy"],
+            req.body["cm-collectable-count"],
+            req.body["map-thumb"]
+        ], err => {
+            if (err) {
+                console.error("Error inserting/updating community track:", err);
+                res.status(500).json({ success: false });
+                return;
+            } else {
+                db.run(`INSERT OR IGNORE INTO trackcolab (uid, guid) VALUES (?, ?)`, [uid, req.body.guid], function (err) {
                     if (err) {
-                        console.error("Error inserting/updating community track:", err);
-                        res.status(500).json({ success: false });
-                        return;
+                        console.error("Error inserting into trackcolab:", err);
                     } else {
-                        db.run(`INSERT OR IGNORE INTO trackcolab (uid, guid) VALUES (?, ?)`, [uid, req.body.guid], function (err) {
-                            if (err) {
-                                console.error("Error inserting into trackcolab:", err);
-                            } else {
 
-                                db.all(`SELECT * FROM trackcolab WHERE guid = ?`, [req.body.guid], (err, row) => {
+                        db.all(`SELECT * FROM trackcolab WHERE guid = ?`, [req.body.guid], (err, row) => {
 
-                                    const existingUids = row.map(r => r.uid);
-                                    console.log(req.body.collaborators)
-                                    const incomingUids = JSON.parse(req.body.collaborators).map(c => c['player-id']);
+                            const existingUids = row.map(r => r.uid);
+                            console.log(req.body.collaborators)
+                            const incomingUids = JSON.parse(req.body.collaborators).map(c => c['player-id']);
 
-                                    incomingUids.forEach(uid => {
-                                        if (!existingUids.includes(uid)) {
-                                            db.run(`INSERT INTO trackcolab (uid, guid) VALUES (?, ?)`, [uid, req.body.guid]);
-                                        }
-                                    });
+                            incomingUids.forEach(uid => {
+                                if (!existingUids.includes(uid)) {
+                                    db.run(`INSERT INTO trackcolab (uid, guid) VALUES (?, ?)`, [uid, req.body.guid]);
+                                }
+                            });
 
-                                    existingUids.forEach(uid => {
-                                        if (!incomingUids.includes(uid)) {
-                                            db.run(`DELETE FROM trackcolab WHERE uid = ? AND guid = ?`, [uid, req.body.guid]);
-                                        }
-                                    });
+                            existingUids.forEach(uid => {
+                                if (!incomingUids.includes(uid)) {
+                                    db.run(`DELETE FROM trackcolab WHERE uid = ? AND guid = ?`, [uid, req.body.guid]);
+                                }
+                            });
 
 
-                                    res.status(200).json({ success: true, data: req.body });
-                                });
-                            }
+                            res.status(200).json({ success: true, data: req.body });
                         });
                     }
-                })
-            });
-        }
+                });
+            }
+        })
     });
 });
 
@@ -994,25 +983,14 @@ app.post('/storage/logs/', (req, res) => {
 })
 
 
-app.post('/replay/', replay.single('replay-data'), (req, res) => {
+app.post('/replay/', replay.single('replay-data'), badTokenAuthv2, (req, res) => {
     console.log("replay sent to /replay/ here is data:", req.headers);
     console.log(req.query)
     console.log(req.body)
     console.log(req.file)
-    const token = req.headers['x-access-jsonwebtoken']
-    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
-        if (err || !row) {
-            console.error("Error fetching UID:", err);
-            res.status(404).json({ success: false });
-            return;
-        } else if (row.expires < Math.floor(Date.now() / 1000)) {
-            console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false, message: "Token invalid" });
-            return;
-        } else {
-            const uid = row.uid
-            db.run(
-                `UPDATE leaderboard
+    const uid = req.uid
+    db.run(
+        `UPDATE leaderboard
                     SET replay_url = ?
                     WHERE rowid = (
                         SELECT rowid
@@ -1021,25 +999,23 @@ app.post('/replay/', replay.single('replay-data'), (req, res) => {
                         ORDER BY updated_at DESC
                         LIMIT 1
                     )`,
-                ['/replay/' + uid + '/' + req.file.filename, uid],
-                function (err) {
+        ['/replay/' + uid + '/' + req.file.filename, uid],
+        function (err) {
 
-                    if (err) {
-                        console.error(err);
-                        res.status(500).json({ success: false });
-                        return;
-                    }
+            if (err) {
+                console.error(err);
+                res.status(500).json({ success: false });
+                return;
+            }
 
-                    console.log('Rows updated:', this.changes);
-                    res.status(200).json({ success: true });
-                }
-            );
+            console.log('Rows updated:', this.changes);
+            res.status(200).json({ success: true });
         }
-    });
+    );
 });
 
 
-app.post('/storage/replay-cloud/', replayCloud.single('file'), (req, res) => {
+app.post('/storage/replay-cloud/', replayCloud.single('file'), badTokenAuthv2, (req, res) => {
     console.log("replay sent to /storage/replay-cloud/ here is data:", req.headers);
     console.log(req.query)
     console.log(req.body);
@@ -1047,7 +1023,7 @@ app.post('/storage/replay-cloud/', replayCloud.single('file'), (req, res) => {
     res.status(200).json({ success: true });
 })
 
-app.post('/storage/image/', imageCloud.single('file'), (req, res) => {
+app.post('/storage/image/', imageCloud.single('file'), badTokenAuthv2, (req, res) => {
     console.log("Image sent to /storage/image/ here is data:", req.headers);
     console.log(req.query)
     console.log(req.body);
@@ -1055,7 +1031,32 @@ app.post('/storage/image/', imageCloud.single('file'), (req, res) => {
     res.status(200).json({ success: true, data: "/" + req.file.path.replace(/\\/g, '/') });
 })
 
+app.get('/images/', async (req, res) => {
+    console.log("Image requested from /images/ here is data:", req.headers);
+    const { url, w, h } = req.query;
+    console.log(url, w, h)
+    console.log(req.query)
+    if (url.startsWith("/image-cloud/")) {
+        const baseDir = path.join(__dirname, 'image-cloud');
+        const finalPath = path.resolve(baseDir, url.replace("/image-cloud/", ""));
+        if (!finalPath.startsWith(baseDir)) {
+            return res.status(403).send('Forbidden: Invalid path');
+        }
+
+        if (!fs.existsSync(finalPath)) {
+            return res.status(404).end();
+        }
+        console.log("FILE SENT " +finalPath)
+        res.sendFile(finalPath);
+    }
+});
+
+
+
+//This would be how you do it normaly but the game wants it in a really odd way - see above
+
 app.get('/image-cloud/:uid/:id', (req, res) => {
+    console.log("/image-cloud")
     const baseDir = path.join(__dirname, 'image-cloud');
     const finalPath = path.resolve(baseDir, req.params.uid, path.basename(req.params.id));
 
@@ -1070,7 +1071,8 @@ app.get('/image-cloud/:uid/:id', (req, res) => {
 });
 
 
-app.get('/replay/:uid/:guid', (req, res) => {
+
+app.get('/replay/:uid/:guid', badTokenAuthv2, (req, res) => {
     const baseDir = path.join(__dirname, 'replay');
     const finalPath = path.resolve(baseDir, req.params.uid, path.basename(req.params.guid));
 
@@ -2005,6 +2007,7 @@ app.post('/leaderboards/', (req, res) => {
                             }
                             let xpValue = 0
                             for (let i = 0; i < Track.length; i++) {
+                                console.log(Track[i])
                                 if (Track[i].guid === parsed[0]['custom_map']) {
                                     xpValue = Track[i]['xp_value'];
                                 }
@@ -2900,7 +2903,7 @@ app.use(session({
 app.use(express.urlencoded({ extended: true }))
 
 app.use(csrf({
-    whitelist: ['/adminlogin'] 
+    whitelist: ['/adminlogin']
 }));
 
 const protect = (req, res, next) => {
@@ -3017,18 +3020,18 @@ app.post(`/admin/reboot`, express.urlencoded({ extended: true }), (req, res) => 
 
 
 app.post(`/admin/add-map-pool/`, express.json(), (req, res) => {
-    db.run("INSERT INTO map_pools (pool_name) VALUES (?)", [req.body.pool_name], function(err) {
-    if (err) {
-        res.status(500).json({ success: false, message: "Database error" });
-        return;
-    } else {
-        res.status(200).json({ success: true, message: "Map pool added successfully", poolId: this.lastID });
-    }
+    db.run("INSERT INTO map_pools (pool_name) VALUES (?)", [req.body.pool_name], function (err) {
+        if (err) {
+            res.status(500).json({ success: false, message: "Database error" });
+            return;
+        } else {
+            res.status(200).json({ success: true, message: "Map pool added successfully", poolId: this.lastID });
+        }
     })
 })
 
 app.post(`/admin/add-map-to-map-pool/`, express.json(), (req, res) => {
-    const {map_guid, pool_name, map, track} = req.body
+    const { map_guid, pool_name, map, track } = req.body
     db.get("SELECT id FROM map_pools WHERE pool_name = ?", [pool_name], (err, row) => {
         if (err || !row) {
             res.status(404).json({ success: false, message: "Map pool not found" });
@@ -3061,7 +3064,7 @@ app.post(`/admin/add-map-to-map-pool/`, express.json(), (req, res) => {
                 })
             }
         }
-    }) 
+    })
 })
 
 app.get(`/admin/map-pool/`, express.json(), (req, res) => {
