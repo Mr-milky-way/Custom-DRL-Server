@@ -550,7 +550,7 @@ function mapCTracksqlToJson(row) {
     }
 }
 
-app.post('/maps/:guid/duplicate', express.urlencoded({ limit: "100mb", extended: true }), (req, res) => {
+app.post('/maps/:guid/duplicate', express.urlencoded({ limit: "100mb", extended: true }), badTokenAuthv2, (req, res) => {
     const baseDir = path.join(__dirname, 'tracks');
     const finalPath = path.resolve(baseDir, req.params.guid + '.cmp');
 
@@ -730,7 +730,6 @@ app.post('/maps/:guid/rate/', (req, res) => {
 })
 
 app.get('/maps/:guid/remove/', express.urlencoded({ extended: false }), badTokenAuthv2, (req, res) => {
-    const token = req.headers['x-access-jsonwebtoken']
     console.log("req sent to /maps/:guid/remove/ for guid:", req.params.guid)
     const uid = req.uid
     db.get(`SELECT player_id FROM communitytracks WHERE guid = ?`, [req.params.guid], (err, row) => {
@@ -858,7 +857,6 @@ app.get('/maps/', (req, res) => {
 });
 
 app.post('/maps/', express.urlencoded({ limit: "50mb", extended: true }), badTokenAuthv2, (req, res) => {
-    const token = req.headers['x-access-jsonwebtoken']
     console.log("req sent to /maps/ via POST", req.body);
     const uid = req.uid
     let payload = {
@@ -974,8 +972,6 @@ app.post('/maps/', express.urlencoded({ limit: "50mb", extended: true }), badTok
 ╚══════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝    ╚══════╝   ╚═╝    ╚═════╝ ╚═╝     ╚═╝
 ---------------------------------------------------------------------------------------------------------
 */
-
-//replays is the only thing stored at the moment but it needs to be changed to save file endings and stuff
 
 app.post('/storage/logs/', (req, res) => {
     console.log("replay sent to /storage/logs/ here is data:", req.headers);
@@ -1124,52 +1120,46 @@ app.get('/replay/:uid/:guid', badTokenAuthv2, (req, res) => {
 */
 
 app.post('/v2/login', (req, res) => {
-    let body = '';
+    console.log("POST /v2/login")
+    let decToken;
+    try {
+        decToken = decryptDRL(req.body.token, "09e027edfde3212431a8758576807083", req.body.time.padStart(16, '0'));
+        console.log(decToken)
+    } catch (E) {
+        console.error("Login Decryption failed:", E);
+        res.status(400).json({ success: false });
+        return
+    }
+    const responseData = {
+        "player-id": decToken.uid,
+        permissions: [],
+        expires: Math.floor(Date.now() / 1000) + 3600
+    };
 
-    req.on('data', c => body += c);
-    req.on('end', () => {
-        console.log("POST /v2/login")
-        const parsed = querystring.parse(body);
-        let decToken;
-        try {
-            decToken = decryptDRL(parsed.token, "09e027edfde3212431a8758576807083", parsed.time.padStart(16, '0'));
-            console.log(decToken)
-        } catch (E) {
-            console.error("Login Decryption failed:", E);
-            res.status(400).json({ success: false });
-            return
-        }
-        const responseData = {
-            "player-id": decToken.uid,
-            permissions: [],
-            expires: Math.floor(Date.now() / 1000) + 3600
-        };
+    console.log(responseData)
 
-        console.log(responseData)
+    const base64Data = Buffer
+        .from(JSON.stringify(responseData))
+        .toString('base64');
 
-        const base64Data = Buffer
-            .from(JSON.stringify(responseData))
-            .toString('base64');
-
-        db.run(`INSERT INTO user (uid, token, expires) VALUES (?, ?, ?)
+    db.run(`INSERT INTO user (uid, token, expires) VALUES (?, ?, ?)
                 ON CONFLICT(uid) DO UPDATE SET token = excluded.token, expires = excluded.expires;`, [
-            decToken.uid,
-            parsed.token,
-            responseData.expires,
-        ], (err) => {
-            if (err) {
-                console.error("SQLite insert failed:", err);
-                res.status(500).json({ success: false });
-                return
-            } else {
-                res.status(200).json({
-                    success: true,
-                    token: parsed.token,
-                    data: base64Data
-                });
-            }
-        })
-    });
+        decToken.uid,
+        req.body.token,
+        responseData.expires,
+    ], (err) => {
+        if (err) {
+            console.error("SQLite insert failed:", err);
+            res.status(500).json({ success: false });
+            return
+        } else {
+            res.status(200).json({
+                success: true,
+                token: req.body.token,
+                data: base64Data
+            });
+        }
+    })
 });
 
 /*
@@ -1183,42 +1173,28 @@ app.post('/v2/login', (req, res) => {
 -------------------------------------------------
 */
 
-app.get('/social/profile/', (req, res) => {
-    console.log("social profile header for:", req.headers);
-    console.log(req.query)
-    const token = req.headers['x-access-jsonwebtoken']
-    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
-        if (err || !row) {
-            console.error("Error fetching UID:", err);
+app.get('/social/profile/', badTokenAuthv2, (req, res) => {
+    console.log("social profile header for:", req.query);
+    const uid = req.uid
+    db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
+        if (!row) {
             res.status(404).json({ success: false });
-            return;
-        } else if (row.expires < Math.floor(Date.now() / 1000)) {
-            console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false, message: "Token invalid" });
-            return;
-        } else {
-            const uid = row.uid
-            db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
-                if (!row) {
-                    res.status(404).json({ success: false });
-                    return
-                }
-                jsondata = JSON.parse(row.json);
-                let payload = [{
-                    "platform-id": "epic-id",
-                    "player-id": uid,
-                    "profile-color": jsondata["profile-color"],
-                    "profile-rank": 1,
-                    "profile-name": jsondata["profile-name"],
-                    "username": jsondata["profile-name"],
-                    "has-game": true,
-                }];
-                const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
-                res.status(200).json({
-                    success: true, data: base64Data
-                });
-            });
+            return
         }
+        jsondata = JSON.parse(row.json);
+        let payload = [{
+            "platform-id": "epic-id",
+            "player-id": uid,
+            "profile-color": jsondata["profile-color"],
+            "profile-rank": 1,
+            "profile-name": jsondata["profile-name"],
+            "username": jsondata["profile-name"],
+            "has-game": true,
+        }];
+        const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
+        res.status(200).json({
+            success: true, data: base64Data
+        });
     });
 })
 
@@ -1228,51 +1204,39 @@ app.get('/state/game/', (req, res) => {
     res.status(200).json({ success: true, data: base64Data });
 })
 
-app.get('/state/', (req, res) => {
+app.get('/state/', badTokenAuthv2, (req, res) => {
     const token = req.headers['x-access-jsonwebtoken'];
     console.log("req sent to /state/ TOKEN:", token);
     let jsondata;
-    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
-        if (err || !row) {
-            console.error("Error fetching UID:", err);
-            res.status(404).json({ success: false });
+    const uid = req.uid;
+    console.log("UID:", uid);
+    db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
+        if (err) {
+            console.error("Error fetching JSON:", err);
+            res.status(500).json({ success: false });
             return;
-        } else if (row.expires < Math.floor(Date.now() / 1000)) {
-            console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false, message: "Token invalid" });
+        } else if (!row) {
+            console.log("No player state found for UID:", uid);
+            jsondata = { lastState: null };
+            const base64Data = Buffer.from(JSON.stringify(jsondata)).toString('base64');
+            res.status(200).json({ success: true, data: base64Data });
             return;
         } else {
+            let jsondata;
+            jsondata = JSON.parse(row.json);
 
-            const uid = row.uid;
-            console.log("UID:", uid);
-            db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
-                if (err) {
-                    console.error("Error fetching JSON:", err);
-                    res.status(500).json({ success: false });
-                    return;
-                } else if (!row) {
-                    console.log("No player state found for UID:", uid);
-                    jsondata = { lastState: null };
-                    const base64Data = Buffer.from(JSON.stringify(jsondata)).toString('base64');
-                    res.status(200).json({ success: true, data: base64Data });
-                    return;
-                } else {
-                    let jsondata;
-                    jsondata = JSON.parse(row.json);
+            jsondata['profile-developer'] = (uid === "b9365d125935475b8327162c66a25e12");
 
-                    jsondata['profile-developer'] = (uid === "b9365d125935475b8327162c66a25e12");
+            const base64Data = Buffer
+                .from(JSON.stringify(jsondata))
+                .toString('base64');
 
-                    const base64Data = Buffer
-                        .from(JSON.stringify(jsondata))
-                        .toString('base64');
-
-                    res.status(200).json({ success: true, data: base64Data });
-                }
-            });
+            res.status(200).json({ success: true, data: base64Data });
         }
     });
 })
 
+//TODO: stop using let body = '';
 app.post('/state/', (req, res) => {
     const token = req.headers['x-access-jsonwebtoken'];
     console.log("post sent to /state/ TOKEN:", token);
@@ -1337,47 +1301,21 @@ app.post('/state/', (req, res) => {
 */
 
 
-app.get('/tournaments/:guid/register', (req, res) => {
+app.get('/tournaments/:guid/register', badTokenAuthv2, (req, res) => {
     console.log("/tournaments/:guid/register");
-    const token = req.headers['x-access-jsonwebtoken'];
-    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
-        if (err || !row) {
-            console.error("Error fetching UID:", err);
-            res.status(404).json({ success: false });
-            return;
-        } else if (row.expires < Math.floor(Date.now() / 1000)) {
-            console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false, message: "Token invalid" });
-            return;
-        } else {
-            const uid = row.uid;
-            db.run(`INSERT INTO tournamentsregistered (uid, guid) VALUES ON CONFLICT (uid, guid) DO NOTHING`, [uid, req.params.guid], (err) => {
-                res.status(200).json({ success: true });
-            })
-        }
-    });
+    const uid = req.uid;
+    db.run(`INSERT INTO tournamentsregistered (uid, guid) VALUES ON CONFLICT (uid, guid) DO NOTHING`, [uid, req.params.guid], (err) => {
+        res.status(200).json({ success: true });
+    })
 })
 
 
-app.get('/tournaments/:guid/unregister', (req, res) => {
+app.get('/tournaments/:guid/unregister', badTokenAuthv2, (req, res) => {
     console.log("/tournaments/:guid/register");
-    const token = req.headers['x-access-jsonwebtoken'];
-    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
-        if (err || !row) {
-            console.error("Error fetching UID:", err);
-            res.status(404).json({ success: false });
-            return;
-        } else if (row.expires < Math.floor(Date.now() / 1000)) {
-            console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false, message: "Token invalid" });
-            return;
-        } else {
-            const uid = row.uid;
-            db.run(`DELETE FROM tournamentsregistered WHERE uid = ? AND guid = ?`, [uid, req.params.guid], (err) => {
-                res.status(200).json({ success: true });
-            })
-        }
-    });
+    const uid = req.uid;
+    db.run(`DELETE FROM tournamentsregistered WHERE uid = ? AND guid = ?`, [uid, req.params.guid], (err) => {
+        res.status(200).json({ success: true });
+    })
 })
 
 app.get(`/tournaments/:guid/subscription`, (req, res) => {
@@ -1807,42 +1745,28 @@ app.get('/leaderboards/user/', (req, res) => {
     });
 });
 
-app.post('/leaderboards/user/reset/', express.urlencoded({ extended: true }), (req, res) => {
-    const token = req.headers['x-access-jsonwebtoken']
-    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
-        if (err || !row) {
-            console.error("Error uid FROM user:", err);
-            res.status(500).json({ success: false });
-            return;
-        } else if (row.expires < Math.floor(Date.now() / 1000)) {
-            console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false, message: "Token invalid" });
-            return;
-        } else {
-            const uid = row.uid;
-            fs.readdir("replay/" + uid, (err, files) => {
-                if (err) throw err;
+app.post('/leaderboards/user/reset/', express.urlencoded({ extended: true }), badTokenAuthv2, (req, res) => {
+    const uid = req.uid;
+    fs.readdir("replay/" + uid, (err, files) => {
+        if (err) throw err;
 
-                for (const file of files) {
-                    fs.unlink(path.join("replay/" + uid, file), (err) => {
-                        if (err) throw err;
-                    });
-                }
+        for (const file of files) {
+            fs.unlink(path.join("replay/" + uid, file), (err) => {
+                if (err) throw err;
             });
-            db.run(`DELETE FROM leaderboard WHERE player_id = ?`, [uid], function (err) {
-                if (err) {
-                    res.status(500).json({ success: false });
-                } else {
-                    res.status(200).json({ success: true });
-                    console.log(`Deleted ${this.changes} leaderboard entries for user ${uid}`);
-                }
-            });
+        }
+    });
+    db.run(`DELETE FROM leaderboard WHERE player_id = ?`, [uid], function (err) {
+        if (err) {
+            res.status(500).json({ success: false });
+        } else {
+            res.status(200).json({ success: true });
+            console.log(`Deleted ${this.changes} leaderboard entries for user ${uid}`);
         }
     });
 });
 
-app.post('/leaderboards/user/reset/track/', express.urlencoded({ extended: true }), (req, res) => {
-    const token = req.headers['x-access-jsonwebtoken']
+app.post('/leaderboards/user/reset/track/', express.urlencoded({ extended: true }), badTokenAuthv2, (req, res) => {
     console.log(req.body)
     let sql;
     let args;
@@ -1853,29 +1777,18 @@ app.post('/leaderboards/user/reset/track/', express.urlencoded({ extended: true 
         sql = `AND track = ?`
         args = [uid, req.body.mapID, req.body.trackID]
     }
-    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
-        if (err || !row) {
-            console.error("Error uid FROM user:", err);
-            res.status(404).json({ success: false });
-            return;
-        } else if (row.expires < Math.floor(Date.now() / 1000)) {
-            console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false, message: "Token invalid" });
-            return;
+    const uid = req.uid;
+    db.run(`DELETE FROM leaderboard WHERE player_id = ? AND map = ?` + sql, args, function (err) {
+        if (err) {
+            res.status(500).json({ success: false });
         } else {
-            const uid = row.uid;
-            db.run(`DELETE FROM leaderboard WHERE player_id = ? AND map = ?` + sql, args, function (err) {
-                if (err) {
-                    res.status(500).json({ success: false });
-                } else {
-                    res.status(200).json({ success: true });
-                    console.log(`Deleted ${this.changes} leaderboard entries for user ${uid}`);
-                }
-            });
+            res.status(200).json({ success: true });
+            console.log(`Deleted ${this.changes} leaderboard entries for user ${uid}`);
         }
     });
 });
 
+//TODO: Swap to express.whatever and remove let body = '';
 app.post('/leaderboards/', (req, res) => {
     const token = req.headers['x-access-jsonwebtoken']
 
@@ -2413,90 +2326,75 @@ app.get('/leaderboards/', (req, res) => {
 ----------------------------------------------------------------------------------------
 */
 
-app.get('/experience-points/ranking/', (req, res) => {
+app.get('/experience-points/ranking/', badTokenAuthv2, (req, res) => {
     console.log("req sent to /experience-points/ranking/:", req.headers);
-    const token = req.headers['x-access-jsonwebtoken'];
-    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
-        console.log("Player", row ? row.uid : "unknown", "is requesting progression");
+    const uid = req.uid;
+    db.get(`SELECT league_guid FROM playerprogression WHERE uid = ?`, [uid], (err, row) => {
         if (err || !row) {
-            console.error("Error fetching UID:", err);
-            res.status(404).json({ success: false });
-            return;
-        } else if (row.expires < Math.floor(Date.now() / 1000)) {
-            console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false, message: "Token invalid" });
+            console.error("Error fetching playerprogression:", err);
+            res.status(500).json({ success: false });
             return;
         } else {
-            const uid = row.uid;
-            db.get(`SELECT league_guid FROM playerprogression WHERE uid = ?`, [uid], (err, row) => {
-                if (err || !row) {
-                    console.error("Error fetching playerprogression:", err);
-                    res.status(500).json({ success: false });
-                    return;
-                } else {
-                    if (row.xp_this_week == 0) {
-                        res.status(200).json({ success: true, data: null });
+            if (row.xp_this_week == 0) {
+                res.status(200).json({ success: true, data: null });
+            } else {
+                const leagueGuid = row.league_guid;
+                db.all(`SELECT * FROM playerprogression WHERE league_guid = ?`, [leagueGuid], (err, row) => {
+                    if (err || !row) {
+                        console.error("Error fetching playerprogression:", err);
+                        res.status(500).json({ success: false });
+                        return;
                     } else {
-                        const leagueGuid = row.league_guid;
-                        db.all(`SELECT * FROM playerprogression WHERE league_guid = ?`, [leagueGuid], (err, row) => {
-                            if (err || !row) {
-                                console.error("Error fetching playerprogression:", err);
-                                res.status(500).json({ success: false });
-                                return;
-                            } else {
-                                let ranking = []
-                                //TODO: Rework this
-                                for (let i = 0; i < row.length; i++) {
-                                    if (row[i].uid == uid) {
-                                        let data = {
-                                            "is-player": true,
-                                            "is-top": i < 3 ? true : false,
-                                            "is-bottom": i > row.length - 3 && i > 6 ? true : false,
-                                            "profile-color": "3FA9F5",
-                                            "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64",
-                                            "profile-name": "YOU",
-                                            "position": i + 1,
-                                            "type": "player",
-                                            "xp": row[i].xp_this_week
-                                        }
-                                        ranking.push(data)
-                                    } else {
-                                        let data = {
-                                            "is-player": false,
-                                            "is-top": i < 3 ? true : false,
-                                            "is-bottom": i > row.length - 3 && i > 6 && leagueGuid !== "LG-1" ? true : false,
-                                            "profile-color": "3FA9F5",
-                                            "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64",
-                                            "profile-name": "not you",
-                                            "position": i + 1,
-                                            "type": "player",
-                                            "xp": row[i].xp_this_week
-                                        }
-                                        ranking.push(data)
-                                    }
+                        let ranking = []
+                        //TODO: Rework this
+                        for (let i = 0; i < row.length; i++) {
+                            if (row[i].uid == uid) {
+                                let data = {
+                                    "is-player": true,
+                                    "is-top": i < 3 ? true : false,
+                                    "is-bottom": i > row.length - 3 && i > 6 ? true : false,
+                                    "profile-color": "3FA9F5",
+                                    "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64",
+                                    "profile-name": "YOU",
+                                    "position": i + 1,
+                                    "type": "player",
+                                    "xp": row[i].xp_this_week
                                 }
-                                let jsondata = {
-                                    "league": {
-                                        "name": "filler",
-                                        "guid": row.league_guid
-                                    },
-                                    "start-at": row.weekstart,
-                                    "end-at": row.weekend,
-                                    "ranking": ranking
-                                };
-                                res.status(200).json({ success: true, data: jsondata });
+                                ranking.push(data)
+                            } else {
+                                let data = {
+                                    "is-player": false,
+                                    "is-top": i < 3 ? true : false,
+                                    "is-bottom": i > row.length - 3 && i > 6 && leagueGuid !== "LG-1" ? true : false,
+                                    "profile-color": "3FA9F5",
+                                    "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64",
+                                    "profile-name": "not you",
+                                    "position": i + 1,
+                                    "type": "player",
+                                    "xp": row[i].xp_this_week
+                                }
+                                ranking.push(data)
                             }
-                        });
+                        }
+                        let jsondata = {
+                            "league": {
+                                "name": "filler",
+                                "guid": row.league_guid
+                            },
+                            "start-at": row.weekstart,
+                            "end-at": row.weekend,
+                            "ranking": ranking
+                        };
+                        res.status(200).json({ success: true, data: jsondata });
                     }
-                }
-            });
+                });
+            }
         }
     });
 })
 
 
-app.get('/experience-points/progression/', (req, res) => {
-    const token = req.headers['x-access-jsonwebtoken'];
+app.get('/experience-points/progression/', badTokenAuthv2, (req, res) => {
     const payload = {
         "xp": 0,
         "previous-level-xp": 0,
@@ -2512,72 +2410,59 @@ app.get('/experience-points/progression/', (req, res) => {
         "goal-daily-completed-maps": 0,
         "prizes": []
     };
-    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
-        console.log("Player", row ? row.uid : "unknown", "is requesting progression");
-        if (err || !row) {
-            console.error("Error fetching UID:", err);
-            res.status(404).json({ success: false });
+    const uid = req.uid;
+    db.get(`SELECT * FROM playerprogression WHERE uid = ?`, [uid], (err, row) => {
+        if (err) {
+            console.error("Error fetching playerprogression:", err);
+            res.status(500).json({ success: false });
             return;
-        } else if (row.expires < Math.floor(Date.now() / 1000)) {
-            console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false, message: "Token invalid" });
-            return;
-        } else {
-            const uid = row.uid;
-            db.get(`SELECT * FROM playerprogression WHERE uid = ?`, [uid], (err, row) => {
-                if (err) {
-                    console.error("Error fetching playerprogression:", err);
-                    res.status(500).json({ success: false });
-                    return;
-                } else if (!row) {
-                    console.log("No player progression found for UID:", uid);
-                    db.run(`INSERT INTO playerprogression (uid, xp, previous_level_xp, next_level_xp, level, rank_name, rank_index, rank_position, rank_round_start, rank_round_end, streak_points, daily_completed_maps, goal_daily_completed_maps, prizes, league_guid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-                        [
-                            uid,
-                            payload.xp,
-                            payload['previous-level-xp'],
-                            payload['next-level-xp'],
-                            payload.level,
-                            payload["rank-name"],
-                            payload["rank-index"],
-                            payload["rank-position"],
-                            payload["rank-round-start"],
-                            payload["rank-round-end"],
-                            payload["streak-points"],
-                            payload["daily-completed-maps"],
-                            payload["goal-daily-completed-maps"],
-                            JSON.stringify(payload.prizes),
-                            "LG-1"
-                        ], err => {
-                            if (err) {
-                                console.error("Error inserting default progression:", err);
-                                res.status(500).json({ success: false });
-                                return
-                            } else {
-                                console.log("Inserted default progression for UID:", uid);
-                                res.status(200).json({ success: true, data: payload });
-                                return
-                            }
-                        })
-                } else {
-                    let jsondata = {
-                        xp: row.xp,
-                        "previous-level-xp": row.previous_level_xp,
-                        "next-level-xp": row.next_level_xp,
-                        level: row.level,
-                        "rank-name": row.rank_name,
-                        "rank-index": row.rank_index,
-                        "rank-position": row.rank_position,
-                        "rank-round-start": row.rank_round_start,
-                        "rank-round-end": row.rank_round_end,
-                        "streak-points": row.streak_points,
-                        "daily-completed-maps": row.daily_completed_maps,
-                        "goal-daily-completed-maps": row.goal_daily_completed_maps,
-                        prizes: JSON.parse(row.prizes)
+        } else if (!row) {
+            console.log("No player progression found for UID:", uid);
+            db.run(`INSERT INTO playerprogression (uid, xp, previous_level_xp, next_level_xp, level, rank_name, rank_index, rank_position, rank_round_start, rank_round_end, streak_points, daily_completed_maps, goal_daily_completed_maps, prizes, league_guid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+                [
+                    uid,
+                    payload.xp,
+                    payload['previous-level-xp'],
+                    payload['next-level-xp'],
+                    payload.level,
+                    payload["rank-name"],
+                    payload["rank-index"],
+                    payload["rank-position"],
+                    payload["rank-round-start"],
+                    payload["rank-round-end"],
+                    payload["streak-points"],
+                    payload["daily-completed-maps"],
+                    payload["goal-daily-completed-maps"],
+                    JSON.stringify(payload.prizes),
+                    "LG-1"
+                ], err => {
+                    if (err) {
+                        console.error("Error inserting default progression:", err);
+                        res.status(500).json({ success: false });
+                        return
+                    } else {
+                        console.log("Inserted default progression for UID:", uid);
+                        res.status(200).json({ success: true, data: payload });
+                        return
                     }
-                    res.status(200).json({ success: true, data: jsondata });
-                }
-            });
+                })
+        } else {
+            let jsondata = {
+                xp: row.xp,
+                "previous-level-xp": row.previous_level_xp,
+                "next-level-xp": row.next_level_xp,
+                level: row.level,
+                "rank-name": row.rank_name,
+                "rank-index": row.rank_index,
+                "rank-position": row.rank_position,
+                "rank-round-start": row.rank_round_start,
+                "rank-round-end": row.rank_round_end,
+                "streak-points": row.streak_points,
+                "daily-completed-maps": row.daily_completed_maps,
+                "goal-daily-completed-maps": row.goal_daily_completed_maps,
+                prizes: JSON.parse(row.prizes)
+            }
+            res.status(200).json({ success: true, data: jsondata });
         }
     });
 })
@@ -2611,33 +2496,21 @@ app.get(`/player/license/`, (req, res) => {
 */
 
 
-app.post('/drones/', express.urlencoded({ extended: true }), (req, res) => {
-    const token = req.headers['x-access-jsonwebtoken'];
+app.post('/drones/', express.urlencoded({ extended: true }), badTokenAuthv2, (req, res) => {
     console.log("req sent to /drones/ headers are: ", req.headers);
     console.log(req.body);
-    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
-        console.log("Player", row ? row.uid : "unknown", "is requesting drones");
-        if (err || !row) {
-            console.error("Error fetching UID:", err);
-            res.status(404).json({ success: false });
+    const uid = req.uid;
+    db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
+        if (err) {
+            console.error("Error fetching JSON:", err);
+            res.status(500).json({ success: false });
             return;
-        } else if (row.expires < Math.floor(Date.now() / 1000)) {
-            console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false, message: "Token invalid" });
-            return;
-        } else {
-            const uid = row.uid;
-            db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
-                if (err) {
-                    console.error("Error fetching JSON:", err);
-                    res.status(500).json({ success: false });
-                    return;
-                }
-                let jsondata = {};
-                if (row) {
-                    jsondata = JSON.parse(row.json);
-                }
-                db.run(`INSERT INTO drone (
+        }
+        let jsondata = {};
+        if (row) {
+            jsondata = JSON.parse(row.json);
+        }
+        db.run(`INSERT INTO drone (
                     guid,
                     player_id,
                     profile_platform_id,
@@ -2700,73 +2573,57 @@ app.post('/drones/', express.urlencoded({ extended: true }), (req, res) => {
                     rig_data             = excluded.rig_data,
                     profile_data         = excluded.profile_data,
                     physics_data         = excluded.physics_data;`,
-                    [
-                        req.body.guid,
-                        uid,
-                        jsondata['profile-platform-id'],
-                        jsondata['profile-platform'],
-                        jsondata['profile-color'],
-                        jsondata['profile-thumb'],
-                        req.body['profile-name'],
-                        req.body.score,
-                        req.body.rating,
-                        req.body['rating-count'],
-                        req.body['thumb-url'],
-                        req.body.name,
-                        req.body['is-public'],
-                        req.body['is-official'],
-                        req.body['is-custom-physics'],
-                        req.body['flight-time'],
-                        req.body['flight-total'],
-                        req.body.size,
-                        req.body.thrust,
-                        req.body.speed,
-                        req.body.weight,
-                        req.body.rpm,
-                        req.body['frame-id'],
-                        req.body['motor-id'],
-                        req.body['prop-id'],
-                        req.body['battery-id'],
-                        JSON.stringify(req.body['rig-data']),
-                        JSON.stringify(req.body['profile-data']),
-                        JSON.stringify(req.body['physics-data'])
-                    ], err => {
-                        if (err) {
-                            console.error("Error inserting/updating drone:", err);
-                            res.status(500).json({ success: false });
-                            return;
-                        } else {
-                            res.status(200).json({ success: true, data: req.body })
-                        }
-                    })
-            });
-        }
+            [
+                req.body.guid,
+                uid,
+                jsondata['profile-platform-id'],
+                jsondata['profile-platform'],
+                jsondata['profile-color'],
+                jsondata['profile-thumb'],
+                req.body['profile-name'],
+                req.body.score,
+                req.body.rating,
+                req.body['rating-count'],
+                req.body['thumb-url'],
+                req.body.name,
+                req.body['is-public'],
+                req.body['is-official'],
+                req.body['is-custom-physics'],
+                req.body['flight-time'],
+                req.body['flight-total'],
+                req.body.size,
+                req.body.thrust,
+                req.body.speed,
+                req.body.weight,
+                req.body.rpm,
+                req.body['frame-id'],
+                req.body['motor-id'],
+                req.body['prop-id'],
+                req.body['battery-id'],
+                JSON.stringify(req.body['rig-data']),
+                JSON.stringify(req.body['profile-data']),
+                JSON.stringify(req.body['physics-data'])
+            ], err => {
+                if (err) {
+                    console.error("Error inserting/updating drone:", err);
+                    res.status(500).json({ success: false });
+                    return;
+                } else {
+                    res.status(200).json({ success: true, data: req.body })
+                }
+            })
     });
 });
 
-app.get('/drones/:guid/remove/', (req, res) => {
-    const token = req.headers['x-access-jsonwebtoken'];
-    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
-        console.log("Player", row ? row.uid : "unknown", "is deleting a drone");
-        if (err || !row) {
-            console.error("Error fetching UID:", err);
-            res.status(404).json({ success: false });
-            return;
-        } else if (row.expires < Math.floor(Date.now() / 1000)) {
-            console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false, message: "Token invalid" });
-            return;
-        } else {
-            const uid = row.uid;
-            db.run(`DELETE FROM drone WHERE guid = ? AND player_id = ?`, [req.params.guid, uid], function (err) {
-                if (err) {
-                    console.error("Error deleting drone:", err);
-                    res.status(500).json({ success: true });
-                    return
-                }
-                res.status(200).json({ success: true });
-            });
+app.get('/drones/:guid/remove/', badTokenAuthv2, (req, res) => {
+    const uid = req.uid;
+    db.run(`DELETE FROM drone WHERE guid = ? AND player_id = ?`, [req.params.guid, uid], function (err) {
+        if (err) {
+            console.error("Error deleting drone:", err);
+            res.status(500).json({ success: true });
+            return
         }
+        res.status(200).json({ success: true });
     });
 });
 
