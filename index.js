@@ -1799,7 +1799,8 @@ app.post('/leaderboards/', (req, res) => {
     req.on('end', () => {
         const raw = body.startsWith('list=') ? body.slice(5) : body;
         const parsed = JSON.parse(decodeURIComponent(raw));
-        db.all(`SELECT * FROM communitytracks WHERE map_category != 'MapCommon'`, (err, Track) => {
+        db.all(`SELECT * FROM communitytracks WHERE guid = ?`, [parsed[0]['custom_map']], (err, Track) => {
+            const Tracks = Track
             let highscore;
             db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
                 if (err || !row) {
@@ -1942,10 +1943,10 @@ app.post('/leaderboards/', (req, res) => {
                                 return;
                             }
                             let xpValue = 0
-                            for (let i = 0; i < Track.length; i++) {
-                                console.log(Track[i])
-                                if (Track[i].guid === parsed[0]['custom_map']) {
-                                    xpValue = Track[i]['xp_value'];
+                            for (let i = 0; i < Tracks.length; i++) {
+                                console.log(Tracks[i]['xp_value'])
+                                if (Tracks[i].guid === parsed[0]['custom_map']) {
+                                    xpValue = Tracks[i]['xp_value'];
                                 }
                             }
                             let NEWXP = row.xp + xpValue;
