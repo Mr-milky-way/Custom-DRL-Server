@@ -55,16 +55,9 @@ const imageCloud = multer({ storage: image });
 
 const replaydest = multer.diskStorage({
     destination: function (req, file, cb) {
-        const token = req.headers['x-access-jsonwebtoken']
-        db.get(`SELECT uid FROM user WHERE token = ?`, [token], (err, row) => {
-            if (err || !row) {
-                console.error("Error fetching UID:", err);
-                return cb(new Error("Invalid token or DB error"));
-            }
-            const uid = row.uid
+            const uid = req.uid
             fs.mkdirSync('replay/' + uid, { recursive: true });
             cb(null, 'replay/' + uid + "/");
-        });
     },
     filename: function (req, file, cb) {
         cb(null, crypto.randomUUID());
@@ -980,7 +973,7 @@ app.post('/storage/logs/', (req, res) => {
 })
 
 
-app.post('/replay/', replay.single('replay-data'), badTokenAuthv2, (req, res) => {
+app.post('/replay/', badTokenAuthv2, replay.single('replay-data'), (req, res) => {
     console.log("replay sent to /replay/ here is data:", req.headers);
     console.log(req.query)
     console.log(req.body)
@@ -1012,7 +1005,7 @@ app.post('/replay/', replay.single('replay-data'), badTokenAuthv2, (req, res) =>
 });
 
 
-app.post('/storage/replay-cloud/', replayCloud.single('file'), badTokenAuthv2, (req, res) => {
+app.post('/storage/replay-cloud/', badTokenAuthv2, replayCloud.single('file'), (req, res) => {
     console.log("replay sent to /storage/replay-cloud/ here is data:", req.headers);
     console.log(req.query)
     console.log(req.body);
@@ -1020,7 +1013,7 @@ app.post('/storage/replay-cloud/', replayCloud.single('file'), badTokenAuthv2, (
     res.status(200).json({ success: true });
 })
 
-app.post('/storage/image/', imageCloud.single('file'), badTokenAuthv2, (req, res) => {
+app.post('/storage/image/', badTokenAuthv2, imageCloud.single('file'), (req, res) => {
     console.log("Image sent to /storage/image/ here is data:", req.headers);
     console.log(req.query)
     console.log(req.body);
@@ -1091,7 +1084,7 @@ app.get('/image-cloud/:uid/:id', (req, res) => {
 });
 
 
-app.get('/replay/:uid/:guid', badTokenAuthv2, (req, res) => {
+app.get('/replay/:uid/:guid', (req, res) => {
     const baseDir = path.join(__dirname, 'replay');
     const finalPath = path.resolve(baseDir, req.params.uid, path.basename(req.params.guid));
 
