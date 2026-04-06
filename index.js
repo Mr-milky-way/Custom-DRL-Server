@@ -11,6 +11,7 @@ const session = require('express-session')
 const path = require('path');
 const querystring = require('querystring');
 const csrf = require('lusca').csrf;
+const sharp = require('sharp');
 
 const db = new sqlite3.Database('main.db', err => {
     if (err) {
@@ -1042,19 +1043,42 @@ app.get('/images/', async (req, res) => {
         if (!finalPath.startsWith(baseDir)) {
             return res.status(403).send('Forbidden: Invalid path');
         }
-
         if (!fs.existsSync(finalPath)) {
             return res.status(404).end();
         }
-        console.log("FILE SENT " +finalPath)
-        res.sendFile(finalPath);
+        let transform = sharp(finalPath);
+        if (w || h) {
+            transform = transform.resize({
+                width: w ? parseInt(w) : null,
+                height: h ? parseInt(h) : null,
+                fit: 'contain'
+            });
+        }
+        transform.pipe(res);
+    } else if (url.startsWith(url + "/image-cloud/")) {
+        const baseDir = path.join(__dirname, 'image-cloud');
+        const finalPath = path.resolve(baseDir, url.replace(url + "/image-cloud/", ""));
+        if (!finalPath.startsWith(baseDir)) {
+            return res.status(403).send('Forbidden: Invalid path');
+        }
+        if (!fs.existsSync(finalPath)) {
+            return res.status(404).end();
+        }
+        let transform = sharp(finalPath);
+        if (w || h) {
+            transform = transform.resize({
+                width: w ? parseInt(w) : null,
+                height: h ? parseInt(h) : null,
+                fit: 'contain'
+            });
+        }
+        transform.pipe(res);
     }
 });
 
 
 
 //This would be how you do it normaly but the game wants it in a really odd way - see above
-
 app.get('/image-cloud/:uid/:id', (req, res) => {
     console.log("/image-cloud")
     const baseDir = path.join(__dirname, 'image-cloud');
@@ -1069,7 +1093,6 @@ app.get('/image-cloud/:uid/:id', (req, res) => {
     }
     res.sendFile(finalPath);
 });
-
 
 
 app.get('/replay/:uid/:guid', badTokenAuthv2, (req, res) => {
