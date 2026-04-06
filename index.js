@@ -37,15 +37,9 @@ process.on("unhandledRejection", err => {
 const image = multer.diskStorage({
     destination: function (req, file, cb) {
         const token = req.headers['x-access-jsonwebtoken']
-        db.get(`SELECT uid FROM user WHERE token = ?`, [token], (err, row) => {
-            if (err || !row) {
-                console.error("Error fetching UID:", err);
-                return cb(new Error("Invalid token or DB error"));
-            }
-            const uid = row.uid
+            const uid = req.uid
             fs.mkdirSync('image-cloud/' + uid, { recursive: true });
             cb(null, 'image-cloud/' + uid + "/");
-        });
     },
     filename: function (req, file, cb) {
         cb(null, crypto.randomUUID() + `.png`);
@@ -1024,7 +1018,6 @@ app.post('/storage/image/', badTokenAuthv2, imageCloud.single('file'), (req, res
 app.get('/images/', async (req, res) => {
     console.log("Image requested from /images/ here is data:", req.headers);
     const { url, w, h } = req.query;
-    console.log(url, w, h)
     console.log(req.query)
     if (url.startsWith("/image-cloud/")) {
         const baseDir = path.join(__dirname, 'image-cloud');
@@ -1741,20 +1734,29 @@ app.get('/leaderboards/user/', (req, res) => {
 app.post('/leaderboards/user/reset/', express.urlencoded({ extended: true }), badTokenAuthv2, (req, res) => {
     const uid = req.uid;
     fs.readdir("replay/" + uid, (err, files) => {
-        if (err) throw err;
+        if (err) {
+            console.error(err)
+            res.status(500).json({ success: false });
+            return;
+        }
 
         for (const file of files) {
             fs.unlink(path.join("replay/" + uid, file), (err) => {
-                if (err) throw err;
+                if (err) {
+                    console.error(err)
+                    res.status(500).json({ success: false });
+                    return;
+                }
+                db.run(`DELETE FROM leaderboard WHERE player_id = ?`, [uid], function (err) {
+                    if (err) {
+                        res.status(500).json({ success: false });
+                        return;
+                    } else {
+                        res.status(200).json({ success: true });
+                        console.log(`Deleted ${this.changes} leaderboard entries for user ${uid}`);
+                    }
+                });
             });
-        }
-    });
-    db.run(`DELETE FROM leaderboard WHERE player_id = ?`, [uid], function (err) {
-        if (err) {
-            res.status(500).json({ success: false });
-        } else {
-            res.status(200).json({ success: true });
-            console.log(`Deleted ${this.changes} leaderboard entries for user ${uid}`);
         }
     });
 });
