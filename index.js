@@ -441,6 +441,10 @@ const badTokenAuthv2 = (req, res, next) => {
             console.error("Error fetching UID: Token expired");
             res.status(401).json({ success: false, message: "Token invalid" });
             return;
+        } else if (row.expires === -1) {
+            console.error("Banned token used");
+            res.status(401).json({ success: false, message: "Token banned" });
+            return;
         } else {
             req.uid = row.uid;
             next()
@@ -1127,24 +1131,32 @@ app.post('/v2/login', express.urlencoded({ extended: false }), (req, res) => {
         .from(JSON.stringify(responseData))
         .toString('base64');
 
-    db.run(`INSERT INTO user (uid, token, expires) VALUES (?, ?, ?)
-                ON CONFLICT(uid) DO UPDATE SET token = excluded.token, expires = excluded.expires;`, [
-        decToken.uid,
-        req.body.token,
-        responseData.expires,
-    ], (err) => {
+    db.get(`SELECT expires FROM user WHERE uid = ?`, [decToken.uid], (err, row) => {
         if (err) {
-            console.error("SQLite insert failed:", err);
-            res.status(500).json({ success: false });
-            return
-        } else {
-            res.status(200).json({
-                success: true,
-                token: req.body.token,
-                data: base64Data
-            });
+            return res.status(500).json({ success: false });
         }
-    })
+        if (row && row.expires === -1) {
+            console.error("Banned user tried to login:", decToken.uid);
+            return res.status(401).json({ success: false, message: "Token banned" });
+        }
+        db.run(`INSERT INTO user (uid, token, expires) VALUES (?, ?, ?)
+            ON CONFLICT(uid) DO UPDATE SET 
+                token = excluded.token, 
+                expires = CASE WHEN user.expires = -1 THEN -1 ELSE excluded.expires END;`,
+            [decToken.uid, req.body.token, responseData.expires],
+            (err) => {
+                if (err) {
+                    console.error("SQLite insert failed:", err);
+                    return res.status(500).json({ success: false });
+                }
+                res.status(200).json({
+                    success: true,
+                    token: req.body.token,
+                    data: base64Data
+                });
+            }
+        );
+    });
 });
 
 /*
@@ -1214,7 +1226,7 @@ app.get('/state/', badTokenAuthv2, (req, res) => {
             if (!jsondata['profile-photo-url'] && jsondata['steam-id']) {
                 const steamPic = await getSteamProfilePic(jsondata['steam-id']);
                 jsondata['profile-photo-url'] = steamPic.full;
-            } else if (!jsondata['profile-photo-url'] && !jsondata['steam-id']) {
+            } else if (!jsondata['profile-photo-url'] && !jsondata['steam-id']) { //TODO: Need to fix this profile pic, find a original default one or smt
                 jsondata['profile-photo-url'] = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
             }
 
@@ -2094,8 +2106,7 @@ app.post('/leaderboards/', express.urlencoded({ extended: false }), badTokenAuth
     });
 })
 
-app.get('/leaderboards/rivals/', (req, res) => {
-    const token = req.headers['x-access-jsonwebtoken']
+app.get('/leaderboards/rivals/', badTokenAuthv2, (req, res) => {
     console.log("req sent to /leaderboards/rivals/ headers are:", req.headers);
     console.log(req.query)
     const uid = req.query['player-id'];
@@ -2250,7 +2261,7 @@ app.get(`/replay/rivals/`, (req, res) => {
         }
     });
 })
-app.get('/leaderboards/', (req, res) => {
+app.get('/leaderboards/', badTokenAuthv2, (req, res) => {
     let limit = 10
     let page = 1
     if (!req.query.limit) {
