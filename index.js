@@ -1174,6 +1174,7 @@ app.get('/social/profile/', badTokenAuthv2, (req, res) => {
             "profile-rank": 1,
             "profile-name": jsondata["profile-name"],
             "username": jsondata["profile-name"],
+            "profile-thumb": jsondata["profile-photo-url"],
             "has-game": true,
         }];
         const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
@@ -1195,7 +1196,7 @@ app.get('/state/', badTokenAuthv2, (req, res) => {
     let jsondata;
     const uid = req.uid;
     console.log("UID:", uid);
-    db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
+    db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], async (err, row) => {
         if (err) {
             console.error("Error fetching JSON:", err);
             res.status(500).json({ success: false });
@@ -1210,6 +1211,14 @@ app.get('/state/', badTokenAuthv2, (req, res) => {
             let jsondata;
             jsondata = JSON.parse(row.json);
 
+            if (!jsondata['profile-photo-url'] && jsondata['steam-id']) {
+                const steamPic = await getSteamProfilePic(jsondata['steam-id']);
+                jsondata['profile-photo-url'] = steamPic.full;
+            } else if (!jsondata['profile-photo-url'] && !jsondata['steam-id']) {
+                jsondata['profile-photo-url'] = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
+            }
+
+            console.log(jsondata['profile-photo-url'])
             jsondata['profile-developer'] = (uid === "b9365d125935475b8327162c66a25e12");
 
             const base64Data = Buffer
@@ -1220,6 +1229,28 @@ app.get('/state/', badTokenAuthv2, (req, res) => {
         }
     });
 })
+
+const STEAM_API_KEY = process.env.STEAM_API_KEY;
+
+async function getSteamProfilePic(steamId) {
+    const url = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${STEAM_API_KEY}&steamids=${steamId}`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.response.players.length > 0) {
+            const player = data.response.players[0];
+            return {
+                full: player.avatarfull
+            };
+        } else {
+            throw new Error('User not found');
+        }
+    } catch (error) {
+        console.error('Error fetching Steam profile:', error);
+    }
+}
 
 //TODO: stop using let body = '';
 app.post('/state/', (req, res) => {
@@ -1250,6 +1281,7 @@ app.post('/state/', (req, res) => {
                         res.status(500).json({ success: false });
                         return;
                     }
+
                     if ('profile-name' in parsed && parsed['profile-name'].trim() === "") {
                         console.warn("Blocked empty profile-name write");
                         parsed['profile-name'] = JSON.parse(json.json)['profile-name'];
