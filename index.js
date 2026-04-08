@@ -156,68 +156,68 @@ db.serialize(() => {
         custom_map_title TEXT
         )`);
 
-        /*
-        db.run(`CREATE TABLE IF NOT EXISTS tournamentrounds (
-        guid TEXT,
-        roundNumber INT,
-        status TEXT,
-        norder INT,
-        title TEXT,
-        start_at DATETIME,
-        end_at DATETIME,
-        map TEXT,
-        track TEXT,
-        is_custom_map BOOLEAN,
-        custom_map TEXT,
-        custom_map_title TEXT,
-        multiplayer_countdown BOOLEAN,
-        mode TEXT,
-        timeout INT,
-        matches TEXT,
-        PRIMARY KEY (roundNumber, guid)
-        )`);
-
-    db.run(`CREATE TABLE IF NOT EXISTS tournamentroundmatches (
-    id TEXT,
-    round_id TEXT,
-    round_norder INT,
-    map TEXT,
-    track TEXT,
-    is_custom_map TEXT,
-    custom_map TEXT,
-    custom_map_title TEXT,
-    multiplayer_room_timer BOOLEAN,
-    is_under_review BOOLEAN,
-    players_size INT,
-    throttle_cap FLOAT,
-    current_heat INT,
-    active_heat INT,
+    /*
+    db.run(`CREATE TABLE IF NOT EXISTS tournamentrounds (
+    guid TEXT,
+    roundNumber INT,
     status TEXT,
     norder INT,
-    heats INT,
-    num_winners INT,
+    title TEXT,
     start_at DATETIME,
     end_at DATETIME,
-    current_time DATETIME,
-    progress INT,
-    default_drone_class INT,
+    map TEXT,
+    track TEXT,
+    is_custom_map BOOLEAN,
+    custom_map TEXT,
+    custom_map_title TEXT,
+    multiplayer_countdown BOOLEAN,
     mode TEXT,
-    parents TEXT,
-    player_ids TEXT,
-    player_order TEXT,
-    players TEXT,
-    scores TEXT,
-    replay_urls TEXT,
-
-    PRIMARY KEY (roundNumber, guid, id)
+    timeout INT,
+    matches TEXT,
+    PRIMARY KEY (roundNumber, guid)
     )`);
 
-    db.run("CREATE TABLE IF NOT EXISTS tournamentsubscribed (uid TEXT, guid TEXT, PRIMARY KEY (uid, guid))");
-    */
+db.run(`CREATE TABLE IF NOT EXISTS tournamentroundmatches (
+id TEXT,
+round_id TEXT,
+round_norder INT,
+map TEXT,
+track TEXT,
+is_custom_map TEXT,
+custom_map TEXT,
+custom_map_title TEXT,
+multiplayer_room_timer BOOLEAN,
+is_under_review BOOLEAN,
+players_size INT,
+throttle_cap FLOAT,
+current_heat INT,
+active_heat INT,
+status TEXT,
+norder INT,
+heats INT,
+num_winners INT,
+start_at DATETIME,
+end_at DATETIME,
+current_time DATETIME,
+progress INT,
+default_drone_class INT,
+mode TEXT,
+parents TEXT,
+player_ids TEXT,
+player_order TEXT,
+players TEXT,
+scores TEXT,
+replay_urls TEXT,
+
+PRIMARY KEY (roundNumber, guid, id)
+)`);
+
+db.run("CREATE TABLE IF NOT EXISTS tournamentsubscribed (uid TEXT, guid TEXT, PRIMARY KEY (uid, guid))");
+*/
     db.run("CREATE TABLE IF NOT EXISTS tournamentsregistered (uid TEXT, guid TEXT, PRIMARY KEY (uid, guid))");
 
-    
-    
+
+
 
     db.run(`
     CREATE TABLE IF NOT EXISTS map_pools (
@@ -433,7 +433,7 @@ db.serialize(() => {
             is_avatar_blocked BOOLEAN,
             full_track_url TEXT
             );`);
-    //db.run("DROP TABLE communitytracks")
+    //db.run("DROP TABLE tournaments")
 });
 
 
@@ -1237,8 +1237,8 @@ app.get('/state/', badTokenAuthv2, (req, res) => {
             if (!jsondata['profile-photo-url'] && jsondata['steam-id']) {
                 const steamPic = await getSteamProfilePic(jsondata['steam-id']);
                 jsondata['profile-photo-url'] = steamPic.full;
-            } else if (!jsondata['profile-photo-url'] && !jsondata['steam-id']) { //TODO: Need to fix this profile pic, find a original default one or smt
-                jsondata['profile-photo-url'] = "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
+            } else if (!jsondata['profile-photo-url'] && !jsondata['steam-id']) {
+                jsondata['profile-photo-url'] = "https://raw.githubusercontent.com/gysi/drl-leaderboard-app/refs/heads/main/frontend/src/assets/placeholder.png";
             }
 
             console.log(jsondata['profile-photo-url'])
@@ -1341,68 +1341,81 @@ app.post('/state/', (req, res) => {
 */
 
 
-function mapTournamentsSqlToJson(row, playerids, ranking, rounds) {
-    return {
-        "id": row.id,
-        "guid": row.guid,
+function mapTournamentsSqlToJson(row, playerids, player_count, ranking, rounds) {
+    try {
+        let data = {
+            "id": row.id,
+            "guid": row.guid,
 
-        "title": row.title,
-        "description": row.description,
-        "call-to-action": row.call_to_action,
-        "prize-description": row.prize_description,
-        "prize-url": row.prize_url,
-        "image-url": row.image_url,
-        "video-url": row.video_url,
-        "streaming-url": row.streaming_url,
-        "terms-and-conditions-url": row.terms_and_conditions_url,
+            "title": row.title,
+            "description": row.description,
+            "call-to-action": row.call_to_action,
+            "prize-description": row.prize_description,
+            "prize-url": row.prize_url,
+            "image-url": row.image_url,
+            "video-url": row.video_url,
+            "streaming-url": row.streaming_url,
+            "terms-and-conditions-url": row.terms_and_conditions_url,
 
-        "region": row.region,
-        "player-size": row.player_size,
-        "max-players": row.max_players,
+            "region": row.region,
+            "players-size": player_count || 0,
+            "max-players": row.max_players,
 
-        "current-time": new Date().toISOString(),
-        "register-start": row.register_start,
-        "register-end": row.register_end,
+            "current-time": new Date().toISOString(),
+            "register-start": row.register_start,
+            "register-end": row.register_end,
 
-        "status": row.status,
-        "type": row.type,
+            "status": row.status,
+            "type": row.type,
 
-        "progression": row.progression,
+            "progression": row.progression,
 
-        "allow-new-registration": row.allow_new_registration,
+            "allow-new-registration": row.allow_new_registration,
 
-        "lan-support": row.lan_support,
-        "server-ip": row.server_ip,
+            "lan-support": row.lan_support,
+            "server-ip": row.server_ip,
 
-        "disable-public-spectators": row.disable_public_spectators,
-        "private": row.private,
+            "disable-public-spectators": row.disable_public_spectators,
+            "private": row.private,
 
-        "penalty": row.penalty,
+            "penalty": row.penalty,
 
-        "drl-pilot-mode": row.drl_pilot_mode,
-        "drone-guid": row.drone_guid,
-        "drone-class": row.drone_class,
+            "drl-pilot-mode": row.drl_pilot_mode,
+            "drone-guid": row.drone_guid,
+            "default-drone-class": row.drone_class || 0,
 
-        "countdown": row.countdown,
+            "countdown": row.countdown,
 
-        "minimum-skill": row.minimum_skill,
+            "minimum-skill": row.minimum_skill,
 
-        "age-check": row.age_check,
+            "age-check": row.age_check,
 
-        "dawc-seeding": row.dawc_seeding,
+            "dawc-seeding": row.dawc_seeding,
 
-        "age-check-number": row.age_check_number,
+            "age-check-number": row.age_check_number,
 
-        "player-ids": playerids,
-        "ranking": ranking,
-        "rounds": rounds
+            "player-ids": playerids || [],
+            "ranking": ranking || null,
+            "rounds": rounds || null
+        }
+
+        return Object.fromEntries(
+            Object.entries(data).filter(([key, value]) => value != null)
+        );
+    } catch (E) {
+        console.error("Error mapping tournament SQL to JSON:", E);
+        return {};
     }
 }
 
 app.get('/tournaments/:guid/register', badTokenAuthv2, (req, res) => {
     console.log("/tournaments/:guid/register");
     const uid = req.uid;
-    db.run(`INSERT INTO tournamentsregistered (uid, guid) VALUES ON CONFLICT (uid, guid) DO NOTHING`, [uid, req.params.guid], (err) => {
+    db.run(`INSERT INTO tournamentsregistered (uid, guid) VALUES (?, ?) ON CONFLICT (uid, guid) DO NOTHING`, [uid, req.params.guid], (err) => {
+        if (err) {
+            console.error("Error registering for tournament:", err);
+            return res.status(500).json({ success: false })
+        }
         res.status(200).json({ success: true });
     })
 })
@@ -1487,154 +1500,26 @@ app.get(`/tournaments/:guid/matches/:mid`, (req, res) => {
 })
 
 app.get(`/tournaments/:guid`, (req, res) => {
-    console.log("/tournaments/:guid");
-    let StartTime = new Date(2026, 2, 27, 15, 30, 0, 0);
-    const now = new Date();
-    now.setSeconds(now.getSeconds());
-    let yyyy = now.getFullYear();
-    let MM = String(now.getMonth() + 1).padStart(2, '0');
-    let dd = String(now.getDate()).padStart(2, '0');
-    let HH = String(now.getHours()).padStart(2, '0');
-    let mm = String(now.getMinutes()).padStart(2, '0');
-    let ss = String(now.getSeconds()).padStart(2, '0');
-
-    const timeStr = `${yyyy}-${MM}-${dd}T${HH}:${mm}:${ss}-00`;
-
-
-    const now2 = new Date();
-    now2.setSeconds(now2.getSeconds() + 1000);
-    yyyy = now2.getFullYear();
-    MM = String(now2.getMonth() + 1).padStart(2, '0');
-    dd = String(now2.getDate()).padStart(2, '0');
-    HH = String(now2.getHours()).padStart(2, '0');
-    mm = String(now2.getMinutes()).padStart(2, '0');
-    ss = String(now2.getSeconds()).padStart(2, '0');
-
-    const timeStr2 = `${yyyy}-${MM}-${dd}T${HH}:${mm}:${ss}-00`;
-
-    yyyy = StartTime.getFullYear();
-    MM = String(StartTime.getMonth() + 1).padStart(2, '0');
-    dd = String(StartTime.getDate()).padStart(2, '0');
-    HH = String(StartTime.getHours() + 1).padStart(2, '0');
-    mm = String(StartTime.getMinutes()).padStart(2, '0');
-    ss = String(StartTime.getSeconds()).padStart(2, '0');
-    StartTime = `${yyyy}-${MM}-${dd}T${HH}:${mm}:${ss}-00`;
-
-    res.status(200).json({
-        success: true, data: [{
-            "id": "tournament-001",
-            "guid": "550e8400-e29b-41d4-a716-446655440000",
-            "title": "Sunday Session EU",
-            "description": "Community Tournament featuring a recent community-made track",
-            "region": "eu", //needs to be lowercase (default is us)
-            "type": "Simple", //this is not even used
-
-            "players-size": 1,
-            "max-players": 16,
-            "player-ids": ["b9365d125935475b8327162c66a25e12"],
-
-            "status": "active",
-            "progression": "manual",
-
-            "allow-new-registration": true,
-            "disable-public-spectators": false,
-            "private": false,
-
-            "register-start": "2026-01-01T00:00:00Z",
-            "register-end": StartTime,
-            "current-time": timeStr,
-
-            "penalty": false,
-
-            "drl-pilot-mode": true,
-
-            "dawc-seeding": false,
-            "countdown": true,
-
-            "ranking": [],
-
-            "rounds": [
-                {
-                    "title": "Qualifiers 2",
-                    "status": "idle",
-                    "norder": 0,
-                    "mode": "match_points",
-                    "game-mode": "race",
-                    "is-custom-map": false,
-                    "start-at": timeStr,
-                    "map": "MP-95a",
-                    "track": "MT-964",
-                    "matches": [
-                        {
-                            "id": "match-001",
-                            "map": "MP-95a",
-                            "track": "MT-964",
-                            "status": "idle",
-                            "start-at": timeStr,
-                            "end-at": timeStr2,
-                            "current-time": timeStr,
-                            "mode": "match_points",
-                            "players-size": 2,
-                            "heats": 4,
-                            "active-heat": 1,
-                            "current-heat": 1,
-                            "num-winners": 1,
-                            "players": [{
-                                "player-id": "b9365d125935475b8327162c66a25e12",
-                                "profile-name": "Ninety9prob",
-                                "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64"
-                            }],
-                            "player-ids": [
-                                "b9365d125935475b8327162c66a25e12",
-                                "player_steam_002"
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "title": "Qualifiers",
-                    "status": "active",
-                    "norder": 1,
-                    "mode": "match_points",
-                    "game-mode": "race",
-                    "is-custom-map": false,
-                    "start-at": timeStr,
-                    "map": "MP-95a",
-                    "track": "MT-964",
-                    "matches": [
-                        {
-                            "id": "match-001",
-                            "map": "MP-95a",
-                            "track": "MT-964",
-                            "status": "active",
-                            "start-at": timeStr,
-                            "end-at": timeStr2,
-                            "current-time": timeStr,
-                            "mode": "match_points",
-                            "players-size": 2,
-                            "heats": 2,
-                            "active-heat": 1,
-                            "current-heat": 1,
-                            "num-winners": 1,
-                            "players": [{
-                                "player-id": "b9365d125935475b8327162c66a25e12",
-                                "profile-name": "Ninety9prob",
-                                "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64"
-                            }],
-                            "player-ids": [
-                                "b9365d125935475b8327162c66a25e12",
-                                "player_steam_002"
-                            ]
-                        }
-                    ]
-                }
-            ]
-        }]
-    });
+    db.get(`SELECT * FROM tournaments WHERE guid = ?`, [req.params.guid], (err, row) => {
+        if (err) {
+            console.error("Error fetching tournaments:", err);
+            res.status(500).json({ success: false });
+            return;
+        }
+        let tournament = row;
+        db.all(`SELECT uid FROM tournamentsregistered WHERE guid = ?`, [req.params.guid], (err, playerRows) => {
+            console.log(playerRows.length)
+            console.log(playerRows.map(r => r.uid).join(','))
+            tournament = mapTournamentsSqlToJson(tournament, [playerRows.map(r => r.uid).join(',')], playerRows.length);
+            console.log(tournament)
+        res.status(200).json({ success: true, data: [tournament] });
+        });
+    })
 })
 
 app.get('/tournaments/', (req, res) => {
-    db.all(`SELECT * FROM tournaments JOIN tournamentsregistered ON tournaments.guid = tournamentsregistered.guid WHERE private = 0`, [], (err, rows) => {
+    console.log("/tournaments/");
+    db.all(`SELECT * FROM tournaments`, [], (err, rows) => {
         if (err) {
             console.error("Error fetching tournaments:", err);
             res.status(500).json({ success: false });
@@ -1642,8 +1527,8 @@ app.get('/tournaments/', (req, res) => {
         }
         for (i in rows) {
             rows[i] = mapTournamentsSqlToJson(rows[i]);
-            console.log(rows[i]);
         }
+        console.log(rows)
         res.status(200).json({ success: true, data: rows });
     })
 })
@@ -3094,31 +2979,31 @@ app.post(`/admin/tournaments/create/`, express.json(), (req, res) => {
     guid = crypto.randomUUID()
     console.log(req.body)
     db.run(`INSERT INTO tournaments (guid, automated_tournament, recurr_every_days, map_pool, map, track, is_custom_map, custom_map, custom_map_title, id, title, description, call_to_action, prize_description, prize_url, image_url, video_url, streaming_url, terms_and_conditions_url, region, max_players, register_start, register_end, status, type, progression, allow_new_registration, lan_support, server_ip, disable_public_spectators, private, penalty, drl_pilot_mode, drone_guid, default_drone_class, countdown, minimum_skill, age_check, age_check_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
-        guid, 
-        req.body.automated, 
-        req.body.recurr_every_days, 
-        req.body.map_pool, 
-        req.body.map, 
-        req.body.track, 
-        req.body.is_custom_map, 
-        req.body.custom_map_guid, 
-        req.body.custom_map_title, 
-        req.body.id, 
-        req.body.title, 
-        req.body.description, 
-        req.body.call_to_action, 
-        req.body.prize_description, 
-        req.body.prize_url, 
-        req.body.image_url, 
-        req.body.video_url, 
-        req.body.streaming_url, 
-        req.body.terms_and_conditions_url, 
-        req.body.region, 
-        req.body.max_players, 
-        req.body.register_start + ':00', 
-        req.body.register_end + ':00', 
-        req.body.status, 
-        req.body.type, 
+        guid,
+        req.body.automated,
+        req.body.recurr_every_days,
+        req.body.map_pool,
+        req.body.map,
+        req.body.track,
+        req.body.is_custom_map,
+        req.body.custom_map_guid,
+        req.body.custom_map_title,
+        req.body.id,
+        req.body.title,
+        req.body.description,
+        req.body.call_to_action,
+        req.body.prize_description,
+        req.body.prize_url,
+        req.body.image_url,
+        req.body.video_url,
+        req.body.streaming_url,
+        req.body.terms_and_conditions_url,
+        req.body.region,
+        req.body.max_players,
+        new Date(req.body.register_start).toISOString(),
+        new Date(req.body.register_end).toISOString(),
+        req.body.status,
+        req.body.type,
         req.body.progression,
         req.body.allow_new_registration,
         req.body.lan_support,
