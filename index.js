@@ -1396,7 +1396,18 @@ function mapTournamentsSqlToJson(row, playerids, player_count, ranking, rounds) 
 
             "player-ids": playerids || [],
             "ranking": ranking || null,
-            "rounds": rounds || null
+            "rounds": rounds || null,
+
+
+
+            "automated": row.automated_tournament,
+            "recurr-every-days": row.recurr_every_days,
+            "map-pool": row.map_pool,
+            "map": row.map,
+            "track": row.track,
+            "is-custom-map": row.is_custom_map,
+            "custom-map": row.custom_map,
+            "custom-map-title": row.custom_map_title
         }
 
         return Object.fromEntries(
@@ -1512,7 +1523,7 @@ app.get(`/tournaments/:guid`, (req, res) => {
             console.log(playerRows.map(r => r.uid).join(','))
             tournament = mapTournamentsSqlToJson(tournament, [playerRows.map(r => r.uid).join(',')], playerRows.length);
             console.log(tournament)
-        res.status(200).json({ success: true, data: [tournament] });
+            res.status(200).json({ success: true, data: [tournament] });
         });
     })
 })
@@ -2974,11 +2985,140 @@ app.get(`/admin/leaderboard-entries-count`, (req, res) => {
     });
 });
 
+app.put(`/admin/tournaments/update/:guid`, express.json(), (req, res) => {
+    console.log(`/admin/tournaments/update/${req.params.guid}`)
+    console.log(req.body)
+    db.run(`UPDATE tournaments SET
+        automated_tournament = ?,
+        recurr_every_days = ?,
+        map_pool = ?,
+        map = ?,
+        track = ?,
+        is_custom_map = ?,
+        custom_map = ?,
+        custom_map_title = ?,
+        id = ?,
+        title = ?,
+        description = ?,
+        call_to_action = ?,
+        prize_description = ?,
+        prize_url = ?,
+        image_url = ?,
+        video_url = ?,
+        streaming_url = ?,
+        terms_and_conditions_url = ?,
+        region = ?,
+        max_players = ?,
+        register_start = ?,
+        register_end = ?,
+        status = ?,
+        type = ?,
+        progression = ?,
+        allow_new_registration = ?,
+        lan_support = ?,
+        server_ip = ?,
+        disable_public_spectators = ?,
+        private = ?,
+        penalty = ?,
+        drl_pilot_mode = ?,
+        drone_guid = ?,
+        default_drone_class = ?,
+        countdown = ?,
+        minimum_skill = ?,
+        age_check = ?,
+        age_check_number = ?
+        WHERE guid = ?;`, [
+        req.body.automated,
+        req.body.recurr_every_days,
+        req.body.map_pool,
+        req.body.map,
+        req.body.track,
+        req.body.is_custom_map,
+        req.body.custom_map_guid,
+        req.body.custom_map_title,
+        req.body.id,
+        req.body.title,
+        req.body.description,
+        req.body.call_to_action,
+        req.body.prize_description,
+        req.body.prize_url,
+        req.body.image_url,
+        req.body.video_url,
+        req.body.streaming_url,
+        req.body.terms_and_conditions_url,
+        req.body.region,
+        req.body.max_players,
+        new Date(req.body.register_start).toISOString(),
+        new Date(req.body.register_end).toISOString(),
+        req.body.status,
+        req.body.type,
+        req.body.progression,
+        req.body.allow_new_registration,
+        req.body.lan_support,
+        req.body.server_ip,
+        req.body.disable_public_spectators,
+        req.body.private,
+        req.body.penalty,
+        req.body.drl_pilot_mode,
+        req.body.drone_guid,
+        req.body.drone_class,
+        req.body.countdown,
+        req.body.minimum_skill,
+        req.body.age_check,
+        req.body.age_check_number,
+        req.params.guid], (err) => {
+            if (err) {
+                console.error("Error updating tournament:", err);
+                return res.status(500).json({ success: false });
+            }
+            res.status(200).json({ success: true });
+        })
+})
+
 app.post(`/admin/tournaments/create/`, express.json(), (req, res) => {
     console.log("Received POST request to create tournament");
     guid = crypto.randomUUID()
-    console.log(req.body)
-    db.run(`INSERT INTO tournaments (guid, automated_tournament, recurr_every_days, map_pool, map, track, is_custom_map, custom_map, custom_map_title, id, title, description, call_to_action, prize_description, prize_url, image_url, video_url, streaming_url, terms_and_conditions_url, region, max_players, register_start, register_end, status, type, progression, allow_new_registration, lan_support, server_ip, disable_public_spectators, private, penalty, drl_pilot_mode, drone_guid, default_drone_class, countdown, minimum_skill, age_check, age_check_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+    db.run(`INSERT INTO tournaments (
+        guid,
+        automated_tournament,
+        recurr_every_days,
+        map_pool,
+        map,
+        track,
+        is_custom_map,
+        custom_map,
+        custom_map_title,
+        id,
+        title,
+        description,
+        call_to_action,
+        prize_description,
+        prize_url,
+        image_url,
+        video_url,
+        streaming_url,
+        terms_and_conditions_url,
+        region,
+        max_players,
+        register_start,
+        register_end,
+        status,
+        type,
+        progression,
+        allow_new_registration,
+        lan_support,
+        server_ip,
+        disable_public_spectators,
+        private,
+        penalty,
+        drl_pilot_mode,
+        drone_guid,
+        default_drone_class,
+        countdown,
+        minimum_skill,
+        age_check,
+        age_check_number
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
         guid,
         req.body.automated,
         req.body.recurr_every_days,
