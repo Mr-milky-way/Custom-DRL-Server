@@ -152,3 +152,5 @@ lastwork.txt
 replay-cloud/
 replay/
 image-cloud/
+
+*.key

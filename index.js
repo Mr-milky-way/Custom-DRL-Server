@@ -9,7 +9,6 @@ const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcrypt');
 const session = require('express-session')
 const path = require('path');
-const querystring = require('querystring');
 const csrf = require('lusca').csrf;
 const sharp = require('sharp');
 
@@ -106,7 +105,7 @@ db.serialize(() => {
 
     //tournaments
 
-    /*db.run(`CREATE TABLE IF NOT EXISTS tournaments (
+    db.run(`CREATE TABLE IF NOT EXISTS tournaments (
         players_size INT,
         max_players INT,
         id TEXT,
@@ -145,9 +144,19 @@ db.serialize(() => {
         type TEXT,
         player_ids TEXT,
         ranking TEXT,
+
+        automated_tournament BOOLEAN,
+        recurr_every_days INT,
+        map_pool TEXT,
+
+        map TEXT,
+        track TEXT,
+        is_custom_map BOOLEAN,
+        custom_map TEXT,
+        custom_map_title TEXT
         )`);
 
-
+        /*
         db.run(`CREATE TABLE IF NOT EXISTS tournamentrounds (
         guid TEXT,
         roundNumber INT,
@@ -202,11 +211,13 @@ db.serialize(() => {
 
     PRIMARY KEY (roundNumber, guid, id)
     )`);
-    
-    db.run("CREATE TABLE IF NOT EXISTS tournamentsregistered (uid TEXT, guid TEXT, PRIMARY KEY (uid, guid))");
 
     db.run("CREATE TABLE IF NOT EXISTS tournamentsubscribed (uid TEXT, guid TEXT, PRIMARY KEY (uid, guid))");
     */
+    db.run("CREATE TABLE IF NOT EXISTS tournamentsregistered (uid TEXT, guid TEXT, PRIMARY KEY (uid, guid))");
+
+    
+    
 
     db.run(`
     CREATE TABLE IF NOT EXISTS map_pools (
@@ -1330,6 +1341,64 @@ app.post('/state/', (req, res) => {
 */
 
 
+function mapTournamentsSqlToJson(row, playerids, ranking, rounds) {
+    return {
+        "id": row.id,
+        "guid": row.guid,
+
+        "title": row.title,
+        "description": row.description,
+        "call-to-action": row.call_to_action,
+        "prize-description": row.prize_description,
+        "prize-url": row.prize_url,
+        "image-url": row.image_url,
+        "video-url": row.video_url,
+        "streaming-url": row.streaming_url,
+        "terms-and-conditions-url": row.terms_and_conditions_url,
+
+        "region": row.region,
+        "player-size": row.player_size,
+        "max-players": row.max_players,
+
+        "current-time": new Date().toISOString(),
+        "register-start": row.register_start,
+        "register-end": row.register_end,
+
+        "status": row.status,
+        "type": row.type,
+
+        "progression": row.progression,
+
+        "allow-new-registration": row.allow_new_registration,
+
+        "lan-support": row.lan_support,
+        "server-ip": row.server_ip,
+
+        "disable-public-spectators": row.disable_public_spectators,
+        "private": row.private,
+
+        "penalty": row.penalty,
+
+        "drl-pilot-mode": row.drl_pilot_mode,
+        "drone-guid": row.drone_guid,
+        "drone-class": row.drone_class,
+
+        "countdown": row.countdown,
+
+        "minimum-skill": row.minimum_skill,
+
+        "age-check": row.age_check,
+
+        "dawc-seeding": row.dawc_seeding,
+
+        "age-check-number": row.age_check_number,
+
+        "player-ids": playerids,
+        "ranking": ranking,
+        "rounds": rounds
+    }
+}
+
 app.get('/tournaments/:guid/register', badTokenAuthv2, (req, res) => {
     console.log("/tournaments/:guid/register");
     const uid = req.uid;
@@ -1565,99 +1634,18 @@ app.get(`/tournaments/:guid`, (req, res) => {
 })
 
 app.get('/tournaments/', (req, res) => {
-    console.log("/tournaments/");
-    let StartTime = new Date(2026, 2, 27, 15, 30, 0, 0);
-    const now = new Date();
-    now.setSeconds(now.getSeconds() + 10);
-    let yyyy = now.getFullYear();
-    let MM = String(now.getMonth() + 1).padStart(2, '0');
-    let dd = String(now.getDate()).padStart(2, '0');
-    let HH = String(now.getHours()).padStart(2, '0');
-    let mm = String(now.getMinutes()).padStart(2, '0');
-    let ss = String(now.getSeconds()).padStart(2, '0');
-
-    const timeStr = `${yyyy}-${MM}-${dd}T${HH}:${mm}:${ss}-00`;
-
-    yyyy = StartTime.getFullYear();
-    MM = String(StartTime.getMonth() + 1).padStart(2, '0');
-    dd = String(StartTime.getDate()).padStart(2, '0');
-    HH = String(StartTime.getHours() + 1).padStart(2, '0');
-    mm = String(StartTime.getMinutes()).padStart(2, '0');
-    ss = String(StartTime.getSeconds()).padStart(2, '0');
-    StartTime = `${yyyy}-${MM}-${dd}T${HH}:${mm}:${ss}-00`;
-
-    res.status(200).json({
-        success: true, data: [{
-            "id": "tournament-001",
-            "guid": "550e8400-e29b-41d4-a716-446655440000",
-            "title": "Sunday Session EU",
-            "description": "Community Tournament featuring a recent community-made track",
-            "region": "eu", //needs to be lowercase (default is us)
-            "type": "Simple", //this is not even used
-
-            "players-size": 1,
-            "max-players": 16,
-            "player-ids": ["b9365d125935475b8327162c66a25e12"],
-
-            "status": "active",
-            "progression": "manual",
-
-            "allow-new-registration": true,
-            "disable-public-spectators": false,
-            "private": false,
-
-            "register-start": "2026-01-01T00:00:00Z",
-            "register-end": StartTime,
-            "current-time": timeStr,
-
-            "penalty": false,
-
-            "drl-pilot-mode": true,
-
-            "dawc-seeding": false,
-            "countdown": true,
-
-            "ranking": [],
-
-            "rounds": [
-                {
-                    "title": "Qualifiers",
-                    "status": "active",
-                    "norder": 1,
-                    "mode": "match_points",
-                    "game-mode": "race",
-                    "is-custom-map": false,
-                    "start-at": timeStr,
-                    "map": "MP-95a",
-                    "track": "MT-964",
-                    "matches": [
-                        {
-                            "id": "match-001",
-                            "map": "MP-95a",
-                            "track": "MT-964",
-                            "status": "active",
-                            "start-at": timeStr,
-                            "mode": "match_points",
-                            "players-size": 2,
-                            "heats": 4,
-                            "active-heat": 1,
-                            "current-heat": 1,
-                            "num-winners": 1,
-                            "players": [{
-                                "player-id": "b9365d125935475b8327162c66a25e12",
-                                "profile-name": "Ninety9prob",
-                                "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64"
-                            }],
-                            "player-ids": [
-                                "b9365d125935475b8327162c66a25e12",
-                                "player_steam_002"
-                            ]
-                        }
-                    ]
-                }
-            ]
-        }]
-    });
+    db.all(`SELECT * FROM tournaments JOIN tournamentsregistered ON tournaments.guid = tournamentsregistered.guid WHERE private = 0`, [], (err, rows) => {
+        if (err) {
+            console.error("Error fetching tournaments:", err);
+            res.status(500).json({ success: false });
+            return;
+        }
+        for (i in rows) {
+            rows[i] = mapTournamentsSqlToJson(rows[i]);
+            console.log(rows[i]);
+        }
+        res.status(200).json({ success: true, data: rows });
+    })
 })
 
 /*
@@ -3047,6 +3035,10 @@ app.get('/admin/maps/', (req, res) => {
             filtersP.push(`%${req.query.q}%`);
         }
     }
+    if (req.query.guid) {
+        filters.push("AND guid = ?");
+        filtersP.push(req.query.guid);
+    }
     if (req.query.sort && req.query.order) {
         const normalizedSort = req.query.sort.replace(/-/g, '_');
         const allowedSortFields = ['score', 'rating_count', 'created_at', 'updated_at'];
@@ -3094,6 +3086,59 @@ app.get(`/admin/leaderboard-entries-count`, (req, res) => {
             return;
         }
         res.status(200).json({ success: true, count: result.total });
+    });
+});
+
+app.post(`/admin/tournaments/create/`, express.json(), (req, res) => {
+    console.log("Received POST request to create tournament");
+    guid = crypto.randomUUID()
+    console.log(req.body)
+    db.run(`INSERT INTO tournaments (guid, automated_tournament, recurr_every_days, map_pool, map, track, is_custom_map, custom_map, custom_map_title, id, title, description, call_to_action, prize_description, prize_url, image_url, video_url, streaming_url, terms_and_conditions_url, region, max_players, register_start, register_end, status, type, progression, allow_new_registration, lan_support, server_ip, disable_public_spectators, private, penalty, drl_pilot_mode, drone_guid, default_drone_class, countdown, minimum_skill, age_check, age_check_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+        guid, 
+        req.body.automated, 
+        req.body.recurr_every_days, 
+        req.body.map_pool, 
+        req.body.map, 
+        req.body.track, 
+        req.body.is_custom_map, 
+        req.body.custom_map_guid, 
+        req.body.custom_map_title, 
+        req.body.id, 
+        req.body.title, 
+        req.body.description, 
+        req.body.call_to_action, 
+        req.body.prize_description, 
+        req.body.prize_url, 
+        req.body.image_url, 
+        req.body.video_url, 
+        req.body.streaming_url, 
+        req.body.terms_and_conditions_url, 
+        req.body.region, 
+        req.body.max_players, 
+        req.body.register_start + ':00', 
+        req.body.register_end + ':00', 
+        req.body.status, 
+        req.body.type, 
+        req.body.progression,
+        req.body.allow_new_registration,
+        req.body.lan_support,
+        req.body.server_ip,
+        req.body.disable_public_spectators,
+        req.body.private,
+        req.body.penalty,
+        req.body.drl_pilot_mode,
+        req.body.drone_guid,
+        req.body.drone_class,
+        req.body.countdown,
+        req.body.minimum_skill,
+        req.body.age_check,
+        req.body.age_check_number
+    ], (err) => {
+        if (err) {
+            console.error("Error creating tournament:", err);
+            return res.status(500).json({ success: false });
+        }
+        res.status(200).json({ success: true });
     });
 });
 

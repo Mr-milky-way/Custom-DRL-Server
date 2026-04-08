@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="/admin/main.css">
-    <script src="/admin/index.js"></script>
+    <link rel="stylesheet" href="/admin/modifyTournament.css">
+    <script src="/admin/CreateTournament.js"></script>
 </head>
 
 <body>
@@ -17,24 +17,189 @@
     </nav>
     <main class="main-content">
         <header class="top-bar">
-            <h1>Modify Tournaments</h1>
+            <h1>Create Tournaments</h1>
         </header>
 
         <section class="data-section">
-            <h2>Tournaments</h2>
-            <script>loadTournaments();</script>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Status</th>
-                        <th>Date</th>
-                        <th>Current Player Count</th>
-                    </tr>
-                </thead>
-                <tbody id="tournament-data">
-                </tbody>
-            </table>
+            <form id="edit-form">
+                <input type="reset" value="Reset Form">
+
+                <label>Automated:</label>
+                <select id="automated">
+                    <option value="false">False</option>
+                    <option value="true">True</option>
+                </select>
+
+                <label>Recurr every:</label>
+                <input type="number" id="recurr-every">
+
+                <label>Map Pool:</label>
+                <select id="MapPool">
+                    <option value="none">None</option>
+                </select>
+                <script>UpdateMapPools();</script>
+
+                <label>Map Search:</label>
+                <input type="text" id="MapSearchInput" placeholder="Search for maps...">
+                <label>Map (only if not automated):</label>
+                <select id="MapSelector">
+                    <option value="none">None</option>
+                </select>
+
+                <label>Map:</label>
+                <input type="text" id="map">
+
+                <label>Track:</label>
+                <input type="text" id="track">
+
+                <label>Is Custom Map:</label>
+                <select id="is-custom-map">
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                </select>
+
+                <label>Custom Map GUID (if is custom map):</label>
+                <input type="text" id="custom-map-guid">
+
+                <label>Custom Map Title (if is custom map):</label>
+                <input type="text" id="custom-map-title">
+
+                <label>Tournament ID:</label>
+                <input type="text" id="id">
+
+                <label>Tournament Title:</label>
+                <input type="text" id="title">
+
+                <label>Tournament Description:</label>
+                <input type="text" id="description">
+
+                <label>Call to Action:</label>
+                <input type="text" id="call-to-action">
+
+                <label>Prize Description:</label>
+                <input type="text" id="prize-description">
+
+                <label>Prize URL:</label>
+                <input type="text" id="prize-url">
+
+                <label>Image URL:</label>
+                <input type="text" id="image-url">
+
+                <label>Video URL:</label>
+                <input type="text" id="video-url">
+
+                <label>Streaming URL:</label>
+                <input type="text" id="streaming-url">
+
+                <label>Terms and Conditions URL:</label>
+                <input type="text" id="terms-and-conditions-url">
+
+                <label>Region:</label>
+                <select id="region">
+                    <option value="us">US</option>
+                    <option value="eu">EU</option>
+                </select>
+
+
+                <label>Max Players:</label>
+                <input type="number" id="max-players">
+
+                <label>Registration Start:</label>
+                <input type="datetime-local" id="register-start">
+
+                <label>Registration End:</label>
+                <input type="datetime-local" id="register-end">
+
+                <label>Status:</label>
+                <select id="status">
+                    <option value="none">None</option>
+                    <option value="fail">Fail</option>
+                    <option value="idle">Idle</option>
+                    <option value="active">Active</option>
+                    <option value="complete">Complete</option>
+                    <option value="canceled">Canceled</option>
+                </select>
+
+                <label>Type:</label>
+                <select id="type">
+                    <option value="None">None</option>
+                    <option value="Simple">Simple</option>
+                    <option value="DRL">DRL</option>
+                </select>
+
+                <label>Progression:</label>
+                <select id="progression">
+                    <option value="auto">Auto</option>
+                    <option value="manual">Manual</option>
+                </select>
+
+                <label>Allow New Registration:</label>
+                <select id="allow-new-registration">
+                    <option value="false">False</option>
+                    <option value="true">True</option>
+                </select>
+
+                <label>Lan Support:</label>
+                <select id="lan-support">
+                    <option value="false">False</option>
+                    <option value="true">True</option>
+                </select>
+
+                <label>Server IP:</label>
+                <input type="text" id="server-ip">
+
+                <label>Disable Public Spectators:</label>
+                <select id="disable-public-spectators">
+                    <option value="false">False</option>
+                    <option value="true">True</option>
+                </select>
+
+                <label>Private:</label>
+                <select id="private">
+                    <option value="false">False</option>
+                    <option value="true">True</option>
+                </select>
+
+                <label>Penalty:</label>
+                <select id="penalty">
+                    <option value="false">False</option>
+                    <option value="true">True</option>
+                </select>
+
+                <label>DRL Pilot Mode:</label>
+                <select id="drl-pilot-mode">
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                </select>
+
+                <label>Drone guid:</label>
+                <input type="text" id="drone-guid">
+
+                <label>Drone Class:</label>
+                <input type="number" id="drone-class">
+
+                <label>Countdown:</label>
+                <select id="countdown">
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                </select>
+
+
+                <label>Minimum Skill:</label>
+                <input type="number" id="minimum-skill" value="0">
+
+
+                <label>Age Check:</label>
+                <select id="age-check">
+                    <option value="false">False</option>
+                    <option value="true">True</option>
+                </select>
+
+                <label>Minimum Age:</label>
+                <input type="number" id="age-check-number">
+
+                <button type="button" onclick="SubmitForm();">Create Tournament</button>
+            </form>
         </section>
     </main>
 </body>

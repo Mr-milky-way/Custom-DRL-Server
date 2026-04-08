@@ -1,31 +1,3 @@
-const urlParams = new URLSearchParams(window.location.search);
-const guid = urlParams.get('guid');
-
-window.onload = function () {
-    fetch(`/tournaments/${guid}/`)
-        .then(res => res.json())
-        .then(data => {
-            const t = Array.isArray(data.data) ? data.data[0] : data.data;
-
-            document.getElementById('id').value = t.id;
-            document.getElementById('title').value = t.title;
-            document.getElementById('description').value = t.description;
-            document.getElementById('region').value = t.region;
-            document.getElementById('status').value = t.status;
-            document.getElementById('progression').value = t.progression;
-            document.getElementById('max-players').value = t['max-players'];
-            document.getElementById('register-end').value = t['register-end'].substring(0, 16);
-            document.getElementById('register-start').value = t['register-start'].substring(0, 16);
-
-            document.getElementById('allow-new-registration').value = t['allow-new-registration'];
-            document.getElementById('disable-public-spectators').value = t['disable-public-spectators'];
-            document.getElementById('private').value = t['private'];
-
-            document.getElementById('drl-pilot-mode').value = t['drl-pilot-mode'];
-            document.getElementById('countdown').value = t['countdown'];
-        })
-        .catch(err => console.error("Error loading tournament:", err));
-};
 
 function UpdateMapPools() {
     const url = '/admin/map-pool/';
