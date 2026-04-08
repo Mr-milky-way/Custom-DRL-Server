@@ -177,43 +177,43 @@ db.serialize(() => {
     PRIMARY KEY (roundNumber, guid)
     )`);
 
-db.run(`CREATE TABLE IF NOT EXISTS tournamentroundmatches (
-id TEXT,
-round_id TEXT,
-round_norder INT,
-map TEXT,
-track TEXT,
-is_custom_map TEXT,
-custom_map TEXT,
-custom_map_title TEXT,
-multiplayer_room_timer BOOLEAN,
-is_under_review BOOLEAN,
-players_size INT,
-throttle_cap FLOAT,
-current_heat INT,
-active_heat INT,
-status TEXT,
-norder INT,
-heats INT,
-num_winners INT,
-start_at DATETIME,
-end_at DATETIME,
-current_time DATETIME,
-progress INT,
-default_drone_class INT,
-mode TEXT,
-parents TEXT,
-player_ids TEXT,
-player_order TEXT,
-players TEXT,
-scores TEXT,
-replay_urls TEXT,
+    db.run(`CREATE TABLE IF NOT EXISTS tournamentroundmatches (
+    id TEXT,
+    round_id TEXT,
+    round_norder INT,
+    map TEXT,
+    track TEXT,
+    is_custom_map TEXT,
+    custom_map TEXT,
+    custom_map_title TEXT,
+    multiplayer_room_timer BOOLEAN,
+    is_under_review BOOLEAN,
+    players_size INT,
+    throttle_cap FLOAT,
+    current_heat INT,
+    active_heat INT,
+    status TEXT,
+    norder INT,
+    heats INT,
+    num_winners INT,
+    start_at DATETIME,
+    end_at DATETIME,
+    current_time DATETIME,
+    progress INT,
+    default_drone_class INT,
+    mode TEXT,
+    parents TEXT,
+    player_ids TEXT,
+    player_order TEXT,
+    players TEXT,
+    scores TEXT,
+    replay_urls TEXT,
 
-PRIMARY KEY (roundNumber, guid, id)
-)`);
+    PRIMARY KEY (roundNumber, guid, id)
+    )`);
 
-db.run("CREATE TABLE IF NOT EXISTS tournamentsubscribed (uid TEXT, guid TEXT, PRIMARY KEY (uid, guid))");
-*/
+    db.run("CREATE TABLE IF NOT EXISTS tournamentsubscribed (uid TEXT, guid TEXT, PRIMARY KEY (uid, guid))");
+    */
     db.run("CREATE TABLE IF NOT EXISTS tournamentsregistered (uid TEXT, guid TEXT, PRIMARY KEY (uid, guid))");
 
 
@@ -1419,6 +1419,74 @@ function mapTournamentsSqlToJson(row, playerids, player_count, ranking, rounds) 
     }
 }
 
+function createTournamentRounds(tournament, playerCount, tournamentType) {
+    if (tournamentType === "DRL") {
+        const rounds = [];
+        let currentPlayers = playerCount;
+
+        const targetBracketSize = currentPlayers > 24 ? 24 : (currentPlayers > 12 ? 12 : currentPlayers);
+        
+        if (currentPlayers > targetBracketSize) {
+            const eliminatedInQuals = currentPlayers - targetBracketSize;
+            rounds.push({
+                status: "idle",
+                title: "QUALIFIERS",
+                "start-at": new Date().toISOString(),
+                "end-at": null,
+                map: tournament.map,
+                track: tournament.track,
+                "is-custom-map": tournament['is-custom-map'],
+                "custom-map": tournament['custom-map'],
+                "custom-map-title": tournament['custom-map-title'],
+                "multiplayer-countdown": true,
+                mode: "match_leaderboard",
+                "timeout": 0,
+                matches: [],
+                roundId: 0,
+                remainingPlayers: targetBracketSize
+            });
+            currentPlayers = targetBracketSize;
+        }
+
+        let roundNumber = 1;
+        while (currentPlayers > 1) {
+            const playersPerMatch = 6;
+            const advancingPerMatch = currentPlayers <= 6 ? 1 : 3;
+            
+            const matchCount = Math.ceil(currentPlayers / playersPerMatch);
+            const outgoingPlayers = matchCount * advancingPerMatch;
+
+            rounds.push({
+                title: currentPlayers <= 6 ? "Finals" : `Elimination Round ${roundNumber}`,
+                incomingPlayers: currentPlayers,
+                matchCount: matchCount,
+                status: "idle",
+                "start-at": new Date().toISOString(),
+                "end-at": null,
+                map: tournament.map,
+                track: tournament.track,
+                "is-custom-map": tournament['is-custom-map'],
+                "custom-map": tournament['custom-map'],
+                "custom-map-title": tournament['custom-map-title'],
+                "multiplayer-countdown": true,
+                mode: "match_points",
+                "timeout": 0,
+                matches: [],
+                roundId: roundNumber,
+                advancingPerMatch: advancingPerMatch,
+                remainingPlayers: Math.min(outgoingPlayers, currentPlayers - 1)
+            });
+
+            currentPlayers = advancingPerMatch === 1 ? 1 : outgoingPlayers;
+
+            roundNumber++;
+        }
+
+        return rounds;
+    }
+}
+
+
 app.get('/tournaments/:guid/register', badTokenAuthv2, (req, res) => {
     console.log("/tournaments/:guid/register");
     const uid = req.uid;
@@ -1523,6 +1591,7 @@ app.get(`/tournaments/:guid`, (req, res) => {
             console.log(playerRows.map(r => r.uid).join(','))
             tournament = mapTournamentsSqlToJson(tournament, [playerRows.map(r => r.uid).join(',')], playerRows.length);
             console.log(tournament)
+            tournament.rounds = createTournamentRounds(tournament, playerRows.length, "DRL")
             res.status(200).json({ success: true, data: [tournament] });
         });
     })
