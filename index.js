@@ -1425,11 +1425,10 @@ function createTournamentRounds(tournament, playerCount, tournamentType) {
         let currentPlayers = playerCount;
 
         const targetBracketSize = currentPlayers > 24 ? 24 : (currentPlayers > 12 ? 12 : currentPlayers);
-        
+        let roundNumber = 0;
         if (currentPlayers > targetBracketSize) {
-            const eliminatedInQuals = currentPlayers - targetBracketSize;
             rounds.push({
-                status: "idle",
+                status: tournament.progression === "auto" ? "active": "idle",
                 title: "QUALIFIERS",
                 "start-at": new Date().toISOString(),
                 "end-at": null,
@@ -1439,16 +1438,15 @@ function createTournamentRounds(tournament, playerCount, tournamentType) {
                 "custom-map": tournament['custom-map'],
                 "custom-map-title": tournament['custom-map-title'],
                 "multiplayer-countdown": true,
-                mode: "match_leaderboard",
+                mode: "leaderboard",
                 "timeout": 0,
                 matches: [],
-                roundId: 0,
+                roundId: roundNumber,
                 remainingPlayers: targetBracketSize
             });
             currentPlayers = targetBracketSize;
+            roundNumber++;
         }
-
-        let roundNumber = 1;
         while (currentPlayers > 1) {
             const playersPerMatch = 6;
             const advancingPerMatch = currentPlayers <= 6 ? 1 : 3;
@@ -1460,8 +1458,8 @@ function createTournamentRounds(tournament, playerCount, tournamentType) {
                 title: currentPlayers <= 6 ? "Finals" : `Elimination Round ${roundNumber}`,
                 incomingPlayers: currentPlayers,
                 matchCount: matchCount,
-                status: "idle",
-                "start-at": new Date().toISOString(),
+                status: tournament.progression === "auto" && roundNumber === 0 ? "active": "idle",
+                "start-at": null,
                 "end-at": null,
                 map: tournament.map,
                 track: tournament.track,
@@ -1590,8 +1588,8 @@ app.get(`/tournaments/:guid`, (req, res) => {
             console.log(playerRows.length)
             console.log(playerRows.map(r => r.uid).join(','))
             tournament = mapTournamentsSqlToJson(tournament, [playerRows.map(r => r.uid).join(',')], playerRows.length);
+            tournament.rounds = createTournamentRounds(tournament, 26, "DRL")
             console.log(tournament)
-            tournament.rounds = createTournamentRounds(tournament, playerRows.length, "DRL")
             res.status(200).json({ success: true, data: [tournament] });
         });
     })
