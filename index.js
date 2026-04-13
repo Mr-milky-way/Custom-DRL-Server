@@ -317,7 +317,7 @@ db.serialize(() => {
     drone_rig TEXT,
     drone_hash TEXT,
 
-    PRIMARY KEY (player_id, map, track, diameter, drl_official, custom_map)
+    PRIMARY KEY (player_id, map, track, diameter, drl_official, custom_map, match_id)
     );`);
     //drones
     db.run(`CREATE TABLE IF NOT EXISTS drone (
@@ -791,27 +791,49 @@ app.get('/maps/:guid', (req, res) => {
 
 app.get('/maps/', (req, res) => {
     console.log("req sent to /maps/ headers are:", req.headers, req.query);
+
+    const mapCategories = req.query['map-category'] ? Array.isArray(req.query['map-category']) ? req.query['map-category'] : [req.query['map-category']] : ['MapCommon'];
+    const isRaceAllowed = req.query['is-race-allowed'];
+    const isPublic = req.query['is-public'];
+
     const limit = parseInt(req.query.limit) || 6;
     const page = parseInt(req.query.page) || 1;
     const offset = (page - 1) * limit;
     let sqlSort = "";
     let filters = []
     let filtersP = []
-    filters.push(" AND is_race_allowed = 1");
+
+    let Order = []
+    let OrderP = []
+
     if (req.query['map-difficulty']) {
-        filters.push(`AND map_difficulty = ?`);
+        filters.push(`map_difficulty = ?`);
         filtersP.push(parseInt(req.query['map-difficulty']));
     }
     if (req.query['map-id']) {
-        filters.push("AND map_id = ?");
+        filters.push("map_id = ?");
         filtersP.push(req.query['map-id']);
+    }
+    if (req.query.guid) {
+        filters.push("guid = ?");
+        filtersP.push(req.query.guid);
+    } else {
+        const placeholders = mapCategories.map(() => '?').join(',');
+        filters.push(`map_category IN (${placeholders})`);
+        filtersP.push(...mapCategories);
+
+        filters.push("is_race_allowed = ?");
+        filtersP.push(isRaceAllowed === 'true' || 1);
+
+        filters.push("is_public = ?");
+        filtersP.push(isPublic === 'true' || 1);
     }
     if (req.query.q) {
         if (req.query.q.startsWith("@")) {
-            filters.push("AND profile_name = ?");
+            filters.push("profile_name = ?");
             filtersP.push(req.query.q.toLowerCase().substring(1));
         } else {
-            filters.push("AND map_title LIKE ?");
+            filters.push("map_title LIKE ?");
             filtersP.push(`%${req.query.q}%`);
         }
     }
@@ -823,13 +845,13 @@ app.get('/maps/', (req, res) => {
         const sortOrder = req.query.order?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
 
         sqlSort = `ORDER BY ${sortField} ${sortOrder}`;
-        filters.push(sqlSort)
+        Order.push(sqlSort)
     }
 
     console.log("Final filters:", filters);
     console.log("Final filter parameters:", filtersP);
     db.get(
-        `SELECT COUNT(*) as total FROM communitytracks WHERE is_public = 1 AND map_category = 'MapCommon' ${filters.join(' ')}`,
+        `SELECT COUNT(*) as total FROM communitytracks WHERE ${filters.join(' AND ')} ${Order.join(' AND ')}`,
         [...filtersP],
         (err, countResult) => {
             if (err) {
@@ -839,10 +861,7 @@ app.get('/maps/', (req, res) => {
             const totalCount = countResult.total;
             const totalPages = Math.ceil(totalCount / limit);
             db.all(
-                `SELECT *
-                FROM communitytracks
-                WHERE is_public = 1 AND map_category = 'MapCommon'
-                ${filters.join(' ')} LIMIT ? OFFSET ? `,
+                `SELECT * FROM communitytracks WHERE ${filters.join(' AND ')} ${Order.join(' AND ')} LIMIT ? OFFSET ? `,
                 [...filtersP, limit, offset],
                 (err, rows) => {
                     if (err) {
@@ -879,7 +898,7 @@ app.post('/maps/', express.urlencoded({ limit: "50mb", extended: true }), badTok
         }
     }
     const baseDir = path.join(__dirname, 'tracks');
-    const finalPath = path.resolve(baseDir, req.params.guid + '.cmp');
+    const finalPath = path.resolve(baseDir, req.body.guid + '.cmp');
 
     if (!finalPath.startsWith(baseDir)) {
         return res.status(403).send('Forbidden: Invalid path');
@@ -930,34 +949,39 @@ app.post('/maps/', express.urlencoded({ limit: "50mb", extended: true }), badTok
                 res.status(500).json({ success: false });
                 return;
             } else {
-                db.run(`INSERT OR IGNORE INTO trackcolab (uid, guid) VALUES (?, ?)`, [uid, req.body.guid], function (err) {
-                    if (err) {
-                        console.error("Error inserting into trackcolab:", err);
-                    } else {
+                if (req.body.collaborators) {
+                    db.run(`INSERT OR IGNORE INTO trackcolab (uid, guid) VALUES (?, ?)`, [uid, req.body.guid], function (err) {
+                        if (err) {
+                            console.error("Error inserting into trackcolab:", err);
+                        } else {
 
-                        db.all(`SELECT * FROM trackcolab WHERE guid = ?`, [req.body.guid], (err, row) => {
+                            db.all(`SELECT * FROM trackcolab WHERE guid = ?`, [req.body.guid], (err, row) => {
 
-                            const existingUids = row.map(r => r.uid);
-                            console.log(req.body.collaborators)
-                            const incomingUids = JSON.parse(req.body.collaborators).map(c => c['player-id']);
+                                const existingUids = row.map(r => r.uid);
+                                console.log(req.body.collaborators)
+                                const incomingUids = JSON.parse(req.body.collaborators).map(c => c['player-id']);
 
-                            incomingUids.forEach(uid => {
-                                if (!existingUids.includes(uid)) {
-                                    db.run(`INSERT INTO trackcolab (uid, guid) VALUES (?, ?)`, [uid, req.body.guid]);
-                                }
+                                incomingUids.forEach(uid => {
+                                    if (!existingUids.includes(uid)) {
+                                        db.run(`INSERT INTO trackcolab (uid, guid) VALUES (?, ?)`, [uid, req.body.guid]);
+                                    }
+                                });
+
+                                existingUids.forEach(uid => {
+                                    if (!incomingUids.includes(uid)) {
+                                        db.run(`DELETE FROM trackcolab WHERE uid = ? AND guid = ?`, [uid, req.body.guid]);
+                                    }
+                                });
+
+
+                                res.status(200).json({ success: true, data: req.body });
                             });
-
-                            existingUids.forEach(uid => {
-                                if (!incomingUids.includes(uid)) {
-                                    db.run(`DELETE FROM trackcolab WHERE uid = ? AND guid = ?`, [uid, req.body.guid]);
-                                }
-                            });
-
-
-                            res.status(200).json({ success: true, data: req.body });
-                        });
-                    }
-                });
+                        }
+                    });
+                }
+                else {
+                    res.status(200).json({ success: true, data: req.body });
+                }
             }
         })
     });
@@ -1304,10 +1328,11 @@ app.post('/state/', (req, res) => {
                         res.status(500).json({ success: false });
                         return;
                     }
-
-                    if ('profile-name' in parsed && parsed['profile-name'].trim() === "") {
-                        console.warn("Blocked empty profile-name write");
-                        parsed['profile-name'] = JSON.parse(json.json)['profile-name'];
+                    if (json) {
+                        if ('profile-name' in parsed && parsed['profile-name'].trim() === "") {
+                            console.warn("Blocked empty profile-name write");
+                            parsed['profile-name'] = JSON.parse(json.json)['profile-name'];
+                        }
                     }
 
                     db.run(`INSERT INTO playerstate (uid, json) VALUES (?, ?)
@@ -1428,7 +1453,7 @@ function createTournamentRounds(tournament, playerCount, tournamentType) {
         let roundNumber = 0;
         if (currentPlayers > targetBracketSize) {
             rounds.push({
-                status: tournament.progression === "auto" ? "active": "idle",
+                status: tournament.progression === "auto" ? "active" : "idle",
                 title: "QUALIFIERS",
                 "start-at": new Date().toISOString(),
                 "end-at": null,
@@ -1440,17 +1465,39 @@ function createTournamentRounds(tournament, playerCount, tournamentType) {
                 "multiplayer-countdown": true,
                 mode: "leaderboard",
                 "timeout": 0,
-                matches: [],
+                matches: [
+                    {
+                        map: tournament.map,
+                        track: tournament.track,
+                        "is-custom-map": tournament['is-custom-map'],
+                        "custom-map": tournament['custom-map'],
+                        "custom-map-title": tournament['custom-map-title'],
+                        "players-size": 2,
+                        "current-heat": 1,
+                        "active-heat": 1,
+                        status: "active",
+                        "start-at": new Date().toISOString(),
+                        "end-at": new Date(Date.now() + 60 * 1000).toISOString(),
+                        "current-time": new Date().toISOString(),
+                        mode: "leaderboard",
+                        "player-ids": ["b9365d125935475b8327162c66a25e12"],
+                        "round-id": "QUAL",
+                        "id": "QUAL",
+                        "num-winners": targetBracketSize,
+                        "round-norder": 1,
+                        "players": []
+                    }
+                ],
                 roundId: roundNumber,
                 remainingPlayers: targetBracketSize
             });
             currentPlayers = targetBracketSize;
             roundNumber++;
-        }
+        } /*
         while (currentPlayers > 1) {
             const playersPerMatch = 6;
             const advancingPerMatch = currentPlayers <= 6 ? 1 : 3;
-            
+
             const matchCount = Math.ceil(currentPlayers / playersPerMatch);
             const outgoingPlayers = matchCount * advancingPerMatch;
 
@@ -1458,7 +1505,7 @@ function createTournamentRounds(tournament, playerCount, tournamentType) {
                 title: currentPlayers <= 6 ? "Finals" : `Elimination Round ${roundNumber}`,
                 incomingPlayers: currentPlayers,
                 matchCount: matchCount,
-                status: tournament.progression === "auto" && roundNumber === 0 ? "active": "idle",
+                status: tournament.progression === "auto" && roundNumber === 0 ? "active" : "idle",
                 "start-at": null,
                 "end-at": null,
                 map: tournament.map,
@@ -1478,11 +1525,41 @@ function createTournamentRounds(tournament, playerCount, tournamentType) {
             currentPlayers = advancingPerMatch === 1 ? 1 : outgoingPlayers;
 
             roundNumber++;
-        }
+        } */
 
         return rounds;
     }
 }
+
+app.get(`/tournaments/:guid/results/:roundid`, badTokenAuthv2, (req, res) => {
+    console.log("/tournaments/:guid/scores")
+    console.log(req.params.guid)
+    console.log(req.params.roundid)
+    res.status(200).json({
+        success: true, data: {
+            "status": "waiting",
+            "leaderboard-params": [
+                { guid: "9054cbe9-c880-4b20-9344-0b2f7824c211", match: "QUAL" }
+            ],
+            "matches": [
+                {
+                    "player-id": "b9365d125935475b8327162c66a25e12",
+                    score: 1,
+                    "match-id": "QUAL",
+                    "position": 1
+                }
+            ],
+            "leaderboard": []
+        }
+    })
+})
+
+
+app.post(`/tournaments/:guid/scores`, express.urlencoded(), badTokenAuthv2, (req, res) => {
+    console.log("/tournaments/:guid/scores")
+    console.log(req.headers)
+    console.log(req.body)
+})
 
 
 app.get('/tournaments/:guid/register', badTokenAuthv2, (req, res) => {
@@ -1551,26 +1628,23 @@ app.get(`/tournaments/:guid/matches/:mid`, (req, res) => {
     res.status(200).json({
         success: true, data: [
             {
-                "id": "match-001",
-                "map": "MP-95a",
-                "track": "MT-964",
-                "status": "active",
-                "start-at": timeStr,
-                "mode": "match_points",
+                map: tournament.map,
+                track: tournament.track,
+                "is-custom-map": tournament['is-custom-map'],
+                "custom-map": tournament['custom-map'],
+                "custom-map-title": tournament['custom-map-title'],
                 "players-size": 2,
-                "heats": 4,
-                "active-heat": 1,
                 "current-heat": 1,
-                "num-winners": 1,
-                "players": [{
-                    "player-id": "b9365d125935475b8327162c66a25e12",
-                    "profile-name": "Ninety9prob",
-                    "profile-thumb": "https://avatars.githubusercontent.com/u/131718510?v=4&size=64"
-                }],
-                "player-ids": [
-                    "b9365d125935475b8327162c66a25e12",
-                    "player_steam_002"
-                ]
+                "active-heat": 1,
+                status: "active",
+                "start-at": new Date().toISOString(),
+                "end-at": new Date(Date.now() + 60 * 1000).toISOString(),
+                "current-time": new Date().toISOString(),
+                mode: "leaderboard",
+                "player-ids": ["b9365d125935475b8327162c66a25e12"],
+                "round-id": "QUAL",
+                "id": "QUAL",
+                "num-winners": targetBracketSize
             }
         ]
     });
@@ -1588,7 +1662,7 @@ app.get(`/tournaments/:guid`, (req, res) => {
             console.log(playerRows.length)
             console.log(playerRows.map(r => r.uid).join(','))
             tournament = mapTournamentsSqlToJson(tournament, [playerRows.map(r => r.uid).join(',')], playerRows.length);
-            tournament.rounds = createTournamentRounds(tournament, 26, "DRL")
+            tournament.rounds = createTournamentRounds(tournament, 15, "DRL")
             console.log(tournament)
             res.status(200).json({ success: true, data: [tournament] });
         });
@@ -1839,7 +1913,7 @@ app.post('/leaderboards/', express.urlencoded({ extended: false }), badTokenAuth
                     const stmt = db.prepare(
                         `INSERT INTO leaderboard (player_id, profile_name, profile_color, map, track, is_custom_map, custom_map, mission, group_id, game_type, diameter, drone_name, drone_thumb, multiplayer, multiplayer_room_id, multiplayer_room_size, multiplayer_player_id, multiplayer_master_id, multiplayer_player_position, flag_url, score_type, match_id, tryouts, battery_resistance, controller_type, score, score_check, score_double_check, score_cheat, score_cheat_ratio, score_cheat_samples, crash_count, top_speed, time_in_first, lap_times, gate_times, fastest_lap, slowest_lap, total_distance, order_col, high_score, race_id, limit_col, heat, custom_physics, drl_official, drl_pilot_mode, drone_guid, drone_rig, drone_hash, updated_at)
                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-                                ON CONFLICT(player_id, map, track, diameter, drl_official, custom_map) DO UPDATE SET score = excluded.score, score_check = excluded.score_check, score_double_check = excluded.score_double_check, controller_type = excluded.controller_type, score_cheat = excluded.score_cheat, score_cheat_ratio = excluded.score_cheat_ratio, score_cheat_samples = excluded.score_cheat_samples, crash_count = excluded.crash_count, top_speed = excluded.top_speed, lap_times = excluded.lap_times, gate_times = excluded.gate_times, fastest_lap = excluded.fastest_lap, slowest_lap = excluded.slowest_lap, total_distance = excluded.total_distance, race_id = excluded.race_id, drone_name = excluded.drone_name, drone_guid = excluded.drone_guid, updated_at = datetime('now');`
+                                ON CONFLICT(player_id, map, track, diameter, drl_official, custom_map, match_id) DO UPDATE SET score = excluded.score, score_check = excluded.score_check, score_double_check = excluded.score_double_check, controller_type = excluded.controller_type, score_cheat = excluded.score_cheat, score_cheat_ratio = excluded.score_cheat_ratio, score_cheat_samples = excluded.score_cheat_samples, crash_count = excluded.crash_count, top_speed = excluded.top_speed, lap_times = excluded.lap_times, gate_times = excluded.gate_times, fastest_lap = excluded.fastest_lap, slowest_lap = excluded.slowest_lap, total_distance = excluded.total_distance, race_id = excluded.race_id, drone_name = excluded.drone_name, drone_guid = excluded.drone_guid, updated_at = datetime('now');`
                     );
                     stmt.run(
                         uid,
@@ -2066,10 +2140,10 @@ app.get('/leaderboards/rivals/', badTokenAuthv2, (req, res) => {
     let query;
     let inputs;
     if (req.query['is-custom-map'] == `true`) {
-        query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? AND custom_map = ? `
+        query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? AND custom_map = ? AND match_id IS NULL `
         inputs = [req.query.map, req.query.track, diameter, drlOfficial, req.query['custom-map']]
     } else {
-        query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? `
+        query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? AND match_id IS NULL `
         inputs = [req.query.map, req.query.track, diameter, drlOfficial]
     }
     let player_pos = 0
@@ -2213,6 +2287,8 @@ app.get(`/replay/rivals/`, (req, res) => {
     });
 })
 app.get('/leaderboards/', badTokenAuthv2, (req, res) => {
+
+    console.log(req.query)
     let limit = 10
     let page = 1
     if (!req.query.limit) {
@@ -2225,14 +2301,9 @@ app.get('/leaderboards/', badTokenAuthv2, (req, res) => {
     } else {
         page = req.query.page
     }
-
     const offset = (page - 1) * limit;
-    const isCustomMap = req.query["is-custom-map"] === "true";
-
-    const diameter = Number(req.query.diameter);
-    const drlOfficial = req.query["drl-official"] === "true" ? 1 : 0;
-    if (isCustomMap) {
-        db.all(`SELECT * FROM leaderboard WHERE custom_map = ? AND diameter = ? AND drl_official = ? ORDER BY score ASC LIMIT ? OFFSET ?`, [req.query["custom-map"], diameter, drlOfficial, limit, offset], (err, row) => {
+    if (req.query.match) {
+        db.all(`SELECT * FROM leaderboard WHERE match_id = ? ORDER BY score ASC LIMIT ? OFFSET ?`, [req.query.match, limit, offset], (err, row) => {
             if (err || row.length === 0) {
                 console.error("Error fetching leaderboard:", err);
                 res.status(200).json({
@@ -2255,31 +2326,61 @@ app.get('/leaderboards/', badTokenAuthv2, (req, res) => {
                 });
             }
         });
-
     } else {
-        db.all(`SELECT * FROM leaderboard WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? ORDER BY score ASC LIMIT ? OFFSET ?`, [req.query.map, req.query.track, diameter, drlOfficial, limit, offset], (err, row) => {
-            if (err || row.length === 0) {
-                console.error("Error fetching leaderboard:", err);
-                res.status(200).json({
-                    success: true, data: {
-                        "leaderboard": null,
-                        "pagging": { "page": page, "limit": limit, "total": 2 }
+        const isCustomMap = req.query["is-custom-map"] === "true";
+
+        const diameter = Number(req.query.diameter);
+        const drlOfficial = req.query["drl-official"] === "true" ? 1 : 0;
+        if (isCustomMap) {
+            db.all(`SELECT * FROM leaderboard WHERE custom_map = ? AND diameter = ? AND drl_official = ? ORDER BY score ASC LIMIT ? OFFSET ?`, [req.query["custom-map"], diameter, drlOfficial, limit, offset], (err, row) => {
+                if (err || row.length === 0) {
+                    console.error("Error fetching leaderboard:", err);
+                    res.status(200).json({
+                        success: true, data: {
+                            "leaderboard": null,
+                            "pagging": { "page": page, "limit": limit, "total": 2 }
+                        }
+                    });
+                } else {
+                    let jsondata = []
+                    for (let i = 0; i < row.length; i++) {
+                        let data = mapLeaderboardSqlToJson(row, i)
+                        jsondata.push(data)
                     }
-                });
-            } else {
-                let jsondata = []
-                for (let i = 0; i < row.length; i++) {
-                    let data = mapLeaderboardSqlToJson(row, i)
-                    jsondata.push(data)
+                    res.status(200).json({
+                        success: true, data: {
+                            "leaderboard": jsondata,
+                            "pagging": { "page": page, "limit": limit, "total": Math.ceil(row.length / limit) }
+                        }
+                    });
                 }
-                res.status(200).json({
-                    success: true, data: {
-                        "leaderboard": jsondata,
-                        "pagging": { "page": page, "limit": limit, "total": Math.ceil(row.length / limit) }
+            });
+
+        } else {
+            db.all(`SELECT * FROM leaderboard WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? ORDER BY score ASC LIMIT ? OFFSET ?`, [req.query.map, req.query.track, diameter, drlOfficial, limit, offset], (err, row) => {
+                if (err || row.length === 0) {
+                    console.error("Error fetching leaderboard:", err);
+                    res.status(200).json({
+                        success: true, data: {
+                            "leaderboard": null,
+                            "pagging": { "page": page, "limit": limit, "total": 2 }
+                        }
+                    });
+                } else {
+                    let jsondata = []
+                    for (let i = 0; i < row.length; i++) {
+                        let data = mapLeaderboardSqlToJson(row, i)
+                        jsondata.push(data)
                     }
-                });
-            }
-        });
+                    res.status(200).json({
+                        success: true, data: {
+                            "leaderboard": jsondata,
+                            "pagging": { "page": page, "limit": limit, "total": Math.ceil(row.length / limit) }
+                        }
+                    });
+                }
+            });
+        }
     }
 });
 
@@ -3185,7 +3286,7 @@ app.post(`/admin/tournaments/create/`, express.json(), (req, res) => {
         minimum_skill,
         age_check,
         age_check_number
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
         guid,
         req.body.automated,
         req.body.recurr_every_days,
