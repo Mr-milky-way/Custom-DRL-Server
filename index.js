@@ -287,7 +287,7 @@ db.serialize(() => {
     score_type TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME,
-    match_id TEXT,
+    match_id TEXT DEFAULT 'normal',
     tryouts BOOLEAN,
     battery_resistance FLOAT,
     controller_type TEXT,
