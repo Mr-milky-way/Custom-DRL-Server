@@ -43,30 +43,94 @@ window.onload = function () {
             document.getElementById('video-url').value = t['video-url'] || null;
             document.getElementById('streaming-url').value = t['streaming-url'] || null;
             document.getElementById('terms-and-conditions-url').value = t['terms-and-conditions-url'] || null,
-            document.getElementById('region').value = t['region'] || "us",
-            document.getElementById('max-players').value = t['max-players'] || null,
-            document.getElementById('register-start').value = formatForDatetimeLocal(t['register-start']) || null,
-            document.getElementById('register-end').value = formatForDatetimeLocal(t['register-end']) || null,
-            document.getElementById('status').value = t['status'] || null,
-            document.getElementById('type').value = t['type'] || null,
-            document.getElementById('progression').value = t['progression'] || 'auto',
-            document.getElementById('allow-new-registration').value = t['allow-new-registration'] === 1,
-            document.getElementById('lan-support').value = t['lan-support'] === 1,
-            document.getElementById('server-ip').value = t['server-ip'] || null,
-            document.getElementById('disable-public-spectators').value = t['disable-public-spectators'] === 1,
-            document.getElementById('private').value = t['private'] === 1,
-            document.getElementById('penalty').value = t['penalty'] === 1,
-            document.getElementById('drl-pilot-mode').value = t['drl-pilot-mode'] === 1,
-            document.getElementById('drone-guid').value = t['drone-guid'] || null,
-            document.getElementById('drone-class').value = t['drone-class'] || null,
-            document.getElementById('countdown').value = t['countdown'] === 1,
-            document.getElementById('minimum-skill').value = t['minimum-skill'] || 0,
-            document.getElementById('age-check').value = t['age-check'] === 1,
-            document.getElementById('age-check-number').value = t['age-check-number'] || 0
+                document.getElementById('region').value = t['region'] || "us",
+                document.getElementById('max-players').value = t['max-players'] || null,
+                document.getElementById('register-start').value = formatForDatetimeLocal(t['register-start']) || null,
+                document.getElementById('register-end').value = formatForDatetimeLocal(t['register-end']) || null,
+                document.getElementById('status').value = t['status'] || null,
+                document.getElementById('type').value = t['type'] || null,
+                document.getElementById('progression').value = t['progression'] || 'auto',
+                document.getElementById('allow-new-registration').value = t['allow-new-registration'] === 1,
+                document.getElementById('lan-support').value = t['lan-support'] === 1,
+                document.getElementById('server-ip').value = t['server-ip'] || null,
+                document.getElementById('disable-public-spectators').value = t['disable-public-spectators'] === 1,
+                document.getElementById('private').value = t['private'] === 1,
+                document.getElementById('penalty').value = t['penalty'] === 1,
+                document.getElementById('drl-pilot-mode').value = t['drl-pilot-mode'] === 1,
+                document.getElementById('drone-guid').value = t['drone-guid'] || null,
+                document.getElementById('drone-class').value = t['drone-class'] || null,
+                document.getElementById('countdown').value = t['countdown'] === 1,
+                document.getElementById('minimum-skill').value = t['minimum-skill'] || 0,
+                document.getElementById('age-check').value = t['age-check'] === 1,
+                document.getElementById('age-check-number').value = t['age-check-number'] || 0
         })
         .catch(error => {
             console.error('Error:', error);
         });
+
+    const MapSearchInput = document.getElementById('MapSearchInput');
+
+    MapSearchInput.addEventListener('input', (event) => {
+
+        const url = '/admin/maps/?q=' + encodeURIComponent(event.target.value);
+
+        fetch(url, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                const tableBody = document.getElementById('MapSelector');
+
+                if (data.data.data.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4">No maps available.</td></tr>';
+                    return;
+                }
+                const rows = data.data.data.map(Map => `
+                    <option value="${Map.guid}">${Map['map-title']}</option>
+                `).join('');
+
+                tableBody.innerHTML = rows;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error)
+                document.getElementById('map-data').innerHTML =
+                    '<tr><td colspan="4">Failed to load data. Please try again later.</td></tr>';
+            });
+    });
+
+    const MapSelector = document.getElementById('MapSelector');
+
+    MapSelector.addEventListener('change', (event) => {
+        const selectedMapGuid = event.target.value;
+
+        if (selectedMapGuid) {
+            const url = `/admin/maps/?guid=${selectedMapGuid}`;
+
+            fetch(url, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(data => {
+                    document.getElementById('map').value = data.data.data[0]['map-id'];
+                    document.getElementById('track').value = data.data.data[0]['track'] ? data.data.data[0]['track'] : '';
+                    document.getElementById('is-custom-map').value = data.data.data[0]['track'] ? false : true;
+                    document.getElementById('custom-map-guid').value = data.data.data[0]['guid'];
+                    document.getElementById('custom-map-title').value = data.data.data[0]['map-title'];
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+    })
 };
 
 function UpdateMapPools() {
@@ -193,7 +257,7 @@ function SubmitForm() {
             "age_check": document.getElementById('age-check').value === 'true',
             "age_check_number": parseInt(document.getElementById('age-check-number').value) || null
         }
-        
+
 
         fetch(url, {
             method: 'PUT',
