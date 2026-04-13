@@ -1937,7 +1937,7 @@ app.post('/leaderboards/', express.urlencoded({ extended: false }), badTokenAuth
                         parsed[0]['multiplayer-player-position'] ? parsed[0]['multiplayer-player-position'] : null,
                         parsed[0]['flag-url'] ? parsed[0]['flag-url'] : null,
                         parsed[0]['score-type'] ? parsed[0]['score-type'] : null,
-                        parsed[0]['match-id'] ? parsed[0]['match-id'] : null,
+                        parsed[0]['match-id'] ? parsed[0]['match-id'] : 'normal',
                         parsed[0]['tryouts'] ? parsed[0]['tryouts'] : null,
                         parsed[0]['battery-resistance'] ? parsed[0]['battery-resistance'] : null,
                         parsed[0]['controller-type'] ? parsed[0]['controller-type'] : null,
