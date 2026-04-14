@@ -2140,10 +2140,10 @@ app.get('/leaderboards/rivals/', badTokenAuthv2, (req, res) => {
     let query;
     let inputs;
     if (req.query['is-custom-map'] == `true`) {
-        query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? AND custom_map = ? AND match_id IS NULL `
+        query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? AND custom_map = ? AND match_id = 'normal' `
         inputs = [req.query.map, req.query.track, diameter, drlOfficial, req.query['custom-map']]
     } else {
-        query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? AND match_id IS NULL `
+        query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? AND match_id = 'normal' `
         inputs = [req.query.map, req.query.track, diameter, drlOfficial]
     }
     let player_pos = 0
