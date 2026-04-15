@@ -1557,6 +1557,26 @@ app.get('/social/profile/', badTokenAuthv2, (req, res) => {
     });*/
 })
 
+app.get(`/player/avatar/:uid/`, (req, res) => {
+    db.get(`SELECT profile_photo_url FROM profilestatemodel WHERE player_id = ?`, [req.params.uid], async (err, row) => {
+        if (err || !row){
+            res.status(500).json({success: false});
+            return
+        }
+        const imageUrl = row.profile_photo_url;
+        try {
+            const response = await fetch(imageUrl);
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+
+            res.set('Content-Type', response.headers.get('content-type'));
+            res.send(buffer);
+        } catch (error) {
+            res.status(500).json({success: false});
+        }
+    })
+})
+
 app.get('/state/game/', (req, res) => {
     const payload = { lastState: null };
     const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
