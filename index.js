@@ -2647,8 +2647,8 @@ app.post('/leaderboards/', express.urlencoded({ extended: false }), badTokenAuth
                 );
                 stmt.run(
                     uid,
-                    jsondata['profile-name'] || null,
-                    jsondata['profile-color'] || null,
+                    req.body['profile-name'] || null,
+                    req.body['profile-color'] || null,
                     parsed[0].map ? parsed[0].map : "unknown",
                     parsed[0].track ? parsed[0].track : "unknown",
                     parsed[0]['is-custom-map'] ? parsed[0]['is-custom-map'] : true,
@@ -3366,10 +3366,10 @@ app.post('/drones/', express.urlencoded({ extended: true }), badTokenAuthv2, (re
         [
             req.body.guid,
             uid,
-            jsondata['profile-platform-id'],
-            jsondata['profile-platform'],
-            jsondata['profile-color'],
-            jsondata['profile-thumb'],
+            req.body['profile-platform-id'],
+            req.body['profile-platform'],
+            req.body['profile-color'],
+            req.body['profile-thumb'],
             req.body['profile-name'],
             req.body.score,
             req.body.rating,
