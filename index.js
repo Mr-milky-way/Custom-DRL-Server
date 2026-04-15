@@ -218,7 +218,7 @@ db.serialize(() => {
 
     db.run(`CREATE TABLE IF NOT EXISTS profilestatemodel (
     system_info TEXT,
-    player_id TEXT,
+    player_id TEXT UNIQUE,
     steam_id TEXT,
     xbuid TEXT,
     playstation_id TEXT,
@@ -410,7 +410,6 @@ db.serialize(() => {
     db.run("CREATE TABLE IF NOT EXISTS trackcolab (uid TEXT, guid TEXT, PRIMARY KEY (uid, guid))");
     //tracks
     db.run("CREATE TABLE IF NOT EXISTS trackupdates (uid TEXT UNIQUE, tracks TEXT)");
-    db.run("CREATE TABLE IF NOT EXISTS playerstate (uid TEXT UNIQUE, json TEXT)");
     //leaderboard
     db.run(`CREATE TABLE IF NOT EXISTS leaderboard (
     player_id TEXT NOT NULL,
@@ -1035,6 +1034,7 @@ app.get('/maps/', (req, res) => {
     );
 });
 
+//TODO: MERGE WITH NEW Player State SYSTEM
 app.post('/maps/', express.urlencoded({ limit: "50mb", extended: true }), badTokenAuthv2, (req, res) => {
     console.log("req sent to /maps/ via POST", req.body);
     const uid = req.uid
@@ -1529,10 +1529,11 @@ function MapPlayerStateTOJson(row) {
     }
 }
 
-
+//TODO: MERGE WITH NEW Player State SYSTEM
 app.get('/social/profile/', badTokenAuthv2, (req, res) => {
     console.log("social profile header for:", req.query);
     const uid = req.uid
+    /*
     db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
         if (!row) {
             res.status(404).json({ success: false });
@@ -1553,7 +1554,7 @@ app.get('/social/profile/', badTokenAuthv2, (req, res) => {
         res.status(200).json({
             success: true, data: base64Data
         });
-    });
+    });*/
 })
 
 app.get('/state/game/', (req, res) => {
@@ -1568,7 +1569,7 @@ app.get('/state/', badTokenAuthv2, (req, res) => {
     let jsondata;
     const uid = req.uid;
     console.log("UID:", uid);
-    db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], async (err, row) => {
+    db.get(`SELECT * FROM profilestatemodel WHERE player_id = ?`, [uid], async (err, row) => {
         if (err) {
             console.error("Error fetching JSON:", err);
             res.status(500).json({ success: false });
@@ -1579,27 +1580,22 @@ app.get('/state/', badTokenAuthv2, (req, res) => {
             const base64Data = Buffer.from(JSON.stringify(jsondata)).toString('base64');
             res.status(200).json({ success: true, data: base64Data });
             return;
-        } else {
-            let jsondata;
-            jsondata = JSON.parse(row.json);
-
-            if (!jsondata['profile-photo-url'] && jsondata['steam-id']) {
-                const steamPic = await getSteamProfilePic(jsondata['steam-id']);
-                jsondata['profile-photo-url'] = steamPic.full;
-            } else if (!jsondata['profile-photo-url'] && !jsondata['steam-id']) {
-                jsondata['profile-photo-url'] = "https://raw.githubusercontent.com/gysi/drl-leaderboard-app/refs/heads/main/frontend/src/assets/placeholder.png";
-            }
-
-            console.log(jsondata['profile-photo-url'])
-            jsondata['profile-developer'] = (uid === "b9365d125935475b8327162c66a25e12");
-
-            const base64Data = Buffer
-                .from(JSON.stringify(jsondata))
-                .toString('base64');
-
-            res.status(200).json({ success: true, data: base64Data });
         }
-    });
+        if (!row.profile_photo_url && row['steam_id'] != null) {
+            const steamPic = await getSteamProfilePic(row['steam_id']);
+            row.profile_photo_url = steamPic.full;
+        } else if (!row.profile_photo_url || row.profile_photo_url == null) {
+            row.profile_photo_url = "https://raw.githubusercontent.com/gysi/drl-leaderboard-app/refs/heads/main/frontend/src/assets/placeholder.png";
+        }
+        jsondata = MapPlayerStateTOJson(row)
+        console.log(jsondata)
+
+        const base64Data = Buffer
+            .from(JSON.stringify(jsondata))
+            .toString('base64');
+
+        res.status(200).json({ success: true, data: base64Data });
+    })
 })
 
 const STEAM_API_KEY = process.env.STEAM_API_KEY;
@@ -1625,58 +1621,479 @@ async function getSteamProfilePic(steamId) {
 }
 
 //TODO: stop using let body = '';
-app.post('/state/', (req, res) => {
+app.post('/state/', express.urlencoded(), badTokenAuthv2, (req, res) => {
     const token = req.headers['x-access-jsonwebtoken'];
-    console.log("post sent to /state/ TOKEN:", token);
-    let body = '';
-    req.on('data', c => body += c);
-    req.on('end', () => {
+    console.log("post sent to /state/ TOKEN:", token, req.headers);
 
-
-        const raw = body.startsWith('state=') ? body.slice(6) : body;
-        const parsed = JSON.parse(decodeURIComponent(raw));
-
-        db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
-            if (err || !row) {
-                console.error("Error fetching UID:", err);
-                res.status(404).json({ success: false });
+    const uid = req.uid;
+    req.body.state = JSON.parse(req.body.state)
+    db.run(`INSERT INTO profilestatemodel  (
+            system_info,
+            player_id,
+            steam_id,
+            xbuid,
+            playstation_id,
+            branch_id,
+            steam_install_path,
+            steam_purchase_unix_seconds,
+            profile_name,
+            profile_block_list,
+            profile_developer,
+            profile_reward_parts,
+            profile_photo_url,
+            profile_photo_size,
+            profile_custom_photo_url,
+            profile_steam_photo_url,
+            profile_color,
+            profile_language_iso,
+            profile_country_iso,
+            profile_full_name,
+            profile_email,
+            profile_age,
+            profile_country,
+            profile_gender,
+            profile_score,
+            has_review,
+            prompt_review,
+            is_drl_pilot,
+            fps_limit,
+            profile_watch_drl,
+            profile_american_citizen,
+            profile_experience_non_fpv,
+            profile_experience_non_fpv_years,
+            profile_experience_fpv,
+            profile_experience_fpv_years,
+            profile_experience_preference_fpv,
+            profile_experience_real_life_racing,
+            profile_experience_built_own_drone,
+            profile_affiliation_multigp,
+            profile_affiliation_military,
+            profile_affiliation_ama,
+            profile_polls,
+            profile_paywall_dismiss,
+            profile_physics_intro,
+            profile_user_rank,
+            profile_data_completion,
+            profile_inventory,
+            flight_time,
+            reset_delay,
+            xbox_privacy_ugc_blocked,
+            ps4_privacy_ugc_blocked,
+            storage_replay_file_count,
+            storage_replay_memory_usage,
+            dmv_welcome_screen,
+            dmv_total_time,
+            fcmode_active,
+            fcmode_active_missions,
+            network_server_region,
+            network_connected_region,
+            settings_controller_profiles,
+            settings_controller_profile_active_guid,
+            settings_controller_using_adapter,
+            settings_fc_profiles,
+            settings_fc_profile_active_guid,
+            settings_audio_volume_main,
+            settings_audio_volume_music,
+            settings_audio_volume_sfx,
+            settings_audio_ui_enabled,
+            settings_audio_motor_enabled,
+            settings_graphics_resolution_x,
+            settings_graphics_resolution_y,
+            settings_graphics_fullscreen,
+            settings_graphics_vsync,
+            settings_graphics_fps_limit,
+            settings_graphics_mode,
+            settings_graphics_exclusive_mode,
+            settings_graphics_advanced_rendering,
+            settings_graphics_quality,
+            settings_graphics_effects_quality,
+            settings_graphics_details_quality,
+            settings_graphics_tier,
+            settings_graphics_post_processing,
+            settings_graphics_texture,
+            settings_graphics_antialias,
+            settings_graphics_shadows,
+            settings_graphics_ambient_occlusion,
+            settings_graphics_dof,
+            settings_graphics_motion_blur,
+            settings_graphics_water_reflection,
+            settings_graphics_brightness,
+            settings_graphics_render_scale,
+            settings_game_race_path,
+            settings_game_race_guide,
+            settings_game_gate_markers,
+            settings_game_race_stats,
+            settings_game_race_fast_reset,
+            settings_radio_noise,
+            settings_game_race_auto_standings,
+            settings_game_fps_warning,
+            settings_game_controller_overlay,
+            settings_game_trails,
+            settings_battery_resistance_min,
+            settings_battery_resistance_max,
+            settings_battery_resistance,
+            settings_battery_capacity,
+            settings_game_trails_duration,
+            settings_game_tuning_promode,
+            settings_game_lens_distortion,
+            settings_game_props_visibility,
+            settings_game_arm_and_turtle,
+            settings_game_propwash,
+            settings_game_crosshair,
+            settings_game_chat,
+            settings_game_damage,
+            settings_game_hotkeys,
+            settings_game_crossplay,
+            settings_game_race_line_color,
+            settings_game_check_point_color,
+            settings_graphics_screen_space_reflection,
+            results_list,
+            campaigns_attempts_table,
+            campaigns_regions_table,
+            campaigns_new_highscore_table,
+            campaigns_terms_accept_table,
+            campaigns_register_info_table,
+            garage_rigs,
+            garage_active_rig,
+            physics_tunes,
+            physics_active_tune,
+            physics_tune_warning,
+            settings_language,
+            settings_notification_state_menu,
+            settings_notification_state_ingame,
+            circuits_opponent_mode,
+            circuits_opponent_difficulty,
+            onboarding_started,
+            onboarding_progress_beginner,
+            onboarding_progress_intermediate,
+            onboarding_progress_pro,
+            onboarding_progress_proMissions,
+            onboarding_progress_steps_beginner,
+            onboarding_progress_steps_intermediate,
+            onboarding_progress_steps_pro,
+            onboarding_clicked_mission,
+            onboarding_orientation,
+            onboarding_sensitivity,
+            maps_favorite,
+            invalidate_settings_cache,
+            clear_maps_cache,
+            blocked_users,
+            is_observer,
+            is_commentator
+        ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (player_id) DO UPDATE SET
+            system_info = EXCLUDED.system_info,
+            steam_id = EXCLUDED.steam_id,
+            xbuid = EXCLUDED.xbuid,
+            playstation_id = EXCLUDED.playstation_id,
+            branch_id = EXCLUDED.branch_id,
+            steam_install_path = EXCLUDED.steam_install_path,
+            steam_purchase_unix_seconds = EXCLUDED.steam_purchase_unix_seconds,
+            profile_name = EXCLUDED.profile_name,
+            profile_block_list = EXCLUDED.profile_block_list,
+            profile_developer = EXCLUDED.profile_developer,
+            profile_reward_parts = EXCLUDED.profile_reward_parts,
+            profile_photo_url = EXCLUDED.profile_photo_url,
+            profile_photo_size = EXCLUDED.profile_photo_size,
+            profile_custom_photo_url = EXCLUDED.profile_custom_photo_url,
+            profile_steam_photo_url = EXCLUDED.profile_steam_photo_url,
+            profile_color = EXCLUDED.profile_color,
+            profile_language_iso = EXCLUDED.profile_language_iso,
+            profile_country_iso = EXCLUDED.profile_country_iso,
+            profile_full_name = EXCLUDED.profile_full_name,
+            profile_email = EXCLUDED.profile_email,
+            profile_age = EXCLUDED.profile_age,
+            profile_country = EXCLUDED.profile_country,
+            profile_gender = EXCLUDED.profile_gender,
+            profile_score = EXCLUDED.profile_score,
+            has_review = EXCLUDED.has_review,
+            prompt_review = EXCLUDED.prompt_review,
+            is_drl_pilot = EXCLUDED.is_drl_pilot,
+            fps_limit = EXCLUDED.fps_limit,
+            profile_watch_drl = EXCLUDED.profile_watch_drl,
+            profile_american_citizen = EXCLUDED.profile_american_citizen,
+            profile_experience_non_fpv = EXCLUDED.profile_experience_non_fpv,
+            profile_experience_non_fpv_years = EXCLUDED.profile_experience_non_fpv_years,
+            profile_experience_fpv = EXCLUDED.profile_experience_fpv,
+            profile_experience_fpv_years = EXCLUDED.profile_experience_fpv_years,
+            profile_experience_preference_fpv = EXCLUDED.profile_experience_preference_fpv,
+            profile_experience_real_life_racing = EXCLUDED.profile_experience_real_life_racing,
+            profile_experience_built_own_drone = EXCLUDED.profile_experience_built_own_drone,
+            profile_affiliation_multigp = EXCLUDED.profile_affiliation_multigp,
+            profile_affiliation_military = EXCLUDED.profile_affiliation_military,
+            profile_affiliation_ama = EXCLUDED.profile_affiliation_ama,
+            profile_polls = EXCLUDED.profile_polls,
+            profile_paywall_dismiss = EXCLUDED.profile_paywall_dismiss,
+            profile_physics_intro = EXCLUDED.profile_physics_intro,
+            profile_user_rank = EXCLUDED.profile_user_rank,
+            profile_data_completion = EXCLUDED.profile_data_completion,
+            profile_inventory = EXCLUDED.profile_inventory,
+            flight_time = EXCLUDED.flight_time,
+            reset_delay = EXCLUDED.reset_delay,
+            xbox_privacy_ugc_blocked = EXCLUDED.xbox_privacy_ugc_blocked,
+            ps4_privacy_ugc_blocked = EXCLUDED.ps4_privacy_ugc_blocked,
+            storage_replay_file_count = EXCLUDED.storage_replay_file_count,
+            storage_replay_memory_usage = EXCLUDED.storage_replay_memory_usage,
+            dmv_welcome_screen = EXCLUDED.dmv_welcome_screen,
+            dmv_total_time = EXCLUDED.dmv_total_time,
+            fcmode_active = EXCLUDED.fcmode_active,
+            fcmode_active_missions = EXCLUDED.fcmode_active_missions,
+            network_server_region = EXCLUDED.network_server_region,
+            network_connected_region = EXCLUDED.network_connected_region,
+            settings_controller_profiles = EXCLUDED.settings_controller_profiles,
+            settings_controller_profile_active_guid = EXCLUDED.settings_controller_profile_active_guid,
+            settings_controller_using_adapter = EXCLUDED.settings_controller_using_adapter,
+            settings_fc_profiles = EXCLUDED.settings_fc_profiles,
+            settings_fc_profile_active_guid = EXCLUDED.settings_fc_profile_active_guid,
+            settings_audio_volume_main = EXCLUDED.settings_audio_volume_main,
+            settings_audio_volume_music = EXCLUDED.settings_audio_volume_music,
+            settings_audio_volume_sfx = EXCLUDED.settings_audio_volume_sfx,
+            settings_audio_ui_enabled = EXCLUDED.settings_audio_ui_enabled,
+            settings_audio_motor_enabled = EXCLUDED.settings_audio_motor_enabled,
+            settings_graphics_resolution_x = EXCLUDED.settings_graphics_resolution_x,
+            settings_graphics_resolution_y = EXCLUDED.settings_graphics_resolution_y,
+            settings_graphics_fullscreen = EXCLUDED.settings_graphics_fullscreen,
+            settings_graphics_vsync = EXCLUDED.settings_graphics_vsync,
+            settings_graphics_fps_limit = EXCLUDED.settings_graphics_fps_limit,
+            settings_graphics_mode = EXCLUDED.settings_graphics_mode,
+            settings_graphics_exclusive_mode = EXCLUDED.settings_graphics_exclusive_mode,
+            settings_graphics_advanced_rendering = EXCLUDED.settings_graphics_advanced_rendering,
+            settings_graphics_quality = EXCLUDED.settings_graphics_quality,
+            settings_graphics_effects_quality = EXCLUDED.settings_graphics_effects_quality,
+            settings_graphics_details_quality = EXCLUDED.settings_graphics_details_quality,
+            settings_graphics_tier = EXCLUDED.settings_graphics_tier,
+            settings_graphics_post_processing = EXCLUDED.settings_graphics_post_processing,
+            settings_graphics_texture = EXCLUDED.settings_graphics_texture,
+            settings_graphics_antialias = EXCLUDED.settings_graphics_antialias,
+            settings_graphics_shadows = EXCLUDED.settings_graphics_shadows,
+            settings_graphics_ambient_occlusion = EXCLUDED.settings_graphics_ambient_occlusion,
+            settings_graphics_dof = EXCLUDED.settings_graphics_dof,
+            settings_graphics_motion_blur = EXCLUDED.settings_graphics_motion_blur,
+            settings_graphics_water_reflection = EXCLUDED.settings_graphics_water_reflection,
+            settings_graphics_brightness = EXCLUDED.settings_graphics_brightness,
+            settings_graphics_render_scale = EXCLUDED.settings_graphics_render_scale,
+            settings_game_race_path = EXCLUDED.settings_game_race_path,
+            settings_game_race_guide = EXCLUDED.settings_game_race_guide,
+            settings_game_gate_markers = EXCLUDED.settings_game_gate_markers,
+            settings_game_race_stats = EXCLUDED.settings_game_race_stats,
+            settings_game_race_fast_reset = EXCLUDED.settings_game_race_fast_reset,
+            settings_radio_noise = EXCLUDED.settings_radio_noise,
+            settings_game_race_auto_standings = EXCLUDED.settings_game_race_auto_standings,
+            settings_game_fps_warning = EXCLUDED.settings_game_fps_warning,
+            settings_game_controller_overlay = EXCLUDED.settings_game_controller_overlay,
+            settings_game_trails = EXCLUDED.settings_game_trails,
+            settings_battery_resistance_min = EXCLUDED.settings_battery_resistance_min,
+            settings_battery_resistance_max = EXCLUDED.settings_battery_resistance_max,
+            settings_battery_resistance = EXCLUDED.settings_battery_resistance,
+            settings_battery_capacity = EXCLUDED.settings_battery_capacity,
+            settings_game_trails_duration = EXCLUDED.settings_game_trails_duration,
+            settings_game_tuning_promode = EXCLUDED.settings_game_tuning_promode,
+            settings_game_lens_distortion = EXCLUDED.settings_game_lens_distortion,
+            settings_game_props_visibility = EXCLUDED.settings_game_props_visibility,
+            settings_game_arm_and_turtle = EXCLUDED.settings_game_arm_and_turtle,
+            settings_game_propwash = EXCLUDED.settings_game_propwash,
+            settings_game_crosshair = EXCLUDED.settings_game_crosshair,
+            settings_game_chat = EXCLUDED.settings_game_chat,
+            settings_game_damage = EXCLUDED.settings_game_damage,
+            settings_game_hotkeys = EXCLUDED.settings_game_hotkeys,
+            settings_game_crossplay = EXCLUDED.settings_game_crossplay,
+            settings_game_race_line_color = EXCLUDED.settings_game_race_line_color,
+            settings_game_check_point_color = EXCLUDED.settings_game_check_point_color,
+            settings_graphics_screen_space_reflection = EXCLUDED.settings_graphics_screen_space_reflection,
+            results_list = EXCLUDED.results_list,
+            campaigns_attempts_table = EXCLUDED.campaigns_attempts_table,
+            campaigns_regions_table = EXCLUDED.campaigns_regions_table,
+            campaigns_new_highscore_table = EXCLUDED.campaigns_new_highscore_table,
+            campaigns_terms_accept_table = EXCLUDED.campaigns_terms_accept_table,
+            campaigns_register_info_table = EXCLUDED.campaigns_register_info_table,
+            garage_rigs = EXCLUDED.garage_rigs,
+            garage_active_rig = EXCLUDED.garage_active_rig,
+            physics_tunes = EXCLUDED.physics_tunes,
+            physics_active_tune = EXCLUDED.physics_active_tune,
+            physics_tune_warning = EXCLUDED.physics_tune_warning,
+            settings_language = EXCLUDED.settings_language,
+            settings_notification_state_menu = EXCLUDED.settings_notification_state_menu,
+            settings_notification_state_ingame = EXCLUDED.settings_notification_state_ingame,
+            circuits_opponent_mode = EXCLUDED.circuits_opponent_mode,
+            circuits_opponent_difficulty = EXCLUDED.circuits_opponent_difficulty,
+            onboarding_started = EXCLUDED.onboarding_started,
+            onboarding_progress_beginner = EXCLUDED.onboarding_progress_beginner,
+            onboarding_progress_intermediate = EXCLUDED.onboarding_progress_intermediate,
+            onboarding_progress_pro = EXCLUDED.onboarding_progress_pro,
+            onboarding_progress_proMissions = EXCLUDED.onboarding_progress_proMissions,
+            onboarding_progress_steps_beginner = EXCLUDED.onboarding_progress_steps_beginner,
+            onboarding_progress_steps_intermediate = EXCLUDED.onboarding_progress_steps_intermediate,
+            onboarding_progress_steps_pro = EXCLUDED.onboarding_progress_steps_pro,
+            onboarding_clicked_mission = EXCLUDED.onboarding_clicked_mission,
+            onboarding_orientation = EXCLUDED.onboarding_orientation,
+            onboarding_sensitivity = EXCLUDED.onboarding_sensitivity,
+            maps_favorite = EXCLUDED.maps_favorite,
+            invalidate_settings_cache = EXCLUDED.invalidate_settings_cache,
+            clear_maps_cache = EXCLUDED.clear_maps_cache,
+            blocked_users = EXCLUDED.blocked_users,
+            is_observer = EXCLUDED.is_observer,
+            is_commentator = EXCLUDED.is_commentator;`,
+        [
+            req.body.state["system-info"],
+            uid,
+            req.body.state["steam-id"],
+            req.body.state["xbuid"],
+            req.body.state["playstation-id"],
+            req.body.state["branch-id"],
+            req.body.state["steam-install-path"],
+            req.body.state["steam-purchase-unix-seconds"],
+            req.body.state["profile-name"],
+            req.body.state["profile-block-list"],
+            req.body.state["profile-developer"],
+            req.body.state["profile-reward-parts"],
+            req.body.state["profile-photo-url"],
+            req.body.state["profile-photo-size"],
+            req.body.state["profile-custom-photo-url"],
+            req.body.state["profile-steam-photo-url"],
+            req.body.state["profile-color"],
+            req.body.state["profile-language-iso"],
+            req.body.state["profile-country-iso"],
+            req.body.state["profile-full-name"],
+            req.body.state["profile-email"],
+            req.body.state["profile-age"],
+            req.body.state["profile-country"],
+            req.body.state["profile-gender"],
+            req.body.state["profile-score"],
+            req.body.state["has-review"],
+            req.body.state["prompt-review"],
+            req.body.state["is-drl-pilot"],
+            req.body.state["fps-limit"],
+            req.body.state["profile-watch-drl"],
+            req.body.state["profile-american-citizen"],
+            req.body.state["profile-experience-non-fpv"],
+            req.body.state["profile-experience-non-fpv-years"],
+            req.body.state["profile-experience-fpv"],
+            req.body.state["profile-experience-fpv-years"],
+            req.body.state["profile-experience-preference-fpv"],
+            req.body.state["profile-experience-real-life-racing"],
+            req.body.state["profile-experience-built-own-drone"],
+            req.body.state["profile-affiliation-multigp"],
+            req.body.state["profile-affiliation-military"],
+            req.body.state["profile-affiliation-ama"],
+            req.body.state["profile-polls"],
+            req.body.state["profile-paywall-dismiss"],
+            req.body.state["profile-physics-intro"],
+            req.body.state["profile-user-rank"],
+            req.body.state["profile-data-completion"],
+            req.body.state["profile-inventory"],
+            req.body.state["flight-time"],
+            req.body.state["reset-delay"],
+            req.body.state["xbox-privacy-ugc-blocked"],
+            req.body.state["ps4-privacy-ugc-blocked"],
+            req.body.state["storage-replay-file-count"],
+            req.body.state["storage-replay-memory-usage"],
+            req.body.state["dmv-welcome-screen"],
+            req.body.state["dmv-total_time"],
+            req.body.state["fcmode-active"],
+            req.body.state["fcmode-active-missions"],
+            req.body.state["network-server-region"],
+            req.body.state["network-connected-region"],
+            req.body.state["settings-controller-profiles"],
+            req.body.state["settings-controller-profile-active-guid"],
+            req.body.state["settings-controller-using-adapter"],
+            req.body.state["settings-fc-profiles"],
+            req.body.state["settings-fc-profile-active-guid"],
+            req.body.state["settings-audio-volume-main"],
+            req.body.state["settings-audio-volume-music"],
+            req.body.state["settings-audio-volume-sfx"],
+            req.body.state["settings-audio-ui-enabled"],
+            req.body.state["settings-audio-motor-enabled"],
+            req.body.state["settings-graphics-resolution-x"],
+            req.body.state["settings-graphics-resolution-y"],
+            req.body.state["settings-graphics-fullscreen"],
+            req.body.state["settings-graphics-vsync"],
+            req.body.state["settings-graphics-fps-limit"],
+            req.body.state["settings-graphics-mode"],
+            req.body.state["settings-graphics-exclusive-mode"],
+            req.body.state["settings-graphics-advanced-rendering"],
+            req.body.state["settings-graphics-quality"],
+            req.body.state["settings-graphics-effects-quality"],
+            req.body.state["settings-graphics-details-quality"],
+            req.body.state["settings-graphics-tier"],
+            req.body.state["settings-graphics-post-processing"],
+            req.body.state["settings-graphics-texture"],
+            req.body.state["settings-graphics-antialias"],
+            req.body.state["settings-graphics-shadows"],
+            req.body.state["settings-graphics-ambient-occlusion"],
+            req.body.state["settings-graphics-dof"],
+            req.body.state["settings-graphics-motion-blur"],
+            req.body.state["settings-graphics-water-reflection"],
+            req.body.state["settings-graphics-brightness"],
+            req.body.state["settings-graphics-render-scale"],
+            req.body.state["settings-game-race-path"],
+            req.body.state["settings-game-race-guide"],
+            req.body.state["settings-game-gate-markers"],
+            req.body.state["settings-game-race-stats"],
+            req.body.state["settings-game-race-fast_reset"],
+            req.body.state["settings-radio-noise"],
+            req.body.state["settings-game-race-auto-standings"],
+            req.body.state["settings-game-fps-warning"],
+            req.body.state["settings-game-controller-overlay"],
+            req.body.state["settings-game-trails"],
+            req.body.state["settings-battery-resistance-min"],
+            req.body.state["settings-battery-resistance-max"],
+            req.body.state["settings-battery-resistance"],
+            req.body.state["settings-battery-capacity"],
+            req.body.state["settings-game-trails-duration"],
+            req.body.state["settings-game-tuning-promode"],
+            req.body.state["settings-game-lens-distortion"],
+            req.body.state["settings-game-props-visibility"],
+            req.body.state["settings-game-arm-and-turtle"],
+            req.body.state["settings-game-propwash"],
+            req.body.state["settings-game-crosshair"],
+            req.body.state["settings-game-chat"],
+            req.body.state["settings-game-damage"],
+            req.body.state["settings-game-hotkeys"],
+            req.body.state["settings-game-crossplay"],
+            req.body.state["settings-game-race-line-color"],
+            req.body.state["settings-game-check-point-color"],
+            req.body.state["settings-graphics-screen-space-reflection"],
+            req.body.state["results-list"],
+            req.body.state["campaigns-attempts-table"],
+            req.body.state["campaigns-regions-table"],
+            req.body.state["campaigns-new-highscore-table"],
+            req.body.state["campaigns-terms-accept-table"],
+            req.body.state["campaigns-register-info-table"],
+            req.body.state["garage-rigs"],
+            req.body.state["garage-active-rig"],
+            req.body.state["physics-tunes"],
+            req.body.state["physics-active-tune"],
+            req.body.state["physics-tune-warning"],
+            req.body.state["settings-language"],
+            req.body.state["settings-notification-state-menu"],
+            req.body.state["settings-notification-state-ingame"],
+            req.body.state["circuits-opponent-mode"],
+            req.body.state["circuits-opponent-difficulty"],
+            req.body.state["onboarding-started"],
+            req.body.state["onboarding-progress-beginner"],
+            req.body.state["onboarding-progress-intermediate"],
+            req.body.state["onboarding-progress-pro"],
+            req.body.state["onboarding-progress-proMissions"],
+            req.body.state["onboarding-progress-steps-beginner"],
+            req.body.state["onboarding-progress-steps-intermediate"],
+            req.body.state["onboarding-progress-steps-pro"],
+            req.body.state["onboarding-clicked-mission"],
+            req.body.state["onboarding-orientation"],
+            req.body.state["onboarding-sensitivity"],
+            req.body.state["maps-favorite"],
+            req.body.state["invalidate-settings-cache"],
+            req.body.state["clear-maps-cache"],
+            req.body.state["blocked-users"],
+            req.body.state["is-observer"],
+            req.body.state["is-commentator"]
+        ], (err) => {
+            if (err) {
+                console.error("Error writing state:", err);
+                res.status(500).json({ success: false });
                 return;
-            } else if (row.expires < Math.floor(Date.now() / 1000)) {
-                console.error("Error fetching UID: Token expired");
-                res.status(401).json({ success: false, message: "Token invalid" });
-                return;
-            } else {
-                const uid = row.uid;
-                db.get(`SELECT json FROM playerstate WHERE uid = ?`, [row.uid], (err, json) => {
-                    if (err) {
-                        console.error("Error fetching JSON:", err);
-                        res.status(500).json({ success: false });
-                        return;
-                    }
-                    if (json) {
-                        if ('profile-name' in parsed && parsed['profile-name'].trim() === "") {
-                            console.warn("Blocked empty profile-name write");
-                            parsed['profile-name'] = JSON.parse(json.json)['profile-name'];
-                        }
-                    }
-
-                    db.run(`INSERT INTO playerstate (uid, json) VALUES (?, ?)
-                    ON CONFLICT(uid) DO UPDATE SET json = excluded.json;`, [
-                        uid,
-                        JSON.stringify(parsed)
-                    ], (err) => {
-                        if (err) {
-                            console.error("SQLite insert failed:", err);
-                            res.status(500).json({ success: false });
-                            return;
-                        } else {
-                            res.status(200).json({ success: true });
-                        }
-                    })
-                });
             }
-        });
-    });
+            res.status(200).json({ success: true });
+        })
 });
 
 /*
@@ -2033,7 +2450,7 @@ function mapLeaderboardSqlToJson(row, i) {
         "profile-platform-id": row[i].profile_platform_id,
         "username": row[i].username,
         "profile-color": row[i].profile_color,
-        "profile-thumb": row[i].profile_thumb,
+        "profile-thumb": row[i].profile_photo_url,
         "profile-name": row[i].profile_name,
         "profile-platform": row[i].profile_platform,
         "is-custom-map": row[i].is_custom_map,
@@ -2221,89 +2638,76 @@ app.post('/leaderboards/', express.urlencoded({ extended: false }), badTokenAuth
                         console.log("No old replay")
                     }
                 }
-                db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
-                    if (err) {
-                        console.error("Error fetching JSON:", err);
-                        res.status(500).json({ success: false });
-                        return;
-                    }
 
-                    if (!row) {
-                    } else {
-                        jsondata = JSON.parse(row.json);
-                    }
-
-
-
-                    const stmt = db.prepare(
-                        `INSERT INTO leaderboard (player_id, profile_name, profile_color, map, track, is_custom_map, custom_map, mission, group_id, game_type, diameter, drone_name, drone_thumb, multiplayer, multiplayer_room_id, multiplayer_room_size, multiplayer_player_id, multiplayer_master_id, multiplayer_player_position, flag_url, score_type, match_id, tryouts, battery_resistance, controller_type, score, score_check, score_double_check, score_cheat, score_cheat_ratio, score_cheat_samples, crash_count, top_speed, time_in_first, lap_times, gate_times, fastest_lap, slowest_lap, total_distance, order_col, high_score, race_id, limit_col, heat, custom_physics, drl_official, drl_pilot_mode, drone_guid, drone_rig, drone_hash, updated_at)
+                console.log(parsed[0])
+                const stmt = db.prepare(
+                    `INSERT INTO leaderboard (player_id, profile_name, profile_color, map, track, is_custom_map, custom_map, mission, group_id, game_type, diameter, drone_name, drone_thumb, multiplayer, multiplayer_room_id, multiplayer_room_size, multiplayer_player_id, multiplayer_master_id, multiplayer_player_position, flag_url, score_type, match_id, tryouts, battery_resistance, controller_type, score, score_check, score_double_check, score_cheat, score_cheat_ratio, score_cheat_samples, crash_count, top_speed, time_in_first, lap_times, gate_times, fastest_lap, slowest_lap, total_distance, order_col, high_score, race_id, limit_col, heat, custom_physics, drl_official, drl_pilot_mode, drone_guid, drone_rig, drone_hash, updated_at)
                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
                                 ON CONFLICT(player_id, map, track, diameter, drl_official, custom_map, match_id) DO UPDATE SET score = excluded.score, score_check = excluded.score_check, score_double_check = excluded.score_double_check, controller_type = excluded.controller_type, score_cheat = excluded.score_cheat, score_cheat_ratio = excluded.score_cheat_ratio, score_cheat_samples = excluded.score_cheat_samples, crash_count = excluded.crash_count, top_speed = excluded.top_speed, lap_times = excluded.lap_times, gate_times = excluded.gate_times, fastest_lap = excluded.fastest_lap, slowest_lap = excluded.slowest_lap, total_distance = excluded.total_distance, race_id = excluded.race_id, drone_name = excluded.drone_name, drone_guid = excluded.drone_guid, updated_at = datetime('now');`
-                    );
-                    stmt.run(
-                        uid,
-                        jsondata['profile-name'],
-                        jsondata['profile-color'],
-                        parsed[0].map ? parsed[0].map : "unknown",
-                        parsed[0].track ? parsed[0].track : "unknown",
-                        parsed[0]['is-custom-map'] ? parsed[0]['is-custom-map'] : true,
-                        parsed[0]['custom-map'] ? parsed[0]['custom-map'] : null,
-                        parsed[0]['mission'] ? parsed[0]['mission'] : null,
-                        parsed[0]['group-id'] ? parsed[0]['group-id'] : null,
-                        parsed[0]['game-type'] ? parsed[0]['game-type'] : null,
-                        parsed[0]['diameter'] ? parsed[0]['diameter'] : 7,
-                        parsed[0]['drone-name'] ? parsed[0]['drone-name'] : null,
-                        parsed[0]['drone-thumb'] ? parsed[0]['drone-thumb'] : null,
-                        parsed[0]['multiplayer'] ? parsed[0]['multiplayer'] : null,
-                        parsed[0]['multiplayer-room-id'] ? parsed[0]['multiplayer-room-id'] : null,
-                        parsed[0]['multiplayer-room-size'] ? parsed[0]['multiplayer-room-size'] : null,
-                        parsed[0]['multiplayer-player-id'] ? parsed[0]['multiplayer-player-id'] : null,
-                        parsed[0]['multiplayer-master-id'] ? parsed[0]['multiplayer-master-id'] : null,
-                        parsed[0]['multiplayer-player-position'] ? parsed[0]['multiplayer-player-position'] : null,
-                        parsed[0]['flag-url'] ? parsed[0]['flag-url'] : null,
-                        parsed[0]['score-type'] ? parsed[0]['score-type'] : null,
-                        parsed[0]['match-id'] != null ? parsed[0]['match-id'] : 'normal',
-                        parsed[0]['tryouts'] ? parsed[0]['tryouts'] : null,
-                        parsed[0]['battery-resistance'] ? parsed[0]['battery-resistance'] : null,
-                        parsed[0]['controller-type'] ? parsed[0]['controller-type'] : null,
-                        parsed[0]['score'] ? parsed[0]['score'] : null,
-                        parsed[0]['score-check'] ? parsed[0]['score-check'] : null,
-                        parsed[0]['score-double-check'] ? parsed[0]['score-double-check'] : null,
-                        parsed[0]['score-cheat'] ? parsed[0]['score-cheat'] : null,
-                        parsed[0]['score-cheat-ratio'] ? parsed[0]['score-cheat-ratio'] : null,
-                        parsed[0]['score-cheat-samples'] ? parsed[0]['score-cheat-samples'] : null,
-                        parsed[0]['crash-count'] ? parsed[0]['crash-count'] : null,
-                        parsed[0]['top-speed'] ? parsed[0]['top-speed'] : null,
-                        parsed[0]['time-in-first'] ? parsed[0]['time-in-first'] : null,
-                        parsed[0]['lap-times'] ? JSON.stringify(parsed[0]['lap-times']) : null,
-                        parsed[0]['gate-times'] ? JSON.stringify(parsed[0]['gate-times']) : null,
-                        parsed[0]['fastest-lap'] ? parsed[0]['fastest-lap'] : null,
-                        parsed[0]['slowest-lap'] ? parsed[0]['slowest-lap'] : null,
-                        parsed[0]['total-distance'] ? parsed[0]['total-distance'] : null,
-                        parsed[0]['order-col'] ? parsed[0]['order-col'] : null,
-                        parsed[0]['high-score'] ? parsed[0]['high-score'] : null,
-                        parsed[0]['race-id'] ? parsed[0]['race-id'] : null,
-                        parsed[0]['limit-col'] ? parsed[0]['limit-col'] : null,
-                        parsed[0]['heat'] ? parsed[0]['heat'] : null,
-                        parsed[0]['custom-physics'] ? parsed[0]['custom-physics'] : null,
-                        parsed[0]['drl-official'] ? parsed[0]['drl-official'] : null,
-                        parsed[0]['drl-pilot-mode'] ? parsed[0]['drl-pilot-mode'] : null,
-                        parsed[0]['drone-guid'] ? parsed[0]['drone-guid'] : null,
-                        parsed[0]['drone-rig'] ? parsed[0]['drone-rig'] : null,
-                        parsed[0]['drone-hash'] ? parsed[0]['drone-hash'] : null,
-                        (err) => {
+                );
+                stmt.run(
+                    uid,
+                    jsondata['profile-name'] || null,
+                    jsondata['profile-color'] || null,
+                    parsed[0].map ? parsed[0].map : "unknown",
+                    parsed[0].track ? parsed[0].track : "unknown",
+                    parsed[0]['is-custom-map'] ? parsed[0]['is-custom-map'] : true,
+                    parsed[0]['custom-map'] ? parsed[0]['custom-map'] : null,
+                    parsed[0]['mission'] ? parsed[0]['mission'] : null,
+                    parsed[0]['group-id'] ? parsed[0]['group-id'] : null,
+                    parsed[0]['game-type'] ? parsed[0]['game-type'] : null,
+                    parsed[0]['diameter'] ? parsed[0]['diameter'] : 7,
+                    parsed[0]['drone-name'] ? parsed[0]['drone-name'] : null,
+                    parsed[0]['drone-thumb'] ? parsed[0]['drone-thumb'] : null,
+                    parsed[0]['multiplayer'] ? parsed[0]['multiplayer'] : null,
+                    parsed[0]['multiplayer-room-id'] ? parsed[0]['multiplayer-room-id'] : null,
+                    parsed[0]['multiplayer-room-size'] ? parsed[0]['multiplayer-room-size'] : null,
+                    parsed[0]['multiplayer-player-id'] ? parsed[0]['multiplayer-player-id'] : null,
+                    parsed[0]['multiplayer-master-id'] ? parsed[0]['multiplayer-master-id'] : null,
+                    parsed[0]['multiplayer-player-position'] ? parsed[0]['multiplayer-player-position'] : null,
+                    parsed[0]['flag-url'] ? parsed[0]['flag-url'] : null,
+                    parsed[0]['score-type'] ? parsed[0]['score-type'] : null,
+                    parsed[0]['match-id'] != null ? parsed[0]['match-id'] : 'normal',
+                    parsed[0]['tryouts'] ? parsed[0]['tryouts'] : null,
+                    parsed[0]['battery-resistance'] ? parsed[0]['battery-resistance'] : null,
+                    parsed[0]['controller-type'] ? parsed[0]['controller-type'] : null,
+                    parsed[0]['score'] ? parsed[0]['score'] : null,
+                    parsed[0]['score-check'] ? parsed[0]['score-check'] : null,
+                    parsed[0]['score-double-check'] ? parsed[0]['score-double-check'] : null,
+                    parsed[0]['score-cheat'] ? parsed[0]['score-cheat'] : null,
+                    parsed[0]['score-cheat-ratio'] ? parsed[0]['score-cheat-ratio'] : null,
+                    parsed[0]['score-cheat-samples'] ? parsed[0]['score-cheat-samples'] : null,
+                    parsed[0]['crash-count'] ? parsed[0]['crash-count'] : null,
+                    parsed[0]['top-speed'] ? parsed[0]['top-speed'] : null,
+                    parsed[0]['time-in-first'] ? parsed[0]['time-in-first'] : null,
+                    parsed[0]['lap-times'] ? JSON.stringify(parsed[0]['lap-times']) : null,
+                    parsed[0]['gate-times'] ? JSON.stringify(parsed[0]['gate-times']) : null,
+                    parsed[0]['fastest-lap'] ? parsed[0]['fastest-lap'] : null,
+                    parsed[0]['slowest-lap'] ? parsed[0]['slowest-lap'] : null,
+                    parsed[0]['total-distance'] ? parsed[0]['total-distance'] : null,
+                    parsed[0]['order-col'] ? parsed[0]['order-col'] : null,
+                    parsed[0]['high-score'] ? parsed[0]['high-score'] : null,
+                    parsed[0]['race-id'] ? parsed[0]['race-id'] : null,
+                    parsed[0]['limit-col'] ? parsed[0]['limit-col'] : null,
+                    parsed[0]['heat'] ? parsed[0]['heat'] : null,
+                    parsed[0]['custom-physics'] ? parsed[0]['custom-physics'] : null,
+                    parsed[0]['drl-official'] ? parsed[0]['drl-official'] : null,
+                    parsed[0]['drl-pilot-mode'] ? parsed[0]['drl-pilot-mode'] : null,
+                    parsed[0]['drone-guid'] ? parsed[0]['drone-guid'] : null,
+                    parsed[0]['drone-rig'] ? parsed[0]['drone-rig'] : null,
+                    parsed[0]['drone-hash'] ? parsed[0]['drone-hash'] : null,
+                    (err) => {
 
-                            if (err) {
-                                console.error("SQLite insert failed:", err);
-                                return;
-                            }
+                        if (err) {
+                            console.error("SQLite insert failed:", err);
+                            return;
+                        }
 
-                            stmt.finalize(err => {
-                                if (err) console.error("Error finalizing statement:", err);
-                            });
+                        stmt.finalize(err => {
+                            if (err) console.error("Error finalizing statement:", err);
                         });
-                    highscore = true
-                });
+                    });
+                highscore = true
             } else {
                 highscore = false
             }
@@ -2472,7 +2876,8 @@ app.get('/leaderboards/rivals/', badTokenAuthv2, (req, res) => {
         inputs = [req.query.map, req.query.track, diameter, drlOfficial]
     }
     let player_pos = 0
-    db.all(`SELECT * FROM leaderboard ` + query + `ORDER BY score ASC`, inputs, (err, row) => {
+    db.all(`SELECT * FROM leaderboard l JOIN profilestatemodel p ON p.player_id = l.player_id ` + query + `ORDER BY score ASC`, inputs, (err, row) => {
+        console.log(row)
         if (err || row.length === 0) {
             console.error("Error fetching leaderboard:", err);
             let jsondata = {
@@ -2522,8 +2927,9 @@ app.get('/leaderboards/rivals/', badTokenAuthv2, (req, res) => {
                 ],
                 "player": player_pos,
                 "rivals": rivals,
-                "past": null // not needed or used
+                "past": mapLeaderboardSqlToJson(row, player_pos)
             }
+            console.log(jsondata)
             res.status(200).json({
                 success: true, data: jsondata
             });
@@ -2628,7 +3034,7 @@ app.get('/leaderboards/', badTokenAuthv2, (req, res) => {
     }
     const offset = (page - 1) * limit;
     if (req.query.match) {
-        db.all(`SELECT * FROM leaderboard WHERE match_id = ? ORDER BY score ASC LIMIT ? OFFSET ?`, [req.query.match, limit, offset], (err, row) => {
+        db.all(`SELECT * FROM leaderboard l JOIN profilestatemodel p ON p.player_id = l.player_id WHERE match_id = ? ORDER BY score ASC LIMIT ? OFFSET ?`, [req.query.match, limit, offset], (err, row) => {
             if (err || row.length === 0) {
                 console.error("Error fetching leaderboard:", err);
                 res.status(200).json({
@@ -2657,7 +3063,7 @@ app.get('/leaderboards/', badTokenAuthv2, (req, res) => {
         const diameter = Number(req.query.diameter);
         const drlOfficial = req.query["drl-official"] === "true" ? 1 : 0;
         if (isCustomMap) {
-            db.all(`SELECT * FROM leaderboard WHERE custom_map = ? AND diameter = ? AND drl_official = ? ORDER BY score ASC LIMIT ? OFFSET ?`, [req.query["custom-map"], diameter, drlOfficial, limit, offset], (err, row) => {
+            db.all(`SELECT * FROM leaderboard l JOIN profilestatemodel p ON p.player_id = l.player_id WHERE custom_map = ? AND diameter = ? AND drl_official = ? ORDER BY score ASC LIMIT ? OFFSET ?`, [req.query["custom-map"], diameter, drlOfficial, limit, offset], (err, row) => {
                 if (err || row.length === 0) {
                     console.error("Error fetching leaderboard:", err);
                     res.status(200).json({
@@ -2682,7 +3088,7 @@ app.get('/leaderboards/', badTokenAuthv2, (req, res) => {
             });
 
         } else {
-            db.all(`SELECT * FROM leaderboard WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? ORDER BY score ASC LIMIT ? OFFSET ?`, [req.query.map, req.query.track, diameter, drlOfficial, limit, offset], (err, row) => {
+            db.all(`SELECT * FROM leaderboard l JOIN profilestatemodel p ON p.player_id = l.player_id WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? ORDER BY score ASC LIMIT ? OFFSET ?`, [req.query.map, req.query.track, diameter, drlOfficial, limit, offset], (err, row) => {
                 if (err || row.length === 0) {
                     console.error("Error fetching leaderboard:", err);
                     res.status(200).json({
@@ -2890,22 +3296,11 @@ app.get(`/player/license/`, (req, res) => {
 ------------------------------------------------------
 */
 
-
 app.post('/drones/', express.urlencoded({ extended: true }), badTokenAuthv2, (req, res) => {
     console.log("req sent to /drones/ headers are: ", req.headers);
     console.log(req.body);
     const uid = req.uid;
-    db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
-        if (err) {
-            console.error("Error fetching JSON:", err);
-            res.status(500).json({ success: false });
-            return;
-        }
-        let jsondata = {};
-        if (row) {
-            jsondata = JSON.parse(row.json);
-        }
-        db.run(`INSERT INTO drone (
+    db.run(`INSERT INTO drone (
                     guid,
                     player_id,
                     profile_platform_id,
@@ -2968,46 +3363,45 @@ app.post('/drones/', express.urlencoded({ extended: true }), badTokenAuthv2, (re
                     rig_data             = excluded.rig_data,
                     profile_data         = excluded.profile_data,
                     physics_data         = excluded.physics_data;`,
-            [
-                req.body.guid,
-                uid,
-                jsondata['profile-platform-id'],
-                jsondata['profile-platform'],
-                jsondata['profile-color'],
-                jsondata['profile-thumb'],
-                req.body['profile-name'],
-                req.body.score,
-                req.body.rating,
-                req.body['rating-count'],
-                req.body['thumb-url'],
-                req.body.name,
-                req.body['is-public'],
-                req.body['is-official'],
-                req.body['is-custom-physics'],
-                req.body['flight-time'],
-                req.body['flight-total'],
-                req.body.size,
-                req.body.thrust,
-                req.body.speed,
-                req.body.weight,
-                req.body.rpm,
-                req.body['frame-id'],
-                req.body['motor-id'],
-                req.body['prop-id'],
-                req.body['battery-id'],
-                JSON.stringify(req.body['rig-data']),
-                JSON.stringify(req.body['profile-data']),
-                JSON.stringify(req.body['physics-data'])
-            ], err => {
-                if (err) {
-                    console.error("Error inserting/updating drone:", err);
-                    res.status(500).json({ success: false });
-                    return;
-                } else {
-                    res.status(200).json({ success: true, data: req.body })
-                }
-            })
-    });
+        [
+            req.body.guid,
+            uid,
+            jsondata['profile-platform-id'],
+            jsondata['profile-platform'],
+            jsondata['profile-color'],
+            jsondata['profile-thumb'],
+            req.body['profile-name'],
+            req.body.score,
+            req.body.rating,
+            req.body['rating-count'],
+            req.body['thumb-url'],
+            req.body.name,
+            req.body['is-public'],
+            req.body['is-official'],
+            req.body['is-custom-physics'],
+            req.body['flight-time'],
+            req.body['flight-total'],
+            req.body.size,
+            req.body.thrust,
+            req.body.speed,
+            req.body.weight,
+            req.body.rpm,
+            req.body['frame-id'],
+            req.body['motor-id'],
+            req.body['prop-id'],
+            req.body['battery-id'],
+            JSON.stringify(req.body['rig-data']),
+            JSON.stringify(req.body['profile-data']),
+            JSON.stringify(req.body['physics-data'])
+        ], err => {
+            if (err) {
+                console.error("Error inserting/updating drone:", err);
+                res.status(500).json({ success: false });
+                return;
+            } else {
+                res.status(200).json({ success: true, data: req.body })
+            }
+        })
 });
 
 app.get('/drones/:guid/remove/', badTokenAuthv2, (req, res) => {
@@ -3025,7 +3419,7 @@ app.get('/drones/:guid/remove/', badTokenAuthv2, (req, res) => {
 app.get('/drones/', (req, res) => {
     console.log(req.query)
     let data = []
-    let sql = "SELECT * FROM drone";
+    let sql = "SELECT * FROM drone d JOIN profilestatemodel p ON p.player_id = d.player_id";
     let params = [];
 
     if (req.query["is-public"] != null) {
@@ -3046,7 +3440,7 @@ app.get('/drones/', (req, res) => {
                     "profile-platform-id": row[i].profile_platform_id,
                     "profile-platform": row[i].profile_platform,
                     "profile-color": row[i].profile_color,
-                    "profile-thumb": row[i].profile_thumb,
+                    "profile-thumb": row[i].profile_photo_url,
                     "profile-name": row[i].profile_name,
                     "score": row[i].score,
                     "rating": row[i].rating,
