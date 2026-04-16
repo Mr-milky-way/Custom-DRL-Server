@@ -72,9 +72,7 @@ app.use(rateLimit({
 
 
 //TODO: finnish maps IE duplicating and stuff
-//TODO: Fix crash dummy data
 //TODO: Get tournaments working ???
-//TODO: Make it look better
 //TODO: Better documentation
 
 
@@ -739,29 +737,6 @@ app.get('/tracks/:id', (req, res) => {
     res.sendFile(finalPath);
 });
 
-
-//TODO: WHAT DID THIS DO?
-/*
-app.get('/maps/:guid', (req, res) => {
-    const guid = req.params.guid;
-    console.log("what? /maps/ MAPS", guid);
- 
-    const mapData = Tracks.filter(track => track.guid === guid);
- 
-    res.status(200).json({
-        success: true,
-        data: {
-            paging: {
-                "page-total": 1,
-                "page": 1,
-                "next-page-url": "",
-                "previous-page-url": ""
-            },
-            data: mapData
-        }
-    });
-});
-*/
 
 app.get('/progression/maps/', (req, res) => {
     let progressionMaps = [];
@@ -1640,7 +1615,6 @@ async function getSteamProfilePic(steamId) {
     }
 }
 
-//TODO: stop using let body = '';
 app.post('/state/', express.urlencoded(), badTokenAuthv2, (req, res) => {
     const token = req.headers['x-access-jsonwebtoken'];
     console.log("post sent to /state/ TOKEN:", token, req.headers);
@@ -3503,6 +3477,7 @@ app.get('/time/', (req, res) => {
     res.status(200).json({ success: true, data: getTimeBase64() });
 })
 
+//TODO: Fix crash dummy data
 //filler data
 app.get('/crash-settings', (req, res) => {
     res.status(200).json({ success: true, data: null });
