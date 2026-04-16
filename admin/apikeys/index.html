@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="/admin/main.css">
     <script src="/admin/index.js"></script>
 </head>
+
 <body>
     <nav class="sidebar">
         <div class="sidebar-header">
@@ -16,55 +18,47 @@
             <li><a href="/admin/dashboard/">Dashboard</a></li>
             <li><a href="/admin/tournaments/">Tournaments</a></li>
             <li><a href="/admin/users/">Admin Users</a></li>
-            <li><a href="/admin/apikeys/">API Keys</a></li>
-            <li class="active"><a href="/admin/map-pools/">Map Pools</a></li>
+            <li class="active"><a href="/admin/apikeys/">API Keys</a></li>
+            <li><a href="/admin/map-pools/">Map Pools</a></li>
             <li><a href="/admin/settings/">Settings</a></li>
             <li class="logout"><a href="/admin/logout">Logout</a></li>
         </ul>
     </nav>
     <main class="main-content">
         <header class="top-bar">
-            <h1>Dashboard</h1>
+            <h1>Admin Users</h1>
         </header>
         <section class="stats-grid">
             <div class="stat-card">
-                <label>Map Pool Name:</label>
-                <input type="text" id="mapPoolName">
-                <button onclick="createMapPool()">Create Map Pool</button>
-                <p id="addPoolResMes" class="number"></p>
-            </div>
-            <div class="stat-card">
-                <h3>Add Map to pool</h3>
-                <input type="text" id="PoolName" placeholder="Map Pool Name">
-                <input type="text" id="MapSearchInput" placeholder="Search for maps...">
-                <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Map Name</th>
-                        <th>Creator Name</th>
-                        <th>Add</th>
-                    </tr>
-                </thead>
-                <tbody id="map-data">
-                </tbody>
-            </table>
+                <h3>Create API key</h3>
+                <label for="uid">UID</label>
+
+                <input type="text" name="uid" id="uid" required>
+
+                <label for="name">Name</label>
+                <input type="text" name="name" id="name" required>
+
+                <button type="button" onclick="CreateAPIKey()">Change Password/username</button>
+
+                <input type="text" name="token" id="token">
             </div>
         </section>
         <section class="data-section">
             <h2>Map Pools</h2>
-            <script>loadMapPools();</script>
+            <script>loadapiKeys();</script>
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Map Pool Name</th>
-                        <th>Map count</th>
-                        <th>Maps</th>
+                        <th>Key name</th>
+                        <th>Token</th>
+                        <th>UID</th>
                     </tr>
                 </thead>
-                <tbody id="map-pool-data">
+                <tbody id="api-key-data">
                 </tbody>
             </table>
         </section>
     </main>
 </body>
+
 </html>

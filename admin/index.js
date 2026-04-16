@@ -278,3 +278,82 @@ function addMapToPool(mapGuid, map, track) {
             alert('Error: ' + error);
         });
 }
+
+
+function CreateAPIKey() {
+    const uid = document.getElementById("uid").value
+    const name = document.getElementById("name").value
+    const url = '/admin/createapiKey/';
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({uid: uid, name: name})
+    })
+        .then(response => response.json())
+        .then(result => {
+            alert(result.message);
+            document.getElementById("token").value = result.message
+        })
+        .catch(error => {
+            console.error('Error:', error)
+            alert('Error: ' + error);
+        });
+}
+
+function loadapiKeys() {
+    const url = '/admin/apikey/';
+
+    fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    })
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            const tableBody = document.getElementById('api-key-data');
+            if (data.body.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4">No map pools available.</td></tr>';
+                return;
+            }
+            const rows = data.body.map(Pool => `
+            <tr>
+                <td>${Pool.name}</td>
+                <td>${Pool.token}</td>
+                <td>${Pool.uid}</td>
+                <td><button onclick="RemoveApiKey('${Pool.uid}')">Revoke</button></td>
+            </tr>
+        `).join('');
+
+            tableBody.innerHTML = rows;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(error)
+            document.getElementById('map-pool-data').innerHTML =
+                '<tr><td colspan="4">Failed to load data. Please try again later.</td></tr>';
+        });
+}
+
+function RemoveApiKey(uid){
+    const url = "/admin/removeapikey/"
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({uid: uid})
+    })
+        .then(response => response.json())
+        .then(result => {
+            alert(result.message);
+        })
+        .catch(error => {
+            console.error('Error:', error)
+            alert('Error: ' + error);
+        });
+}

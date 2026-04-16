@@ -603,13 +603,13 @@ const badTokenAuthv2 = (req, res, next) => {
             console.error("Error fetching UID:", err);
             res.status(404).json({ success: false });
             return;
-        } else if (row.expires < Math.floor(Date.now() / 1000)) {
-            console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false, message: "Token invalid" });
-            return;
         } else if (row.expires === -1) {
             console.error("Banned token used");
             res.status(401).json({ success: false, message: "Token banned" });
+            return;
+        } else if (row.expires != 0 && row.expires < Math.floor(Date.now() / 1000)) {
+            console.error("Error fetching UID: Token expired");
+            res.status(401).json({ success: false, message: "Token invalid" });
             return;
         } else {
             req.uid = row.uid;
@@ -993,7 +993,7 @@ app.get('/maps/', (req, res) => {
             const totalCount = countResult.total;
             const totalPages = Math.ceil(totalCount / limit);
             db.all(
-                `SELECT * FROM communitytracks WHERE ${filters.join(' AND ')} ${Order.join(' AND ')} LIMIT ? OFFSET ? `,
+                `SELECT * FROM communitytracks c JOIN profilestatemodel p ON p.player_id = c.player_id WHERE ${filters.join(' AND ')} ${Order.join(' AND ')} LIMIT ? OFFSET ? `,
                 [...filtersP, limit, offset],
                 (err, rows) => {
                     if (err) {
@@ -1009,7 +1009,7 @@ app.get('/maps/', (req, res) => {
     );
 });
 
-//TODO: MERGE WITH NEW Player State SYSTEM
+//TODO: fix this (need to fix the track colab thingy)
 app.post('/maps/', express.urlencoded({ limit: "50mb", extended: true }), badTokenAuthv2, (req, res) => {
     console.log("req sent to /maps/ via POST", req.body);
     const uid = req.uid
@@ -1534,8 +1534,8 @@ app.get('/social/profile/', badTokenAuthv2, (req, res) => {
 
 app.get(`/player/avatar/:uid/`, (req, res) => {
     db.get(`SELECT profile_photo_url FROM profilestatemodel WHERE player_id = ?`, [req.params.uid], async (err, row) => {
-        if (err || !row){
-            res.status(500).json({success: false});
+        if (err || !row) {
+            res.status(500).json({ success: false });
             return
         }
         const imageUrl = row.profile_photo_url;
@@ -1547,7 +1547,7 @@ app.get(`/player/avatar/:uid/`, (req, res) => {
             res.set('Content-Type', response.headers.get('content-type'));
             res.send(buffer);
         } catch (error) {
-            res.status(500).json({success: false});
+            res.status(500).json({ success: false });
         }
     })
 })
@@ -3012,8 +3012,6 @@ app.get(`/replay/rivals/`, (req, res) => {
     });
 })
 app.get('/leaderboards/', badTokenAuthv2, (req, res) => {
-
-    console.log(req.query)
     let limit = 10
     let page = 1
     if (!req.query.limit) {
@@ -3027,86 +3025,40 @@ app.get('/leaderboards/', badTokenAuthv2, (req, res) => {
         page = req.query.page
     }
     const offset = (page - 1) * limit;
-    if (req.query.match) {
-        db.all(`SELECT * FROM leaderboard l JOIN profilestatemodel p ON p.player_id = l.player_id WHERE match_id = ? ORDER BY score ASC LIMIT ? OFFSET ?`, [req.query.match, limit, offset], (err, row) => {
-            if (err || row.length === 0) {
-                console.error("Error fetching leaderboard:", err);
-                res.status(200).json({
-                    success: true, data: {
-                        "leaderboard": null,
-                        "pagging": { "page": page, "limit": limit, "total": 2 }
-                    }
-                });
-            } else {
-                let jsondata = []
-                for (let i = 0; i < row.length; i++) {
-                    let data = mapLeaderboardSqlToJson(row, i)
-                    jsondata.push(data)
-                }
-                res.status(200).json({
-                    success: true, data: {
-                        "leaderboard": jsondata,
-                        "pagging": { "page": page, "limit": limit, "total": Math.ceil(row.length / limit) }
-                    }
-                });
-            }
-        });
-    } else {
-        const isCustomMap = req.query["is-custom-map"] === "true";
+    console.log(req.query)
+    const allowed = ["player-id", "map", "track", "diameter", "drl-official", "drone-name", "drone-guid", "profile-platform-id", "username", "profile-color", "profile-thumb", "profile-name", "profile-platform", "is-custom-map", "custom-map", "mission", "group-id", "region", "replay-url", "game-type", "drone-thumb", "multiplayer", "multiplayer-room-id", "multiplayer-room-size", "multiplayer-player-id", "multiplayer-master-id", "multiplayer-player-position", "flag-url", "score-type", "match-id", "tryouts", "battery-resistance", "controller-type", "position", "score", "score-check", "score-double-check", "score-cheat", "score-cheat-ratio", "score-cheat-samples", "crash-count", "top-speed", "time-in-first", "lap-times", "gate-times", "fastest-lap", "slowest-lap", "total-distance", "percentile", "order-col", "high-score", "race-id", "limit-col", "heat", "custom-physics", "drl-pilot-mode", "drone-rig", "drone-hash",]
+    const filteredQuery = Object.fromEntries(
+        Object.entries(req.query).filter(([key]) => allowed.includes(key))
+    );
+    console.log(filteredQuery)
+    const keys = Object.keys(filteredQuery);
+    const conditions = keys.map(key => `${key} = ?`);
+    const values = Object.values(filteredQuery);
 
-        const diameter = Number(req.query.diameter);
-        const drlOfficial = req.query["drl-official"] === "true" ? 1 : 0;
-        if (isCustomMap) {
-            db.all(`SELECT * FROM leaderboard l JOIN profilestatemodel p ON p.player_id = l.player_id WHERE custom_map = ? AND diameter = ? AND drl_official = ? ORDER BY score ASC LIMIT ? OFFSET ?`, [req.query["custom-map"], diameter, drlOfficial, limit, offset], (err, row) => {
-                if (err || row.length === 0) {
-                    console.error("Error fetching leaderboard:", err);
-                    res.status(200).json({
-                        success: true, data: {
-                            "leaderboard": null,
-                            "pagging": { "page": page, "limit": limit, "total": 2 }
-                        }
-                    });
-                } else {
-                    let jsondata = []
-                    for (let i = 0; i < row.length; i++) {
-                        let data = mapLeaderboardSqlToJson(row, i)
-                        jsondata.push(data)
-                    }
-                    res.status(200).json({
-                        success: true, data: {
-                            "leaderboard": jsondata,
-                            "pagging": { "page": page, "limit": limit, "total": Math.ceil(row.length / limit) }
-                        }
-                    });
+
+    db.all(`SELECT * FROM leaderboard l JOIN profilestatemodel p ON p.player_id = l.player_id WHERE ${conditions.join(' AND ')} ORDER BY score ASC LIMIT ? OFFSET ?`, [values, limit, offset], (err, row) => {
+        if (err || row.length === 0) {
+            console.error("Error fetching leaderboard:", err);
+            res.status(200).json({
+                success: true, data: {
+                    "leaderboard": null,
+                    "pagging": { "page": page, "limit": limit, "total": 2 }
                 }
             });
-
         } else {
-            db.all(`SELECT * FROM leaderboard l JOIN profilestatemodel p ON p.player_id = l.player_id WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? ORDER BY score ASC LIMIT ? OFFSET ?`, [req.query.map, req.query.track, diameter, drlOfficial, limit, offset], (err, row) => {
-                if (err || row.length === 0) {
-                    console.error("Error fetching leaderboard:", err);
-                    res.status(200).json({
-                        success: true, data: {
-                            "leaderboard": null,
-                            "pagging": { "page": page, "limit": limit, "total": 2 }
-                        }
-                    });
-                } else {
-                    let jsondata = []
-                    for (let i = 0; i < row.length; i++) {
-                        let data = mapLeaderboardSqlToJson(row, i)
-                        jsondata.push(data)
-                    }
-                    res.status(200).json({
-                        success: true, data: {
-                            "leaderboard": jsondata,
-                            "pagging": { "page": page, "limit": limit, "total": Math.ceil(row.length / limit) }
-                        }
-                    });
+            let jsondata = []
+            for (let i = 0; i < row.length; i++) {
+                let data = mapLeaderboardSqlToJson(row, i)
+                jsondata.push(data)
+            }
+            res.status(200).json({
+                success: true, data: {
+                    "leaderboard": jsondata,
+                    "pagging": { "page": page, "limit": limit, "total": Math.ceil(row.length / limit) }
                 }
             });
         }
-    }
+    });
 });
 
 
@@ -3955,6 +3907,40 @@ app.put(`/admin/tournaments/update/:guid`, express.json(), (req, res) => {
             }
             res.status(200).json({ success: true });
         })
+})
+
+app.post(`/admin/createapiKey/`, express.json(), (req, res) => {
+    const {name, uid} = req.body
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = 0;
+    db.run(`INSERT INTO user (uid, token, expires, name) VALUES (?, ?, ?, ?)`, [uid, token, expires, name], (err) => {
+        if (err) {
+            console.error("/admin/createapiKey/ ERROR: " + err)
+            return res.status(500).json({success: false, message: err})
+        }
+        res.status(200).json({success: true, message: token})
+    })
+})
+
+app.get(`/admin/apikey/`, express.json(), (req, res) => {
+    db.all(`SELECT * FROM user WHERE name IS NOT NULL`, [], (err, rows) => {
+        if (err|| rows.length === 0) {
+            console.error("/admin/apikeys/ ERROR: " + err)
+            return res.status(500).json({success: false, message: err})
+        }
+        res.status(200).json({success: true, body: rows})
+    })
+})
+
+app.post(`/admin/removeapikey/`, express.json(), (req, res) => {
+    const {uid} = req.body
+    db.all(`DELETE FROM user WHERE uid = ?`, [uid], (err) => {
+        if (err) {
+            console.error("/admin/removeapikey/ ERROR: " + err)
+            return res.status(500).json({success: false, message: err})
+        }
+        res.status(200).json({success: true})
+    })
 })
 
 app.post(`/admin/tournaments/create/`, express.json(), (req, res) => {
