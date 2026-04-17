@@ -993,7 +993,13 @@ app.get('/maps/', (req, res) => {
             const totalCount = countResult.total;
             const totalPages = Math.ceil(totalCount / limit);
             db.all(
-                `SELECT * FROM communitytracks c JOIN profilestatemodel p ON p.player_id = c.player_id WHERE ${filters.join(' AND ')} ${Order.join(' AND ')} LIMIT ? OFFSET ? `,
+                `SELECT c.*,
+                COALESCE(p.player_id, c.player_id) AS player_id,
+                COALESCE(p.profile_name, c.profile_name) AS profile_name,
+                COALESCE(p.profile_photo_url, c.profile_thumb) AS profile_thumb,
+                COALESCE(p.profile_color, c.profile_color) AS profile_color
+                
+                FROM communitytracks c LEFT JOIN profilestatemodel p ON p.player_id = c.player_id WHERE ${filters.join(' AND ')} ${Order.join(' AND ')} LIMIT ? OFFSET ? `,
                 [...filtersP, limit, offset],
                 (err, rows) => {
                     if (err) {
@@ -2495,6 +2501,24 @@ function mapLeaderboardSqlToJson(row, i) {
     }
 }
 
+app.get('/onboarding/bots', badTokenAuthv2, (req, res) => {
+    console.log('/onboarding/bots')
+})
+
+app.get('/onboarding/bots/beginner', badTokenAuthv2, (req, res) => {
+    console.log('/onboarding/bots/beginner')
+    res.sendFile("\bots\$cache-onboarding-replay-Beginner0.rpl.bytes")
+})
+
+app.get('/onboarding/bots/intermediate', badTokenAuthv2, (req, res) => {
+    console.log('/onboarding/bots/intermediate')
+})
+
+app.get('/onboarding/pro', badTokenAuthv2, (req, res) => {
+    console.log('/onboarding/pro')
+})
+
+
 //TODO: This
 app.get('/leaderboards/user/', (req, res) => {
     const token = req.headers['x-access-jsonwebtoken']
@@ -2590,7 +2614,7 @@ app.post('/leaderboards/user/reset/track/', express.urlencoded({ extended: true 
 app.post('/leaderboards/', express.urlencoded({ extended: false }), badTokenAuthv2, (req, res) => {
     console.log(TOJSON(req.body.list))
     console.log("NEW LEADERBOARD POST:")
-    const parsed = JSON.parse(req.body.list);
+    const parsed = TOJSON(req.body.list);
     db.all(`SELECT * FROM communitytracks WHERE guid = ?`, [parsed[0]['custom-map']], (err, Track) => {
         const Tracks = Track
         let highscore;
@@ -2684,7 +2708,7 @@ app.post('/leaderboards/', express.urlencoded({ extended: false }), badTokenAuth
                     parsed[0]['race-id'] ? parsed[0]['race-id'] : null,
                     parsed[0]['limit-col'] ? parsed[0]['limit-col'] : null,
                     parsed[0]['heat'] ? parsed[0]['heat'] : null,
-                    parsed[0]['custom-physics'] ? parsed[0]['custom-physics'] : null,
+                    parsed[0]['custom-physics'] ? parsed[0]['custom-physics'] : 0,
                     parsed[0]['drl-official'] ? parsed[0]['drl-official'] : null,
                     parsed[0]['drl-pilot-mode'] ? parsed[0]['drl-pilot-mode'] : null,
                     parsed[0]['drone-guid'] ? parsed[0]['drone-guid'] : null,
@@ -2870,7 +2894,7 @@ app.get('/leaderboards/rivals/', badTokenAuthv2, (req, res) => {
         inputs = [req.query.map, req.query.track, diameter, drlOfficial]
     }
     let player_pos = 0
-    db.all(`SELECT * FROM leaderboard l JOIN profilestatemodel p ON p.player_id = l.player_id ` + query + `ORDER BY score ASC`, inputs, (err, row) => {
+    db.all(`SELECT * FROM leaderboard l LEFT JOIN profilestatemodel p ON p.player_id = l.player_id ` + query + `ORDER BY score ASC`, inputs, (err, row) => {
         console.log(row)
         if (err || row.length === 0) {
             console.error("Error fetching leaderboard:", err);
@@ -2932,7 +2956,6 @@ app.get('/leaderboards/rivals/', badTokenAuthv2, (req, res) => {
 });
 
 app.get(`/replay/rivals/`, (req, res) => {
-    const token = req.headers['x-access-jsonwebtoken']
     console.log("req sent to /leaderboards/rivals/ headers are:", req.headers);
     console.log(req.query)
     const uid = req.query['player-id'];
@@ -2941,21 +2964,22 @@ app.get(`/replay/rivals/`, (req, res) => {
     let query;
     let inputs;
     if (req.query['is-custom-map'] == `true`) {
-        query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? AND custom_map = ? `
+        query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? AND custom_map = ? AND match_id = 'normal' `
         inputs = [req.query.map, req.query.track, diameter, drlOfficial, req.query['custom-map']]
     } else {
-        query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? `
+        query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? AND match_id = 'normal' `
         inputs = [req.query.map, req.query.track, diameter, drlOfficial]
     }
     let player_pos = 0
-    db.all(`SELECT * FROM leaderboard ` + query + `ORDER BY score ASC`, inputs, (err, row) => {
+    db.all(`SELECT * FROM leaderboard l LEFT JOIN profilestatemodel p ON p.player_id = l.player_id ` + query + `ORDER BY score ASC`, inputs, (err, row) => {
+        console.log(row)
         if (err || row.length === 0) {
             console.error("Error fetching leaderboard:", err);
             let jsondata = {
                 "top": [
                     null
                 ],
-                "player": -1,
+                "player": 0,
                 "rivals": [null],
                 "past": null
             }
@@ -2964,45 +2988,41 @@ app.get(`/replay/rivals/`, (req, res) => {
             });
         } else {
             let rivals = []
-            let past = null
             row[0].position = 1
             for (let i = 0; i < row.length; i++) {
                 if (row[i].player_id == uid) {
                     player_pos = i
-                    past = mapLeaderboardSqlToJson(row, i)
-                    if (row[i - 1] && row[i + 1]) {
-                        i = i - 1
-                        let data = mapLeaderboardSqlToJson(row, i)
-                        rivals.push(data)
-                        i++
-                        data = mapLeaderboardSqlToJson(row, i)
-                        rivals.push(data)
-                        i++
-                        data = mapLeaderboardSqlToJson(row, i)
-                        rivals.push(data)
-                        break
-                    } else if (row[i - 1]) {
-                        i = i - 1
-                        let data = mapLeaderboardSqlToJson(row, i)
-                        rivals.push(data)
-                        i++;
-                        data = mapLeaderboardSqlToJson(row, i)
-                        rivals.push(data)
-                        break
-                    } else {
-                        let data = mapLeaderboardSqlToJson(row, i)
-                        rivals.push(data)
-                        break
+
+                    const RIVAL_WINDOW = 3;
+                    let start = player_pos - 1;
+                    let end = player_pos + RIVAL_WINDOW;
+
+                    if (start < 0) {
+                        end += -start;
+                        start = 0;
                     }
+                    if (end > row.length) {
+                        start -= (end - row.length);
+                        start = Math.max(0, start);
+                    }
+
+                    for (let i = start; i < end; i++) {
+                        if (row[i]) {
+                            console.log(i)
+                            console.log(row[i])
+                            rivals.push(mapLeaderboardSqlToJson(row, i));
+                        }
+                    }
+                    break;
                 }
             }
             let jsondata = {
                 "top": [
-                    row[0]
+                    mapLeaderboardSqlToJson(row, 0)
                 ],
                 "player": player_pos,
                 "rivals": rivals,
-                "past": past
+                "past": mapLeaderboardSqlToJson(row, player_pos)
             }
             console.log(jsondata)
             res.status(200).json({
@@ -3030,13 +3050,36 @@ app.get('/leaderboards/', badTokenAuthv2, (req, res) => {
     const filteredQuery = Object.fromEntries(
         Object.entries(req.query).filter(([key]) => allowed.includes(key))
     );
-    console.log(filteredQuery)
-    const keys = Object.keys(filteredQuery);
+
+    const normalizeValue = (value) => {
+        if (Array.isArray(value)) {
+            return value.map(normalizeValue);
+        }
+
+        if (value === "true") return 1;
+        if (value === "false") return 0;
+
+        if (typeof value === "string" && value.trim() !== "" && !isNaN(value)) {
+            return Number(value);
+        }
+
+        return value;
+    };
+
+    const normalizedQuery = Object.fromEntries(
+        Object.entries(filteredQuery).map(([key, value]) => [
+            key.replace(/-/g, "_"),
+            normalizeValue(value)
+        ])
+    );
+    console.log(normalizedQuery)
+    const keys = Object.keys(normalizedQuery);
     const conditions = keys.map(key => `${key} = ?`);
-    const values = Object.values(filteredQuery);
+    const values = Object.values(normalizedQuery);
 
 
-    db.all(`SELECT * FROM leaderboard l JOIN profilestatemodel p ON p.player_id = l.player_id WHERE ${conditions.join(' AND ')} ORDER BY score ASC LIMIT ? OFFSET ?`, [values, limit, offset], (err, row) => {
+    db.all(`SELECT * FROM leaderboard l LEFT JOIN profilestatemodel p ON p.player_id = l.player_id WHERE ${conditions.join(' AND ')} ORDER BY score ASC LIMIT ? OFFSET ?`, [...values, limit, offset], (err, row) => {
+        console.log(`SELECT * FROM leaderboard l LEFT JOIN profilestatemodel p ON p.player_id = l.player_id WHERE ${conditions.join(' AND ')} ORDER BY score ASC LIMIT ? OFFSET ?`, ...values, limit, offset)
         if (err || row.length === 0) {
             console.error("Error fetching leaderboard:", err);
             res.status(200).json({
@@ -3365,7 +3408,7 @@ app.get('/drones/:guid/remove/', badTokenAuthv2, (req, res) => {
 app.get('/drones/', (req, res) => {
     console.log(req.query)
     let data = []
-    let sql = "SELECT * FROM drone d JOIN profilestatemodel p ON p.player_id = d.player_id";
+    let sql = "SELECT * FROM drone d LEFT JOIN profilestatemodel p ON p.player_id = d.player_id";
     let params = [];
 
     if (req.query["is-public"] != null) {
@@ -3910,36 +3953,36 @@ app.put(`/admin/tournaments/update/:guid`, express.json(), (req, res) => {
 })
 
 app.post(`/admin/createapiKey/`, express.json(), (req, res) => {
-    const {name, uid} = req.body
+    const { name, uid } = req.body
     const token = crypto.randomBytes(32).toString('hex');
     const expires = 0;
     db.run(`INSERT INTO user (uid, token, expires, name) VALUES (?, ?, ?, ?)`, [uid, token, expires, name], (err) => {
         if (err) {
             console.error("/admin/createapiKey/ ERROR: " + err)
-            return res.status(500).json({success: false, message: err})
+            return res.status(500).json({ success: false, message: err })
         }
-        res.status(200).json({success: true, message: token})
+        res.status(200).json({ success: true, message: token })
     })
 })
 
 app.get(`/admin/apikey/`, express.json(), (req, res) => {
     db.all(`SELECT * FROM user WHERE name IS NOT NULL`, [], (err, rows) => {
-        if (err|| rows.length === 0) {
+        if (err || rows.length === 0) {
             console.error("/admin/apikeys/ ERROR: " + err)
-            return res.status(500).json({success: false, message: err})
+            return res.status(500).json({ success: false, message: err })
         }
-        res.status(200).json({success: true, body: rows})
+        res.status(200).json({ success: true, body: rows })
     })
 })
 
 app.post(`/admin/removeapikey/`, express.json(), (req, res) => {
-    const {uid} = req.body
+    const { uid } = req.body
     db.all(`DELETE FROM user WHERE uid = ?`, [uid], (err) => {
         if (err) {
             console.error("/admin/removeapikey/ ERROR: " + err)
-            return res.status(500).json({success: false, message: err})
+            return res.status(500).json({ success: false, message: err })
         }
-        res.status(200).json({success: true})
+        res.status(200).json({ success: true })
     })
 })
 
