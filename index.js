@@ -2450,7 +2450,7 @@ function mapLeaderboardSqlToJson(row, i) {
         "profile-platform-id": row[i].profile_platform_id,
         "username": row[i].username,
         "profile-color": row[i].profile_color,
-        "profile-thumb": row[i].profile_photo_url,
+        "profile-thumb": row[i].profile_thumb,
         "profile-name": row[i].profile_name,
         "profile-platform": row[i].profile_platform,
         "is-custom-map": row[i].is_custom_map,
@@ -2708,7 +2708,7 @@ app.post('/leaderboards/', express.urlencoded({ extended: false }), badTokenAuth
                     parsed[0]['race-id'] ? parsed[0]['race-id'] : null,
                     parsed[0]['limit-col'] ? parsed[0]['limit-col'] : null,
                     parsed[0]['heat'] ? parsed[0]['heat'] : null,
-                    parsed[0]['custom-physics'] ? parsed[0]['custom-physics'] : 0,
+                    parsed[0]['custom-physics'] === true ? 1 : 0,
                     parsed[0]['drl-official'] ? parsed[0]['drl-official'] : null,
                     parsed[0]['drl-pilot-mode'] ? parsed[0]['drl-pilot-mode'] : null,
                     parsed[0]['drone-guid'] ? parsed[0]['drone-guid'] : null,
@@ -3078,7 +3078,12 @@ app.get('/leaderboards/', badTokenAuthv2, (req, res) => {
     const values = Object.values(normalizedQuery);
 
 
-    db.all(`SELECT * FROM leaderboard l LEFT JOIN profilestatemodel p ON p.player_id = l.player_id WHERE ${conditions.join(' AND ')} ORDER BY score ASC LIMIT ? OFFSET ?`, [...values, limit, offset], (err, row) => {
+    db.all(`SELECT l.*,
+                COALESCE(p.player_id, l.player_id) AS player_id,
+                COALESCE(p.profile_name, l.profile_name) AS profile_name,
+                COALESCE(p.profile_photo_url, l.profile_thumb) AS profile_thumb,
+                COALESCE(p.profile_color, l.profile_color) AS profile_color
+                FROM leaderboard l LEFT JOIN profilestatemodel p ON p.player_id = l.player_id WHERE ${conditions.join(' AND ')} ORDER BY score ASC LIMIT ? OFFSET ?`, [...values, limit, offset], (err, row) => {
         console.log(`SELECT * FROM leaderboard l LEFT JOIN profilestatemodel p ON p.player_id = l.player_id WHERE ${conditions.join(' AND ')} ORDER BY score ASC LIMIT ? OFFSET ?`, ...values, limit, offset)
         if (err || row.length === 0) {
             console.error("Error fetching leaderboard:", err);
