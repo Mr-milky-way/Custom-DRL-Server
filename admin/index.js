@@ -357,3 +357,65 @@ function RemoveApiKey(uid){
             alert('Error: ' + error);
         });
 }
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const playerSearchInput = document.getElementById('player-search');
+
+    playerSearchInput.addEventListener('input', (event) => {
+
+        const url = '/admin/players/?q=' + encodeURIComponent(event.target.value);
+
+        fetch(url, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                const tableBody = document.getElementById('player-data');
+                console.log(data)
+                if (data.data.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4">No maps available.</td></tr>';
+                    return;
+                }
+                const rows = data.data.map(Map => `
+            <tr>
+                <td>${Map['profile-name']}</td>
+                <td>${Map['profile-developer']}</td>
+                <td><button onclick="PromoteToDev(${!Map['profile-developer']},'${Map[`player-id`]}')">Change Dev Status</button></td>
+            </tr>
+        `).join('');
+
+                tableBody.innerHTML = rows;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert(error)
+                document.getElementById('player-data').innerHTML =
+                    '<tr><td colspan="4">Failed to load data. Please try again later.</td></tr>';
+            });
+    });
+})
+
+function PromoteToDev(ToSet, uid) {
+    const url = "/admin/PromoteToDev/"
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ToSet: ToSet, uid: uid})
+    })
+        .then(response => response.json())
+        .then(result => {
+            alert(result.message);
+        })
+        .catch(error => {
+            console.error('Error:', error)
+            alert('Error: ' + error);
+        });
+}

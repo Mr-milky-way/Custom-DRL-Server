@@ -840,21 +840,40 @@ app.get('/maps/user/updated/', express.urlencoded({ extended: false }), badToken
     console.log("req sent to /maps/user/updated/")
     let payload = []
     const uid = req.uid
-    db.all(`SELECT ct.*
-                FROM communitytracks ct
-                INNER JOIN trackcolab tc ON ct.guid = tc.guid
-                WHERE tc.uid = ?`, [uid], (err, row) => {
-        if (err) {
+    db.get(`SELECT profile_developer FROM profilestatemodel WHERE player_id = ?`, [uid], (err, row) => {
+        if (err || !row) {
             console.error("Error fetching community tracks:", err);
             return res.status(500).json({ success: false });
         }
-        for (let i = 0; i < row.length; i++) {
-            let data = mapCTracksqlToJson(row[i]);
-            payload.push(data);
+        if (row.profile_developer === true) {
+            db.all("SELECT * FROM communitytracks", [], (err, row) => {
+                for (let i = 0; i < row.length; i++) {
+                    let data = mapCTracksqlToJson(row[i]);
+                    payload.push(data);
+                }
+                console.log("Returned", payload, "tracks for user", uid);
+                res.status(200).json({ success: true, data: { data: payload, "pagging": { "page": req.query.page, "page-total": Math.ceil(payload.length / req.query.limit) }, success: true } });
+            })
+        } else {
+            db.all(`SELECT ct.*
+                FROM communitytracks ct
+                INNER JOIN trackcolab tc ON ct.guid = tc.guid
+                WHERE tc.uid = ?`, [uid], (err, row) => {
+                if (err) {
+                    console.error("Error fetching community tracks:", err);
+                    return res.status(500).json({ success: false });
+                }
+                for (let i = 0; i < row.length; i++) {
+                    let data = mapCTracksqlToJson(row[i]);
+                    payload.push(data);
+                }
+                console.log("Returned", payload, "tracks for user", uid);
+                res.status(200).json({ success: true, data: { data: payload, "pagging": { "page": req.query.page, "page-total": Math.ceil(payload.length / req.query.limit) }, success: true } });
+            });
         }
-        console.log("Returned", payload, "tracks for user", uid);
-        res.status(200).json({ success: true, data: { data: payload, "pagging": { "page": req.query.page, "page-total": Math.ceil(payload.length / req.query.limit) }, success: true } });
-    });
+
+    })
+
 })
 
 
@@ -949,6 +968,9 @@ app.get('/maps/', (req, res) => {
     if (req.query.guid) {
         filters.push("guid = ?");
         filtersP.push(req.query.guid);
+    } else if (req.query['player-id']) {
+        filters.push("c.player_id = ?")
+        filtersP.push(req.query['player-id']);
     } else {
         const placeholders = mapCategories.map(() => '?').join(',');
         filters.push(`map_category IN (${placeholders})`);
@@ -982,8 +1004,10 @@ app.get('/maps/', (req, res) => {
 
     console.log("Final filters:", filters);
     console.log("Final filter parameters:", filtersP);
+
+
     db.get(
-        `SELECT COUNT(*) as total FROM communitytracks WHERE ${filters.join(' AND ')} ${Order.join(' AND ')}`,
+        `SELECT COUNT(*) as total FROM communitytracks c WHERE ${filters.join(' AND ')}`,
         [...filtersP],
         (err, countResult) => {
             if (err) {
@@ -999,7 +1023,7 @@ app.get('/maps/', (req, res) => {
                 COALESCE(p.profile_photo_url, c.profile_thumb) AS profile_thumb,
                 COALESCE(p.profile_color, c.profile_color) AS profile_color
                 
-                FROM communitytracks c LEFT JOIN profilestatemodel p ON p.player_id = c.player_id WHERE ${filters.join(' AND ')} ${Order.join(' AND ')} LIMIT ? OFFSET ? `,
+                FROM communitytracks c LEFT JOIN profilestatemodel p ON p.player_id = c.player_id WHERE ${filters.join(' AND ')} ${Order.join('')} LIMIT ? OFFSET ? `,
                 [...filtersP, limit, offset],
                 (err, rows) => {
                     if (err) {
@@ -1073,7 +1097,7 @@ app.post('/maps/', express.urlencoded({ limit: "50mb", extended: true }), badTok
             req.body["map-stats-triangle-count"],
             req.body["map-stats-object-count"],
             req.body["is-race-allowed"],
-            uid,
+            req.body['player-id'],
             jsondata["profile-name"],
             `/tracks/${req.body.guid}`,
             req.body["map-difficulty"],
@@ -1089,7 +1113,7 @@ app.post('/maps/', express.urlencoded({ limit: "50mb", extended: true }), badTok
                 return;
             } else {
                 if (req.body.collaborators) {
-                    db.run(`INSERT OR IGNORE INTO trackcolab (uid, guid) VALUES (?, ?)`, [uid, req.body.guid], function (err) {
+                    db.run(`INSERT OR IGNORE INTO trackcolab (uid, guid) VALUES (?, ?)`, [req.body['player-id'], req.body.guid], function (err) {
                         if (err) {
                             console.error("Error inserting into trackcolab:", err);
                         } else {
@@ -1341,7 +1365,7 @@ app.post('/v2/login', express.urlencoded({ extended: false }), (req, res) => {
 ██╔═══╝ ██║     ██╔══██║  ╚██╔╝  ██╔══╝  ██╔══██╗
 ██║     ███████╗██║  ██║   ██║   ███████╗██║  ██║
 ╚═╝     ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝
--------------------------------------------------   
+-------------------------------------------------
 */
 
 function MapPlayerStateTOJson(row) {
@@ -1504,7 +1528,7 @@ function MapPlayerStateTOJson(row) {
         return Object.fromEntries(
             Object.entries(data).filter(([key, value]) => value != null)
         );
-    } catch {
+    } catch (E) {
         console.error("Error mapping tournament SQL to JSON:", E);
         return {};
     }
@@ -1638,7 +1662,6 @@ app.post('/state/', express.urlencoded(), badTokenAuthv2, (req, res) => {
             steam_purchase_unix_seconds,
             profile_name,
             profile_block_list,
-            profile_developer,
             profile_reward_parts,
             profile_photo_url,
             profile_photo_size,
@@ -1780,7 +1803,7 @@ app.post('/state/', express.urlencoded(), badTokenAuthv2, (req, res) => {
             blocked_users,
             is_observer,
             is_commentator
-        ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT (player_id) DO UPDATE SET
             system_info = EXCLUDED.system_info,
             steam_id = EXCLUDED.steam_id,
@@ -1791,7 +1814,6 @@ app.post('/state/', express.urlencoded(), badTokenAuthv2, (req, res) => {
             steam_purchase_unix_seconds = EXCLUDED.steam_purchase_unix_seconds,
             profile_name = EXCLUDED.profile_name,
             profile_block_list = EXCLUDED.profile_block_list,
-            profile_developer = EXCLUDED.profile_developer,
             profile_reward_parts = EXCLUDED.profile_reward_parts,
             profile_photo_url = EXCLUDED.profile_photo_url,
             profile_photo_size = EXCLUDED.profile_photo_size,
@@ -1944,7 +1966,6 @@ app.post('/state/', express.urlencoded(), badTokenAuthv2, (req, res) => {
             req.body.state["steam-purchase-unix-seconds"],
             req.body.state["profile-name"],
             req.body.state["profile-block-list"],
-            req.body.state["profile-developer"],
             req.body.state["profile-reward-parts"],
             req.body.state["profile-photo-url"],
             req.body.state["profile-photo-size"],
@@ -3031,6 +3052,7 @@ app.get(`/replay/rivals/`, (req, res) => {
         }
     });
 })
+
 app.get('/leaderboards/', badTokenAuthv2, (req, res) => {
     let limit = 10
     let page = 1
@@ -3988,6 +4010,36 @@ app.post(`/admin/removeapikey/`, express.json(), (req, res) => {
             return res.status(500).json({ success: false, message: err })
         }
         res.status(200).json({ success: true })
+    })
+})
+
+app.post(`/admin/PromoteToDev/`, express.json(), (req, res) => {
+    const { ToSet, uid } = req.body
+    console.log([ToSet, uid])
+    db.run(`UPDATE profilestatemodel SET profile_developer = ? WHERE player_id = ?`, [ToSet, uid], (err) => {
+        if (err) {
+            console.error("/admin/PromoteToDev/ ERROR: " + err)
+            return res.status(500).json({ success: false, message: err })
+        }
+        res.status(200).json({ success: true })
+    })
+})
+
+
+app.get('/admin/players', (req, res) => {
+
+    let jsondata = [];
+    db.all(`SELECT * FROM profilestatemodel WHERE profile_name LIKE ?`, [`%${req.query.q}%`], async (err, row) => {
+        if (err || row.length === 0) {
+            console.error("Error fetching JSON:", err);
+            res.status(500).json({ success: false });
+            return;
+        }
+        for (i=0; i < row.length; i++) {
+            jsondata.push(MapPlayerStateTOJson(row[i]))
+        }
+
+        res.status(200).json({ success: true, data: jsondata });
     })
 })
 
