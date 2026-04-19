@@ -650,60 +650,68 @@ function TOJSON(value) {
 }
 
 function mapCTracksqlToJson(row) {
-    return {
-        "guid": row.guid,
-        "root": TOJSON(row.root),
-        "prefs": TOJSON(row.prefs),
-        "allow-copy": row.allow_copy,
-        "base-assets-enabled": row.base_assets_enabled,
-        "exclusive-by-platform": TOJSON(row.exclusive_by_platform),
-        "is-race-allowed": row.is_race_allowed,
-        "is-public": row.is_public,
-        "is-public-for-drlpilots": row.is_public_for_drlpilots,
-        "is-drl-official": row.is_drl_official,
-        "is-featured": row.is_featured,
-        "is-multigp": row.is_multigp,
-        "is-tryouts": row.is_tryouts,
-        "is-virtual-season": row.is_virtual_season,
-        "map-category": row.map_category,
-        "map-difficulty": row.map_difficulty,
-        "map-distance": row.map_distance,
-        "map-dirty": row.map_dirty,
-        "map-lighting": row.map_lighting,
-        "map-laps": row.map_laps,
-        "map-stats-triangle-count": row.map_stats_triangle_count,
-        "map-stats-object-count": row.map_stats_object_count,
-        "map-asset-layers": TOJSON(row.map_asset_layers),
-        "map-styles": TOJSON(row.map_styles),
-        "categories": TOJSON(row.categories),
-        "prefs-auto-save": row.prefs_auto_save,
-        "rating-count": row.rating_count,
-        "score": row.score,
-        "track-id": row.track_id,
-        "xp-value": row.xp_value,
-        "xp-min-time": row.xp_min_time,
-        "cm-collectable-count": row.cm_collectable_count,
-        "collaborators": TOJSON(row.collaborators),
-        "map-mode-type": row.map_mode_type,
-        "map-id": row.map_id,
-        "map-title": row.map_title,
-        "steam-id": row.steam_id,
-        "created-at": row.created_at,
-        "updated-at": row.updated_at,
-        "version": row.version,
-        "title-translations": TOJSON(row.title_translations),
-        "images": TOJSON(row.images),
-        "map-thumb": row.map_thumb,
-        "avatar": row.avatar,
-        "player-id": row.player_id,
-        "profile-name": row.profile_name,
-        "profile-thumb": row.profile_thumb,
-        "profile-color": row.profile_color,
-        "profile-platform": row.profile_platform,
-        "profile-platform-id": row.profile_platform_id,
-        "flag-url": row.flag_url,
-        "is-avatar-blocked": row.is_avatar_blocked,
-        "full-track-url": url + row.full_track_url
+    try {
+        let data = {
+            "guid": row.guid,
+            "root": TOJSON(row.root),
+            "prefs": TOJSON(row.prefs),
+            "allow-copy": row.allow_copy,
+            "base-assets-enabled": row.base_assets_enabled,
+            "exclusive-by-platform": TOJSON(row.exclusive_by_platform),
+            "is-race-allowed": row.is_race_allowed,
+            "is-public": row.is_public,
+            "is-public-for-drlpilots": row.is_public_for_drlpilots,
+            "is-drl-official": row.is_drl_official,
+            "is-featured": row.is_featured,
+            "is-multigp": row.is_multigp,
+            "is-tryouts": row.is_tryouts,
+            "is-virtual-season": row.is_virtual_season,
+            "map-category": row.map_category,
+            "map-difficulty": row.map_difficulty,
+            "map-distance": row.map_distance,
+            "map-dirty": row.map_dirty,
+            "map-lighting": row.map_lighting,
+            "map-laps": row.map_laps,
+            "map-stats-triangle-count": row.map_stats_triangle_count,
+            "map-stats-object-count": row.map_stats_object_count,
+            "map-asset-layers": TOJSON(row.map_asset_layers),
+            "map-styles": TOJSON(row.map_styles),
+            "categories": TOJSON(row.categories),
+            "prefs-auto-save": row.prefs_auto_save,
+            "rating-count": row.rating_count,
+            "score": row.score,
+            "track-id": row.track_id,
+            "xp-value": row.xp_value,
+            "xp-min-time": row.xp_min_time,
+            "cm-collectable-count": row.cm_collectable_count,
+            "collaborators": TOJSON(row.collaborators),
+            "map-mode-type": row.map_mode_type,
+            "map-id": row.map_id,
+            "map-title": row.map_title,
+            "steam-id": row.steam_id,
+            "created-at": row.created_at,
+            "updated-at": row.updated_at,
+            "version": row.version,
+            "title-translations": TOJSON(row.title_translations),
+            "images": TOJSON(row.images),
+            "map-thumb": row.map_thumb,
+            "avatar": row.avatar,
+            "player-id": row.player_id,
+            "profile-name": row.profile_name,
+            "profile-thumb": row.profile_thumb,
+            "profile-color": row.profile_color,
+            "profile-platform": row.profile_platform,
+            "profile-platform-id": row.profile_platform_id,
+            "flag-url": row.flag_url,
+            "is-avatar-blocked": row.is_avatar_blocked,
+            "full-track-url": url + row.full_track_url
+        }
+        return Object.fromEntries(
+            Object.entries(data).filter(([key, value]) => value != null)
+        );
+    } catch (E) {
+        console.error("Error mapping tournament SQL to JSON:", E);
+        return {};
     }
 }
 
@@ -840,39 +848,21 @@ app.get('/maps/user/updated/', express.urlencoded({ extended: false }), badToken
     console.log("req sent to /maps/user/updated/")
     let payload = []
     const uid = req.uid
-    db.get(`SELECT profile_developer FROM profilestatemodel WHERE player_id = ?`, [uid], (err, row) => {
-        if (err || !row) {
-            console.error("Error fetching community tracks:", err);
-            return res.status(500).json({ success: false });
-        }
-        if (row.profile_developer === true) {
-            db.all("SELECT * FROM communitytracks", [], (err, row) => {
-                for (let i = 0; i < row.length; i++) {
-                    let data = mapCTracksqlToJson(row[i]);
-                    payload.push(data);
-                }
-                console.log("Returned", payload, "tracks for user", uid);
-                res.status(200).json({ success: true, data: { data: payload, "pagging": { "page": req.query.page, "page-total": Math.ceil(payload.length / req.query.limit) }, success: true } });
-            })
-        } else {
-            db.all(`SELECT ct.*
+    db.all(`SELECT ct.*
                 FROM communitytracks ct
                 INNER JOIN trackcolab tc ON ct.guid = tc.guid
                 WHERE tc.uid = ?`, [uid], (err, row) => {
-                if (err) {
-                    console.error("Error fetching community tracks:", err);
-                    return res.status(500).json({ success: false });
-                }
-                for (let i = 0; i < row.length; i++) {
-                    let data = mapCTracksqlToJson(row[i]);
-                    payload.push(data);
-                }
-                console.log("Returned", payload, "tracks for user", uid);
-                res.status(200).json({ success: true, data: { data: payload, "pagging": { "page": req.query.page, "page-total": Math.ceil(payload.length / req.query.limit) }, success: true } });
-            });
+        if (err) {
+            console.error("Error fetching community tracks:", err);
+            return res.status(500).json({ success: false });
         }
-
-    })
+        for (let i = 0; i < row.length; i++) {
+            let data = mapCTracksqlToJson(row[i]);
+            payload.push(data);
+        }
+        console.log("Returned", payload, "tracks for user", uid);
+        res.status(200).json({ success: true, data: { data: payload, "pagging": { "page": req.query.page, "page-total": Math.ceil(payload.length / req.query.limit) }, success: true } });
+    });
 
 })
 
@@ -1381,7 +1371,7 @@ function MapPlayerStateTOJson(row) {
             "steam-purchase-unix-seconds": row.steam_purchase_unix_seconds,
             "profile-name": row.profile_name,
             "profile-block-list": row.profile_block_list,
-            "profile-developer": row.profile_developer,
+            "profile-developer": row.profile_developer === 1 ? true : false,
             "profile-reward-parts": row.profile_reward_parts,
             "profile-photo-url": row.profile_photo_url,
             "profile-photo-size": row.profile_photo_size,
@@ -2915,7 +2905,12 @@ app.get('/leaderboards/rivals/', badTokenAuthv2, (req, res) => {
         inputs = [req.query.map, req.query.track, diameter, drlOfficial]
     }
     let player_pos = 0
-    db.all(`SELECT * FROM leaderboard l LEFT JOIN profilestatemodel p ON p.player_id = l.player_id ` + query + `ORDER BY score ASC`, inputs, (err, row) => {
+    db.all(`SELECT l.*,
+                COALESCE(p.player_id, l.player_id) AS player_id,
+                COALESCE(p.profile_name, l.profile_name) AS profile_name,
+                COALESCE(p.profile_photo_url, l.profile_thumb) AS profile_thumb,
+                COALESCE(p.profile_color, l.profile_color) AS profile_color
+                FROM leaderboard l LEFT JOIN profilestatemodel p ON p.player_id = l.player_id ` + query + `ORDER BY score ASC`, inputs, (err, row) => {
         console.log(row)
         if (err || row.length === 0) {
             console.error("Error fetching leaderboard:", err);
@@ -3433,17 +3428,24 @@ app.get('/drones/:guid/remove/', badTokenAuthv2, (req, res) => {
 });
 
 app.get('/drones/', (req, res) => {
+    console.log('/drones/')
     console.log(req.query)
     let data = []
     let sql = "SELECT * FROM drone d LEFT JOIN profilestatemodel p ON p.player_id = d.player_id";
     let params = [];
-
-    if (req.query["is-public"] != null) {
-        const isPublic = req.query["is-public"] === "true" ? "true" : "false";
-        sql += " WHERE is_public = ?";
-        params.push(isPublic);
+    if (req.query['player-id'] != null) {
+        if (req.query['player-id'] === req.uid){
+            sql += " WHERE d.player_id = ?"
+            params.push(req.uid);
+        }
     } else {
-        const pub = true
+        if (req.query["is-public"] != null) {
+            const isPublic = req.query["is-public"] === "true" ? "true" : "false";
+            sql += " WHERE is_public = ?";
+            params.push(isPublic);
+        } else {
+            const pub = true
+        }
     }
     db.all(sql, params, (err, row) => {
         if (err || row.length === 0) {
@@ -4035,7 +4037,7 @@ app.get('/admin/players', (req, res) => {
             res.status(500).json({ success: false });
             return;
         }
-        for (i=0; i < row.length; i++) {
+        for (i = 0; i < row.length; i++) {
             jsondata.push(MapPlayerStateTOJson(row[i]))
         }
 
