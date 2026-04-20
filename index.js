@@ -3434,9 +3434,9 @@ app.get('/drones/', (req, res) => {
     let sql = "SELECT * FROM drone d LEFT JOIN profilestatemodel p ON p.player_id = d.player_id";
     let params = [];
     if (req.query['player-id'] != null) {
-        if (req.query['player-id'] === req.uid){
+        if (req.query['player-id']){
             sql += " WHERE d.player_id = ?"
-            params.push(req.uid);
+            params.push(req.query['player-id']);
         }
     } else {
         if (req.query["is-public"] != null) {
@@ -3447,6 +3447,8 @@ app.get('/drones/', (req, res) => {
             const pub = true
         }
     }
+    console.log("DRONES")
+    console.log(sql, params)
     db.all(sql, params, (err, row) => {
         if (err || row.length === 0) {
             console.error("Error fetching drones:", err);
