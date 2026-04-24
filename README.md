@@ -1,9 +1,15 @@
-## Docs
+# Custom DRL Servers
+
+Back in December of 2025 the servers for DRL Sim (Drone Racing League Simulator) got shut down along with the company. This erased over 7 years of data like maps, leaderboard entries, and custom drones. It also made the game basically unplayable: can't race against yourself, can't create maps, and can't make custom drones, can't play with other players (ofc), and your settings don't even save. Most of the community just thought that was it, no more DRL Sim. After all the company is gone, why would the game not be?
+
+But I, a Clippy and a Stop Killing Games supporter, decided that I was going to do what DRL didn't and make a way for the community to bring the game back online. I started by decompiling the game and just took a look around the code. Then I just tried to send false data to the game to "login".
+
+It worked and from there I just sent it and tried to rebuild as much of the server as possible. 
+
+## Docs (WIP)
 Docs for Functions and data sent by the game can be found [here](/docs/MainDocs.md)
 
 ## Instructions
-> [!WARNING]
-> This is a bit complicated, and untested on the steam branch. A backup of your game files is HEAVILY RECOMMENDED, even if you are on the epic branch.
 
 ### Requirements
 - [Node.js with NPM](https://nodejs.org/en/download)
@@ -17,7 +23,7 @@ Docs for Functions and data sent by the game can be found [here](/docs/MainDocs.
 
 You are going to also need to install some npm packages to run this. You can run this comand below
 ```
-npm install express express-rate-limit sqlite3
+npm install express express-rate-limit sqlite3 dotenv pm2 express-session lusca bcrypt sharp
 ```
 
 You are also going to need the code which you can grab with git
@@ -27,7 +33,7 @@ git clone https://github.com/Mr-milky-way/Custom-DRL-Server.git
 or download from github up at the top here.
 
 ### DLL setup
-Go over to [this release](https://github.com/Mr-milky-way/Custom-DRL-Server/releases/tag/V1-DLLS) and follow the instructions there
+Go over to [this release](https://github.com/Mr-milky-way/Custom-DRL-Server/releases/tag/V1-DLLS) and follow the instructions there (you will need to change the API URL in apiurl.txt)
 
 ### Running the server
 
