@@ -51,3 +51,25 @@ then run the game.
 
 > [!NOTE]
 > Some things are still broken and do not work right. If something fails make an issue on this repo. I should get to it at somepoint
+
+### Environment Variables
+
+There are 5 environment variables as of apr 28, 2026
+```
+PORT
+URL
+STEAM_API_KEY
+SESSION_SECRET
+NODE_ENV
+```
+
+```STEAM_API_KEY``` Is required and is an apikey from steam
+```SESSION_SECRET``` Is advised and is the secret for admin sessions
+Everything else is optional or is set to a default
+```PORT``` defaults to 8080
+```URL``` defaults to http://localhost
+```NODE_ENV``` unset, when set to production it enables secure for admin seestions
+
+## List Of Public Servers
+
+```https://api.drl-game.com```
