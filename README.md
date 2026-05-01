@@ -11,7 +11,9 @@ It worked and from there I just sent it and tried to rebuild as much of the serv
 
 ## List Of Public Servers
 
-```https://api.drl-game.com```
+```
+https://api.drl-game.com
+```
 
 ## Docs (WIP)
 Docs for Functions and data sent by the game can be found [here](/docs/MainDocs.md)
