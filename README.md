@@ -1,4 +1,4 @@
-# Custom DRL Servers
+# Drone Racing League Community Server
 
 Back in December of 2025 the servers for DRL Sim (Drone Racing League Simulator) got shut down along with the company. This erased over 7 years of data like maps, leaderboard entries, and custom drones. It also made the game basically unplayable: can't race against yourself, can't create maps, and can't make custom drones, can't play with other players (ofc), and your settings don't even save. Most of the community just thought that was it, no more DRL Sim. After all the company is gone, why would the game not be?
 
