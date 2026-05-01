@@ -26,7 +26,7 @@
 ### /tournaments/ (GET)
 Function: [GetTournaments](#gettournaments)
 
-Wants back: [DRLTournamentResult](/docs/GameDataTypes.md#drltournamentresult)
+Wants back: [DRLTournamentResult](/docs/GameReqs/GameDataTypes.md#drltournamentresult)
 
 
 

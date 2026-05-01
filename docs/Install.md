@@ -29,6 +29,6 @@ Either will work and you don't get much from backing up the whole storage.
 You are now ready to install the DLL patch
 
 ## Installing the patch
-If you are on windows (all other versions OS's untested) download DRLPatchWin.zip from the Releases page and unzip into the [install directory](#finding-game-location) boot up the game and now you should start connecting to the game server :)
+If you are on windows (all other versions OS's untested) download DRLPatchWin.zip from the [Releases](https://github.com/Mr-milky-way/Drone-Racing-League-Community-Server/releases/latest) page and unzip into the [install directory](#finding-game-location) boot up the game and now you should start connecting to the game server :)
 Example Image:
 <img width="604" height="445" alt="image" src="https://github.com/user-attachments/assets/7aabdd90-88e7-4f34-b3b9-614eb323d240" />

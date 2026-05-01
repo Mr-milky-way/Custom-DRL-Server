@@ -6,6 +6,13 @@ But I, a Clippy and a Stop Killing Games supporter, decided that I was going to 
 
 It worked and from there I just sent it and tried to rebuild as much of the server as possible. 
 
+## Just want to Fix it?
+### Go [Here](/docs/Install.md)
+
+## List Of Public Servers
+
+```https://api.drl-game.com```
+
 ## Docs (WIP)
 Docs for Functions and data sent by the game can be found [here](/docs/MainDocs.md)
 
@@ -69,7 +76,3 @@ Everything else is optional or is set to a default
 ```PORT``` defaults to 8080
 ```URL``` defaults to http://localhost
 ```NODE_ENV``` unset, when set to production it enables secure for admin seestions
-
-## List Of Public Servers
-
-```https://api.drl-game.com```
