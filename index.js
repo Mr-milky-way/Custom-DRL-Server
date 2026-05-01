@@ -4146,6 +4146,10 @@ app.get('/admin/logout', (req, res) => {
     });
 });
 
+app.get('/', (req, res) => {
+    res.status(200).json({ success: true });
+});
+
 app.listen(PORT, () => {
     console.log(`Server is running on [${url}](${url})`);
 });
