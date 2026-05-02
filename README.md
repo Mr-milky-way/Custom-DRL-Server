@@ -15,6 +15,8 @@ It worked and from there I just sent it and tried to rebuild as much of the serv
 https://api.drl-game.com
 ```
 
+Server uptime can be found [HERE](https://mr-milky-way.github.io/Drone-Racing-League-Server-Uptime/history/main-server) but it's kinda broken.
+
 ## Docs (WIP)
 Docs for Functions and data sent by the game can be found [here](/docs/MainDocs.md)
 
