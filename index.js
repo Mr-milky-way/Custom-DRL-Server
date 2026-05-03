@@ -2752,6 +2752,9 @@ app.post('/leaderboards/', express.urlencoded({ extended: false }), badTokenAuth
     console.log("NEW LEADERBOARD POST:")
     const parsed = TOJSON(req.body.list);
     db.all(`SELECT * FROM communitytracks WHERE guid = ?`, [parsed[0]['custom-map']], (err, Track) => {
+        if (!parsed[0]["drl-official"]) {
+            parsed[0]["drl-official"] = false
+        }
         const Tracks = Track
         let highscore;
         const uid = req.uid;
@@ -2845,7 +2848,7 @@ app.post('/leaderboards/', express.urlencoded({ extended: false }), badTokenAuth
                     parsed[0]['limit-col'] ? parsed[0]['limit-col'] : null,
                     parsed[0]['heat'] ? parsed[0]['heat'] : null,
                     parsed[0]['custom-physics'] === true ? 1 : 0,
-                    parsed[0]['drl-official'] ? parsed[0]['drl-official'] : null,
+                    parsed[0]['drl-official'] ? parsed[0]['drl-official'] : false,
                     parsed[0]['drl-pilot-mode'] ? parsed[0]['drl-pilot-mode'] : null,
                     parsed[0]['drone-guid'] ? parsed[0]['drone-guid'] : null,
                     parsed[0]['drone-rig'] ? parsed[0]['drone-rig'] : null,
