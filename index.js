@@ -536,6 +536,7 @@ db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS communitytracks (
             guid TEXT UNIQUE,
             root TEXT,
+            root_full TEXT,
             prefs TEXT,
             allow_copy BOOLEAN,
             base_assets_enabled BOOLEAN,
@@ -706,9 +707,7 @@ function mapCTracksqlToJson(row) {
             "is-avatar-blocked": row.is_avatar_blocked,
             "full-track-url": url + row.full_track_url
         }
-        return Object.fromEntries(
-            Object.entries(data).filter(([key, value]) => value != null)
-        );
+        return data
     } catch (E) {
         console.error("Error mapping tournament SQL to JSON:", E);
         return {};
@@ -732,17 +731,25 @@ app.post('/maps/:guid/duplicate', express.urlencoded({ limit: "100mb", extended:
 //path for track downloads
 app.get('/tracks/:id', (req, res) => {
     console.log("req sent to /tracks/ for id:", req.params.id)
-    const baseDir = path.join(__dirname, 'tracks');
-    const finalPath = path.resolve(baseDir, req.params.id + '.cmp');
-
-    if (!finalPath.startsWith(baseDir)) {
-        return res.status(403).send('Forbidden: Invalid path');
-    }
-
-    if (!fs.existsSync(finalPath)) {
-        return res.status(404).end();
-    }
-    res.sendFile(finalPath);
+    db.get(`SELECT c.*,
+                COALESCE(p.player_id, c.player_id) AS player_id,
+                COALESCE(p.profile_name, c.profile_name) AS profile_name,
+                COALESCE(p.profile_photo_url, c.profile_thumb) AS profile_thumb,
+                COALESCE(p.profile_color, c.profile_color) AS profile_color,
+                c.root_full AS root
+                
+                FROM communitytracks c LEFT JOIN profilestatemodel p ON p.player_id = c.player_id WHERE guid = ?`, [req.params.id], (err, row) => {
+        if (err) {
+            console.error("Error fetching community track:", err);
+            return res.status(500).json({ success: false });
+        }
+        if (!row) {
+            return res.status(404).json({ success: false, message: "Track not found" });
+        }
+        const trackData = mapCTracksqlToJson(row);
+        console.log(trackData)
+        res.status(200).json({ success: true, data: { pagging: { page: 1, "page-total": 1 }, data: [trackData] } });
+    });
 });
 
 
@@ -882,20 +889,6 @@ app.get('/maps/:guid/remove/', express.urlencoded({ extended: false }), badToken
             return;
         } else {
             if (row.player_id == uid) {
-                try {
-                    const baseDir = path.join(__dirname, 'tracks');
-                    const finalPath = path.resolve(baseDir, req.params.guid + '.cmp');
-
-                    if (!finalPath.startsWith(baseDir)) {
-                        return res.status(403).send('Forbidden: Invalid path');
-                    }
-                    fs.unlinkSync(fs.realpathSync(finalPath));
-                    console.log('File deleted synchronously successfully');
-                } catch (err) {
-                    console.error('Error deleting file synchronously:', err);
-                    res.status(500).json({ success: false });
-                    return;
-                }
                 db.run(`DELETE FROM communitytracks WHERE guid = ? AND player_id = ?`, [req.params.guid, uid], function (err) {
                     if (err) {
                         console.error("Error deleting community track:", err);
@@ -917,17 +910,24 @@ app.get('/maps/:guid/remove/', express.urlencoded({ extended: false }), badToken
 
 app.get('/maps/:guid', (req, res) => {
     console.log("req sent to /maps/ for guid:", req.params.guid)
-    const baseDir = path.join(__dirname, 'tracks');
-    const finalPath = path.resolve(baseDir, req.params.guid + '.cmp');
-
-    if (!finalPath.startsWith(baseDir)) {
-        return res.status(403).send('Forbidden: Invalid path');
-    }
-
-    if (!fs.existsSync(finalPath)) {
-        return res.status(404).end();
-    }
-    res.sendFile(finalPath);
+    db.get(`SELECT c.*,
+                COALESCE(p.player_id, c.player_id) AS player_id,
+                COALESCE(p.profile_name, c.profile_name) AS profile_name,
+                COALESCE(p.profile_photo_url, c.profile_thumb) AS profile_thumb,
+                COALESCE(p.profile_color, c.profile_color) AS profile_color,
+                c.root_full AS root
+                
+                FROM communitytracks c LEFT JOIN profilestatemodel p ON p.player_id = c.player_id WHERE guid = ?`, [req.params.guid], (err, row) => {
+        if (err) {
+            console.error("Error fetching community track:", err);
+            return res.status(500).json({ success: false });
+        }
+        if (!row) {
+            return res.status(404).json({ success: false, message: "Track not found" });
+        }
+        const trackData = mapCTracksqlToJson(row);
+        res.status(200).json({ success: true, data: { pagging: { page: 1, "page-total": 1 }, data: [trackData] } });
+    });
 });
 
 app.get('/maps/', (req, res) => {
@@ -974,7 +974,7 @@ app.get('/maps/', (req, res) => {
     }
     if (req.query.q) {
         if (req.query.q.startsWith("@")) {
-            filters.push("profile_name = ?");
+            filters.push("COALESCE(p.profile_name, c.profile_name) = ?");
             filtersP.push(req.query.q.toLowerCase().substring(1));
         } else {
             filters.push("map_title LIKE ?");
@@ -997,7 +997,7 @@ app.get('/maps/', (req, res) => {
 
 
     db.get(
-        `SELECT COUNT(*) as total FROM communitytracks c WHERE ${filters.join(' AND ')}`,
+        `SELECT COUNT(*) as total FROM communitytracks c LEFT JOIN profilestatemodel p ON p.player_id = c.player_id WHERE ${filters.join(' AND ')}`,
         [...filtersP],
         (err, countResult) => {
             if (err) {
@@ -1029,41 +1029,14 @@ app.get('/maps/', (req, res) => {
     );
 });
 
-//TODO: fix this (need to fix the track colab thingy)
-app.post('/maps/', express.urlencoded({ limit: "50mb", extended: true }), badTokenAuthv2, (req, res) => {
+app.post('/maps/', express.urlencoded({ limit: "2gb", extended: true }), badTokenAuthv2, (req, res) => {
     console.log("req sent to /maps/ via POST", req.body);
+    if (req.body.prefs === '{}'){
+        req.body.prefs = { "map-prefs-auto-save": true }
+    }
+    const track = req.body;
+    console.log(track.prefs)
     const uid = req.uid
-    let payload = {
-        "success": true,
-        "message": null,
-        "token": null,
-        "webtoken": null,
-        "encoded": false,
-        "data": {
-            "pagging": {
-                "page": 1,
-                "page-total": 1,
-                "total": 1,
-                "previous-page-url": null,
-                "next-page-url": null
-            },
-            "data": [req.body]
-        }
-    }
-    const baseDir = path.join(__dirname, 'tracks');
-    const finalPath = path.resolve(baseDir, req.body.guid + '.cmp');
-
-    if (!finalPath.startsWith(baseDir)) {
-        return res.status(403).send('Forbidden: Invalid path');
-    }
-    fs.writeFile(finalPath, JSON.stringify(payload), err => {
-        if (err) {
-            console.error(err);
-        } else {
-            console.log("File written successfully");
-
-        }
-    });
     db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
         if (!row) {
             return res.status(500).json({ success: false, error: 'Player state not found' });
@@ -1075,27 +1048,170 @@ app.post('/maps/', express.urlencoded({ limit: "50mb", extended: true }), badTok
             "type": req.body.root.type,
             "name": "$root"
         }
-        db.run(`INSERT INTO communitytracks (guid, root, prefs, map_dirty, map_title, map_mode_type, map_id, map_stats_triangle_count, map_stats_object_count, is_race_allowed, player_id, profile_name, full_track_url, map_difficulty, map_lighting, is_public, allow_copy, cm_collectable_count, map_thumb) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ON CONFLICT(guid) DO UPDATE SET root = excluded.root, prefs = excluded.prefs, map_title = excluded.map_title, map_stats_triangle_count = excluded.map_stats_triangle_count, map_stats_object_count = excluded.map_stats_object_count, is_race_allowed = excluded.is_race_allowed, full_track_url = excluded.full_track_url, map_difficulty = excluded.map_difficulty, map_lighting = excluded.map_lighting, is_public = excluded.is_public, allow_copy = excluded.allow_copy, cm_collectable_count = excluded.cm_collectable_count, map_thumb = excluded.map_thumb;`, [
-            req.body.guid,
+        db.run(`INSERT INTO communitytracks (
+            guid,
+            root,
+            root_full,
+            prefs,
+            allow_copy,
+            base_assets_enabled,
+            exclusive_by_platform,
+            is_race_allowed,
+            is_public,
+            is_public_for_drlpilots,
+            is_drl_official,
+            is_featured,
+            is_multigp,
+            is_tryouts,
+            is_virtual_season,
+            map_category,
+            map_difficulty,
+            map_distance,
+            map_dirty,
+            map_lighting,
+            map_laps,
+            map_stats_triangle_count,
+            map_stats_object_count,
+            map_asset_layers,
+            map_styles,
+            categories,
+            prefs_auto_save,
+            rating_count,
+            score,
+            track_id,
+            xp_value,
+            xp_min_time,
+            cm_collectable_count,
+            collaborators,
+            map_mode_type,
+            map_id,
+            map_title,
+            steam_id,
+            created_at,
+            updated_at,
+            version,
+            title_translations,
+            images,
+            map_thumb,
+            avatar,
+            player_id,
+            profile_name,
+            profile_thumb,
+            profile_color,
+            profile_platform,
+            profile_platform_id,
+            flag_url,
+            is_avatar_blocked,
+            full_track_url
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(guid) DO UPDATE SET
+            root = excluded.root,
+            root_full = excluded.root_full,
+            prefs = excluded.prefs,
+            allow_copy = excluded.allow_copy,
+            base_assets_enabled = excluded.base_assets_enabled,
+            exclusive_by_platform = excluded.exclusive_by_platform,
+            is_race_allowed = excluded.is_race_allowed,
+            is_public = excluded.is_public,
+            is_public_for_drlpilots = excluded.is_public_for_drlpilots,
+            is_drl_official = excluded.is_drl_official,
+            is_featured = excluded.is_featured,
+            is_multigp = excluded.is_multigp,
+            is_tryouts = excluded.is_tryouts,
+            is_virtual_season = excluded.is_virtual_season,
+            map_category = excluded.map_category,
+            map_difficulty = excluded.map_difficulty,
+            map_distance = excluded.map_distance,
+            map_dirty = excluded.map_dirty,
+            map_lighting = excluded.map_lighting,
+            map_laps = excluded.map_laps,
+            map_stats_triangle_count = excluded.map_stats_triangle_count,
+            map_stats_object_count = excluded.map_stats_object_count,
+            map_asset_layers = excluded.map_asset_layers,
+            map_styles = excluded.map_styles,
+            categories = excluded.categories,
+            prefs_auto_save = excluded.prefs_auto_save,
+            rating_count = excluded.rating_count,
+            score = excluded.score,
+            track_id = excluded.track_id,
+            xp_value = excluded.xp_value,
+            xp_min_time = excluded.xp_min_time,
+            cm_collectable_count = excluded.cm_collectable_count,
+            collaborators = excluded.collaborators,
+            map_mode_type = excluded.map_mode_type,
+            map_id = excluded.map_id,
+            map_title = excluded.map_title,
+            steam_id = excluded.steam_id,
+            created_at = excluded.created_at,
+            updated_at = excluded.updated_at,
+            version = excluded.version,
+            title_translations = excluded.title_translations,
+            images = excluded.images,
+            map_thumb = excluded.map_thumb,
+            avatar = excluded.avatar,
+            player_id = excluded.player_id,
+            profile_name = excluded.profile_name,
+            profile_thumb = excluded.profile_thumb,
+            profile_color = excluded.profile_color,
+            profile_platform = excluded.profile_platform,
+            profile_platform_id = excluded.profile_platform_id,
+            flag_url = excluded.flag_url,
+            is_avatar_blocked = excluded.is_avatar_blocked,
+            full_track_url = excluded.full_track_url`, [
+            track.guid,
             JSON.stringify(root),
-            JSON.stringify(req.body.prefs),
-            req.body["map-dirty"],
-            req.body["map-title"],
-            req.body["map-mode-type"],
-            req.body["map-id"],
-            req.body["map-stats-triangle-count"],
-            req.body["map-stats-object-count"],
-            req.body["is-race-allowed"],
-            req.body['player-id'],
-            jsondata["profile-name"],
-            `/tracks/${req.body.guid}`,
-            req.body["map-difficulty"],
-            req.body["map-lighting"],
-            req.body["is-public"],
-            req.body["allow-copy"],
-            req.body["cm-collectable-count"],
-            req.body["map-thumb"]
+            JSON.stringify(track.root),
+            JSON.stringify(track.prefs),
+            track["allow-copy"],
+            track["base-assets-enabled"],
+            JSON.stringify(track["exclusive-by-platform"]),
+            track["is-race-allowed"],
+            track["is-public"],
+            track["is-public-for-drlpilots"],
+            track["is-drl-official"],
+            track["is-featured"],
+            track["is-multigp"],
+            track["is-tryouts"],
+            track["is-virtual-season"],
+            track["map-category"],
+            track["map-difficulty"],
+            track["map-distance"],
+            track["map-dirty"],
+            track["map-lighting"],
+            track["map-laps"],
+            track["map-stats-triangle-count"],
+            track["map-stats-object-count"],
+            JSON.stringify(track["map-asset-layers"]),
+            JSON.stringify(track["map-styles"]),
+            JSON.stringify(track["categories"]),
+            track["prefs-auto-save"],
+            track["rating-count"],
+            track["score"],
+            track["track-id"],
+            track["xp-value"],
+            track["xp-min-time"],
+            track["cm-collectable-count"],
+            JSON.stringify(track["collaborators"]),
+            track["map-mode-type"],
+            track["map-id"],
+            track["map-title"],
+            track["steam-id"],
+            track["created-at"],
+            track["updated-at"],
+            track["version"],
+            JSON.stringify(track["title-translations"]),
+            JSON.stringify(track["images"]),
+            track["map-thumb"],
+            track["avatar"],
+            track["player-id"],
+            track["profile-name"],
+            track["profile-thumb"],
+            track["profile-color"],
+            track["profile-platform"],
+            track["profile-platform-id"],
+            track["flag-url"],
+            track["is-avatar-blocked"],
+            track["full-track-url"]
         ], err => {
             if (err) {
                 console.error("Error inserting/updating community track:", err);
@@ -1133,7 +1249,13 @@ app.post('/maps/', express.urlencoded({ limit: "50mb", extended: true }), badTok
                     });
                 }
                 else {
-                    res.status(200).json({ success: true, data: req.body });
+                    db.run(`INSERT OR IGNORE INTO trackcolab (uid, guid) VALUES (?, ?)`, [req.body['player-id'], req.body.guid], function (err) {
+                        if (err) {
+                            console.error("Error inserting into trackcolab:", err);
+                        } else {
+                            res.status(200).json({ success: true, data: req.body });
+                        }
+                    });
                 }
             }
         })
@@ -1165,6 +1287,9 @@ app.post('/replay/', badTokenAuthv2, replay.single('replay-data'), (req, res) =>
     console.log(req.body)
     console.log(req.file)
     const uid = req.uid
+    if (req.file.size === 0) {
+        return res.status(200).json({ success: true, message: "File is empty" });
+    }
     db.run(
         `UPDATE leaderboard
                     SET replay_url = ?
@@ -3434,7 +3559,7 @@ app.get('/drones/', (req, res) => {
     let sql = "SELECT * FROM drone d LEFT JOIN profilestatemodel p ON p.player_id = d.player_id";
     let params = [];
     if (req.query['player-id'] != null) {
-        if (req.query['player-id']){
+        if (req.query['player-id']) {
             sql += " WHERE d.player_id = ?"
             params.push(req.query['player-id']);
         }

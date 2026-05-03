@@ -2,11 +2,13 @@ const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('main.db');
 const Tracks = require('./tracks.json');
 const Ctracks = require('./CtracksC.json')
+const fs = require('fs');
 
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS communitytracks (
             guid TEXT UNIQUE,
             root TEXT,
+            root_full TEXT,
             prefs TEXT,
             allow_copy BOOLEAN,
             base_assets_enabled BOOLEAN,
@@ -77,6 +79,7 @@ const stmt = db.prepare(
     `INSERT INTO communitytracks (
             guid,
             root,
+            root_full,
             prefs,
             allow_copy,
             base_assets_enabled,
@@ -128,7 +131,7 @@ const stmt = db.prepare(
             flag_url,
             is_avatar_blocked,
             full_track_url
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(guid) DO NOTHING;`
 );
 
@@ -136,10 +139,14 @@ db.serialize(() => {
     db.run("BEGIN TRANSACTION");
     for (let i = 0; i < full.length; i++) {
         const track = full[i];
+        const rawData = fs.readFileSync(`./tracks/${track.guid}.cmp`, 'utf8');
+        const jsonData = JSON.parse(rawData);
+        console.log(jsonData.data.data[0].root);
         try {
             stmt.run(
                 track.guid,
                 toJSON(track.root),
+                toJSON(jsonData.data.data[0].root),
                 toJSON(track.prefs),
                 track["allow-copy"],
                 track["base-assets-enabled"],
