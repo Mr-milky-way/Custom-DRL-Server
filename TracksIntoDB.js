@@ -140,7 +140,6 @@ db.serialize(() => {
         const track = full[i];
         const rawData = fs.readFileSync(`./tracks/${track.guid}.cmp`, 'utf8');
         const jsonData = JSON.parse(rawData);
-        console.log(jsonData.data.data[0].root);
         try {
             stmt.run(
                 track.guid,

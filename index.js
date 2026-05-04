@@ -65,6 +65,9 @@ const PORT = process.env.PORT || 8080;
 const url = process.env.URL || `http://localhost:${PORT}`;
 
 
+app.set('query parser', 'extended');
+
+
 app.use(rateLimit({
     windowMs: 60_000,
     max: 1000
@@ -778,7 +781,7 @@ app.get('/maps/updated/', (req, res) => {
         db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
             if (err || !row) {
                 console.error("Error fetching UID:", err);
-                for (i = 0; i < Track.length; i++) {
+                for (let i = 0; i < Track.length; i++) {
                     Track[i] = mapCTracksqlToJson(Track[i]);
                 }
                 res.status(200).json(Track);
@@ -792,14 +795,14 @@ app.get('/maps/updated/', (req, res) => {
                 db.get(`SELECT tracks FROM trackupdates WHERE uid = ?`, [uid], (err, row) => {
                     if (err || !row) {
                         console.error("Error fetching user tracks:", err);
-                        for (i = 0; i < Track.length; i++) {
+                        for (let i = 0; i < Track.length; i++) {
                             Track[i] = mapCTracksqlToJson(Track[i]);
                         }
                         return res.status(200).json(Track);
                     }
                     let payload = [];
                     let trackss = JSON.parse(row.tracks);
-                    for (i = 0; i < trackss.length; i++) {
+                    for (let i = 0; i < trackss.length; i++) {
                         for (e = 0; e < Track.length; e++) {
                             if (trackss[i].guid !== Track[e].guid || trackss[i].version !== Track[e].version) {
                                 payload.push(mapCTracksqlToJson(Track[e]));
@@ -1029,7 +1032,7 @@ app.get('/maps/', (req, res) => {
 
 app.post('/maps/', express.urlencoded({ limit: "2gb", extended: true }), badTokenAuthv2, (req, res) => {
     console.log("req sent to /maps/ via POST", req.body);
-    if (req.body.prefs === '{}'){
+    if (req.body.prefs === '{}') {
         req.body.prefs = { "map-prefs-auto-save": true }
     }
     const track = req.body;
@@ -1647,32 +1650,74 @@ function MapPlayerStateTOJson(row) {
     }
 }
 
-//TODO: MERGE WITH NEW Player State SYSTEM
 app.get('/social/profile/', badTokenAuthv2, (req, res) => {
     console.log("social profile header for:", req.query);
     const uid = req.uid
-    /*
-    db.get(`SELECT json FROM playerstate WHERE uid = ?`, [uid], (err, row) => {
-        if (!row) {
-            res.status(404).json({ success: false });
-            return
+    let payload = []
+    console.log(req.query['epic-ids'])
+    if (req.query['epic-ids']) {
+        let marks = []
+        for (let i = 0; i < req.query['epic-ids'].length; i++) {
+            marks.push("?")
         }
-        jsondata = JSON.parse(row.json);
-        let payload = [{
-            "platform-id": "epic-id",
-            "player-id": uid,
-            "profile-color": jsondata["profile-color"],
-            "profile-rank": 1,
-            "profile-name": jsondata["profile-name"],
-            "username": jsondata["profile-name"],
-            "profile-thumb": jsondata["profile-photo-url"],
-            "has-game": true,
-        }];
-        const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
-        res.status(200).json({
-            success: true, data: base64Data
+        db.all(`SELECT * FROM profilestatemodel WHERE player_id IN (${marks.join(',')})`, [req.query['epic-ids']], (err, rows) => {
+            if (err || rows.length === 0) {
+                console.log("epic_id faild with:", err)
+            } else {
+                for (let i = 0; i < req.query['epic-ids'].length; i++) {
+                    if (rows[i].player_id === req.query['epic-ids'][i]) {
+                        payload.push({
+                            "platform-id": "epic-id",
+                            "player-id": rows[i].player_id,
+                            "profile-color": rows[i].profile_color,
+                            "profile-name": rows[i].profile_name,
+                            "username": rows[i].profile_name,
+                            "profile-thumb": rows[i].profile_photo_url,
+                            "has-game": true,
+                        })
+                    } else {
+                        payload.push({
+                            "has-game": false
+                        })
+                    }
+                }
+            }
         });
-    });*/
+    }
+    if (req.query['steam-ids']) {
+        let marks = []
+        for (let i = 0; i < req.query['steam-ids'].length; i++) {
+            marks.push("?")
+        }
+        db.all(`SELECT * FROM profilestatemodel WHERE steam_id IN (${marks.join(',')})`, [...req.query['steam-ids']], (err, rows) => {
+            if (err || rows.length === 0) {
+                console.log("steam_id faild with:", err)
+            } else {
+                for (let i = 0; i < req.query['steam-ids'].length; i++) {
+                    if (rows[i].steam_id === req.query['steam-ids'][i]) {
+                        payload.push({
+                            "platform-id": "steam-id",
+                            "player-id": rows[i].player_id,
+                            "profile-color": rows[i].profile_color,
+                            "profile-name": rows[i].profile_name,
+                            "username": rows[i].profile_name,
+                            "profile-thumb": rows[i].profile_photo_url,
+                            "has-game": true,
+                        })
+                    } else {
+                        payload.push({
+                            "has-game": false
+                        })
+                    }
+                }
+            }
+        });
+    }
+    console.log(payload)
+    const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
+    res.status(200).json({
+        success: true, data: base64Data
+    });
 })
 
 app.get(`/player/avatar/:uid/`, (req, res) => {
@@ -2553,7 +2598,7 @@ app.get('/tournaments/', (req, res) => {
             res.status(500).json({ success: false });
             return;
         }
-        for (i in rows) {
+        for (let i in rows) {
             rows[i] = mapTournamentsSqlToJson(rows[i]);
         }
         console.log(rows)
@@ -4165,7 +4210,7 @@ app.get('/admin/players', (req, res) => {
             res.status(500).json({ success: false });
             return;
         }
-        for (i = 0; i < row.length; i++) {
+        for (let i = 0; i < row.length; i++) {
             jsondata.push(MapPlayerStateTOJson(row[i]))
         }
 
