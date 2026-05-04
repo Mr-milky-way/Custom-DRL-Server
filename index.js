@@ -531,12 +531,11 @@ db.serialize(() => {
         weekend TEXT
         );`);
 
-
     //tracks
+    db.run("CREATE TABLE IF NOT EXISTS trackroots (root TEXT, guid TEXT UNIQUE)");
     db.run(`CREATE TABLE IF NOT EXISTS communitytracks (
             guid TEXT UNIQUE,
             root TEXT,
-            root_full TEXT,
             prefs TEXT,
             allow_copy BOOLEAN,
             base_assets_enabled BOOLEAN,
@@ -736,9 +735,9 @@ app.get('/tracks/:id', (req, res) => {
                 COALESCE(p.profile_name, c.profile_name) AS profile_name,
                 COALESCE(p.profile_photo_url, c.profile_thumb) AS profile_thumb,
                 COALESCE(p.profile_color, c.profile_color) AS profile_color,
-                c.root_full AS root
+                t.root AS root
                 
-                FROM communitytracks c LEFT JOIN profilestatemodel p ON p.player_id = c.player_id WHERE guid = ?`, [req.params.id], (err, row) => {
+                FROM communitytracks c LEFT JOIN profilestatemodel p ON p.player_id = c.player_id LEFT JOIN trackroots t ON t.guid = c.guid WHERE c.guid = ?`, [req.params.id], (err, row) => {
         if (err) {
             console.error("Error fetching community track:", err);
             return res.status(500).json({ success: false });
@@ -754,59 +753,7 @@ app.get('/tracks/:id', (req, res) => {
 
 app.get('/progression/maps/', (req, res) => {
     let progressionMaps = [];
-    db.all(`SELECT guid,
-            root,
-            prefs,
-            allow_copy,
-            base_assets_enabled,
-            exclusive_by_platform,
-            is_race_allowed,
-            is_public,
-            is_public_for_drlpilots,
-            is_drl_official,
-            is_featured,
-            is_multigp,
-            is_tryouts,
-            is_virtual_season,
-            map_category,
-            map_difficulty,
-            map_distance,
-            map_dirty,
-            map_lighting,
-            map_laps,
-            map_stats_triangle_count,
-            map_stats_object_count,
-            map_asset_layers,
-            map_styles,
-            categories,
-            prefs_auto_save,
-            rating_count,
-            score,
-            track_id,
-            xp_value,
-            xp_min_time,
-            cm_collectable_count,
-            collaborators,
-            map_mode_type,
-            map_id,
-            map_title,
-            steam_id,
-            created_at,
-            updated_at,
-            version,
-            title_translations,
-            images,
-            map_thumb,
-            avatar,
-            player_id,
-            profile_name,
-            profile_thumb,
-            profile_color,
-            profile_platform,
-            profile_platform_id,
-            flag_url,
-            is_avatar_blocked,
-            full_track_url FROM communitytracks WHERE map_category != 'MapCommon'`, (err, Track) => {
+    db.all(`SELECT * FROM communitytracks WHERE map_category != 'MapCommon'`, (err, Track) => {
         for (let i = 0; i < Track.length; i++) {
             let data = {
                 guid: Track[i].guid,
@@ -827,60 +774,7 @@ app.get('/progression/maps/', (req, res) => {
 app.get('/maps/updated/', (req, res) => {
     console.log("req sent to /maps/updated/")
     const token = req.headers['x-access-jsonwebtoken']
-    db.all(`SELECT guid,
-            root,
-            prefs,
-            allow_copy,
-            base_assets_enabled,
-            exclusive_by_platform,
-            is_race_allowed,
-            is_public,
-            is_public_for_drlpilots,
-            is_drl_official,
-            is_featured,
-            is_multigp,
-            is_tryouts,
-            is_virtual_season,
-            map_category,
-            map_difficulty,
-            map_distance,
-            map_dirty,
-            map_lighting,
-            map_laps,
-            map_stats_triangle_count,
-            map_stats_object_count,
-            map_asset_layers,
-            map_styles,
-            categories,
-            prefs_auto_save,
-            rating_count,
-            score,
-            track_id,
-            xp_value,
-            xp_min_time,
-            cm_collectable_count,
-            collaborators,
-            map_mode_type,
-            map_id,
-            map_title,
-            steam_id,
-            created_at,
-            updated_at,
-            version,
-            title_translations,
-            images,
-            map_thumb,
-            avatar,
-            player_id,
-            profile_name,
-            profile_thumb,
-            profile_color,
-            profile_platform,
-            profile_platform_id,
-            flag_url,
-            is_avatar_blocked,
-            full_track_url
-            FROM communitytracks WHERE map_category != 'MapCommon' AND is_public = 1`, (err, Track) => {
+    db.all(`SELECT * FROM communitytracks WHERE map_category != 'MapCommon' AND is_public = 1`, (err, Track) => {
         db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
             if (err || !row) {
                 console.error("Error fetching UID:", err);
@@ -898,7 +792,6 @@ app.get('/maps/updated/', (req, res) => {
                 db.get(`SELECT tracks FROM trackupdates WHERE uid = ?`, [uid], (err, row) => {
                     if (err || !row) {
                         console.error("Error fetching user tracks:", err);
-                        console.log(Track)
                         for (i = 0; i < Track.length; i++) {
                             Track[i] = mapCTracksqlToJson(Track[i]);
                         }
@@ -960,61 +853,9 @@ app.get('/maps/user/updated/', express.urlencoded({ extended: false }), badToken
     console.log("req sent to /maps/user/updated/")
     let payload = []
     const uid = req.uid
-    db.all(`SELECT c.guid,
-                c.root,
-                c.prefs,
-                c.allow_copy,
-                c.base_assets_enabled,
-                c.exclusive_by_platform,
-                c.is_race_allowed,
-                c.is_public,
-                c.is_public_for_drlpilots,
-                c.is_drl_official,
-                c.is_featured,
-                c.is_multigp,
-                c.is_tryouts,
-                c.is_virtual_season,
-                c.map_category,
-                c.map_difficulty,
-                c.map_distance,
-                c.map_dirty,
-                c.map_lighting,
-                c.map_laps,
-                c.map_stats_triangle_count,
-                c.map_stats_object_count,
-                c.map_asset_layers,
-                c.map_styles,
-                c.categories,
-                c.prefs_auto_save,
-                c.rating_count,
-                c.score,
-                c.track_id,
-                c.xp_value,
-                c.xp_min_time,
-                c.cm_collectable_count,
-                c.collaborators,
-                c.map_mode_type,
-                c.map_id,
-                c.map_title,
-                c.steam_id,
-                c.created_at,
-                c.updated_at,
-                c.version,
-                c.title_translations,
-                c.images,
-                c.map_thumb,
-                c.avatar,
-                c.player_id,
-                c.profile_name,
-                c.profile_thumb,
-                c.profile_color,
-                c.profile_platform,
-                c.profile_platform_id,
-                c.flag_url,
-                c.is_avatar_blocked,
-                c.full_track_url
-                FROM communitytracks c
-                INNER JOIN trackcolab tc ON c.guid = tc.guid
+    db.all(`SELECT ct.*
+                FROM communitytracks ct
+                INNER JOIN trackcolab tc ON ct.guid = tc.guid
                 WHERE tc.uid = ?`, [uid], (err, row) => {
         if (err) {
             console.error("Error fetching community tracks:", err);
@@ -1072,9 +913,9 @@ app.get('/maps/:guid', (req, res) => {
                 COALESCE(p.profile_name, c.profile_name) AS profile_name,
                 COALESCE(p.profile_photo_url, c.profile_thumb) AS profile_thumb,
                 COALESCE(p.profile_color, c.profile_color) AS profile_color,
-                c.root_full AS root
+                t.root AS root
                 
-                FROM communitytracks c LEFT JOIN profilestatemodel p ON p.player_id = c.player_id WHERE guid = ?`, [req.params.guid], (err, row) => {
+                FROM communitytracks c LEFT JOIN profilestatemodel p ON p.player_id = c.player_id LEFT JOIN trackroots t ON t.guid = c.guid WHERE c.guid = ?`, [req.params.guid], (err, row) => {
         if (err) {
             console.error("Error fetching community track:", err);
             return res.status(500).json({ success: false });
@@ -1164,59 +1005,7 @@ app.get('/maps/', (req, res) => {
             const totalCount = countResult.total;
             const totalPages = Math.ceil(totalCount / limit);
             db.all(
-                `SELECT c.guid,
-                c.root,
-                c.prefs,
-                c.allow_copy,
-                c.base_assets_enabled,
-                c.exclusive_by_platform,
-                c.is_race_allowed,
-                c.is_public,
-                c.is_public_for_drlpilots,
-                c.is_drl_official,
-                c.is_featured,
-                c.is_multigp,
-                c.is_tryouts,
-                c.is_virtual_season,
-                c.map_category,
-                c.map_difficulty,
-                c.map_distance,
-                c.map_dirty,
-                c.map_lighting,
-                c.map_laps,
-                c.map_stats_triangle_count,
-                c.map_stats_object_count,
-                c.map_asset_layers,
-                c.map_styles,
-                c.categories,
-                c.prefs_auto_save,
-                c.rating_count,
-                c.score,
-                c.track_id,
-                c.xp_value,
-                c.xp_min_time,
-                c.cm_collectable_count,
-                c.collaborators,
-                c.map_mode_type,
-                c.map_id,
-                c.map_title,
-                c.steam_id,
-                c.created_at,
-                c.updated_at,
-                c.version,
-                c.title_translations,
-                c.images,
-                c.map_thumb,
-                c.avatar,
-                c.player_id,
-                c.profile_name,
-                c.profile_thumb,
-                c.profile_color,
-                c.profile_platform,
-                c.profile_platform_id,
-                c.flag_url,
-                c.is_avatar_blocked,
-                c.full_track_url,
+                `SELECT c.*,
                 COALESCE(p.player_id, c.player_id) AS player_id,
                 COALESCE(p.profile_name, c.profile_name) AS profile_name,
                 COALESCE(p.profile_photo_url, c.profile_thumb) AS profile_thumb,

@@ -5,10 +5,10 @@ const Ctracks = require('./CtracksC.json')
 const fs = require('fs');
 
 db.serialize(() => {
+    db.run("CREATE TABLE IF NOT EXISTS trackroots (root TEXT, guid TEXT UNIQUE)");
     db.run(`CREATE TABLE IF NOT EXISTS communitytracks (
             guid TEXT UNIQUE,
             root TEXT,
-            root_full TEXT,
             prefs TEXT,
             allow_copy BOOLEAN,
             base_assets_enabled BOOLEAN,
@@ -79,7 +79,6 @@ const stmt = db.prepare(
     `INSERT INTO communitytracks (
             guid,
             root,
-            root_full,
             prefs,
             allow_copy,
             base_assets_enabled,
@@ -131,7 +130,7 @@ const stmt = db.prepare(
             flag_url,
             is_avatar_blocked,
             full_track_url
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(guid) DO NOTHING;`
 );
 
@@ -146,7 +145,6 @@ db.serialize(() => {
             stmt.run(
                 track.guid,
                 toJSON(track.root),
-                toJSON(jsonData.data.data[0].root),
                 toJSON(track.prefs),
                 track["allow-copy"],
                 track["base-assets-enabled"],
@@ -202,6 +200,11 @@ db.serialize(() => {
             db.run(`INSERT OR IGNORE INTO trackcolab (uid, guid) VALUES (?, ?)`, [track["player-id"], track.guid], function (err) {
                 if (err) {
                     console.error("Error inserting into trackcolab:", err);
+                }
+            });
+            db.run(`INSERT OR IGNORE INTO trackroots (root, guid) VALUES (?, ?)`, [toJSON(jsonData.data.data[0].root), track.guid], function (err) {
+                if (err) {
+                    console.error("Error inserting into trackroots:", err);
                 }
             });
             if (Array.isArray(track.collaborators)) {
