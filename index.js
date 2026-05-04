@@ -92,8 +92,8 @@ app.use(rateLimit({
 
 
 app.use((req, res, next) => {
-    res.setTimeout(10000, () => {
-        console.error("Request timed out");
+    res.setTimeout(20000, () => {
+        console.error("Request timed out on ", req.url);
         res.status(504).json({ success: false });
     });
     next();
