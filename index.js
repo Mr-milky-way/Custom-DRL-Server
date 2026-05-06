@@ -214,6 +214,7 @@ db.serialize(() => {
     )`);
 
     db.run("CREATE TABLE IF NOT EXISTS tournamentsubscribed (uid TEXT, guid TEXT, PRIMARY KEY (uid, guid))");
+    
     */
 
 
@@ -2452,6 +2453,7 @@ function createTournamentRounds(tournament, playerCount, tournamentType) {
     }
 }
 
+// TODO: Implement
 app.get(`/tournaments/:guid/results/:roundid`, badTokenAuthv2, (req, res) => {
     console.log("/tournaments/:guid/scores")
     console.log(req.params.guid)
@@ -2475,14 +2477,14 @@ app.get(`/tournaments/:guid/results/:roundid`, badTokenAuthv2, (req, res) => {
     })
 })
 
-
+// TODO: Implement
 app.post(`/tournaments/:guid/scores`, express.urlencoded(), badTokenAuthv2, (req, res) => {
     console.log("/tournaments/:guid/scores")
     console.log(req.headers)
     console.log(req.body)
 })
 
-
+// TODO: Implement
 app.get('/tournaments/:guid/register', badTokenAuthv2, (req, res) => {
     console.log("/tournaments/:guid/register");
     const uid = req.uid;
@@ -2495,7 +2497,7 @@ app.get('/tournaments/:guid/register', badTokenAuthv2, (req, res) => {
     })
 })
 
-
+// TODO: Implement
 app.get('/tournaments/:guid/unregister', badTokenAuthv2, (req, res) => {
     console.log("/tournaments/:guid/register");
     const uid = req.uid;
@@ -2504,6 +2506,7 @@ app.get('/tournaments/:guid/unregister', badTokenAuthv2, (req, res) => {
     })
 })
 
+// TODO: Implement
 app.get(`/tournaments/:guid/subscription`, (req, res) => {
     console.log("/tournaments/:guid/subscription");
     res.status(200).json({
@@ -2515,7 +2518,7 @@ app.get(`/tournaments/:guid/subscription`, (req, res) => {
     });
 })
 
-
+// TODO: Implement
 app.get(`/tournaments/:guid/matches/:mid/countdown`, (req, res) => {
     console.log("/tournaments/:guid/matches/:mid/countdown");
     const base64Data = Buffer.from(JSON.stringify(true)).toString('base64');
@@ -2524,17 +2527,19 @@ app.get(`/tournaments/:guid/matches/:mid/countdown`, (req, res) => {
     });
 })
 
+// TODO: Implement
 app.get(`/tournaments/subscription`, (req, res) => {
     console.log("/tournaments/subscription");
     res.status(200).json({ success: true, data: [] });
 })
 
-
+// TODO: Implement
 app.get(`/player/tournaments/`, (req, res) => {
     console.log("/player/tournaments/");
     res.status(200).json({ success: true, data: [] });
 })
 
+// TODO: Implement
 app.get(`/tournaments/:guid/matches/:mid`, (req, res) => {
     console.log("/tournaments/:guid/matches/:mid");
     const now = new Date();
