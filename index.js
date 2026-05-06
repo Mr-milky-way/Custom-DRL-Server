@@ -1412,6 +1412,31 @@ app.get('/replay/:uid/:guid', (req, res) => {
 });
 
 
+
+
+
+
+app.get(`/onboarding-bots-replays-v2/onboarding-bot-beginner.race`, (req, res) => {
+    res.sendFile(path.join(__dirname, 'bots', '$cache-onboarding-replay-Beginner0.rpl.bytes'));
+})
+
+app.get(`/onboarding-bots-replays-v2/onboarding-bot-intermediate.race`, (req, res) => {
+    res.sendFile(path.join(__dirname, 'bots', '$cache-onboarding-replay-Intermediate0.rpl.bytes'));
+})
+
+app.get(`/onboarding-bots-replays-v2/onboarding-bot-pro-1.race`, (req, res) => {
+    res.sendFile(path.join(__dirname, 'bots', '$cache-onboarding-replay-Pro0.rpl.bytes'));
+})
+
+app.get(`/onboarding-bots-replays-v2/onboarding-bot-pro-2.race`, (req, res) => {
+    res.sendFile(path.join(__dirname, 'bots', '$cache-onboarding-replay-Pro1.rpl.bytes'));
+})
+
+app.get(`/onboarding-bots-replays-v2/onboarding-bot-pro-3.race`, (req, res) => {
+    res.sendFile(path.join(__dirname, 'bots', '$cache-onboarding-replay-Pro2.rpl.bytes'));
+})
+
+
 /*
 ---------------------------------------
 ██╗      ██████╗  ██████╗ ██╗███╗   ██╗
