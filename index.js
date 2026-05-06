@@ -1413,6 +1413,31 @@ app.get('/replay/:uid/:guid', (req, res) => {
 });
 
 
+
+
+
+
+app.get(`/onboarding-bots-replays-v2/onboarding-bot-beginner.race`, (req, res) => {
+    res.sendFile(path.join(__dirname, 'bots', '$cache-onboarding-replay-Beginner0.rpl.bytes'));
+})
+
+app.get(`/onboarding-bots-replays-v2/onboarding-bot-intermediate.race`, (req, res) => {
+    res.sendFile(path.join(__dirname, 'bots', '$cache-onboarding-replay-Intermediate0.rpl.bytes'));
+})
+
+app.get(`/onboarding-bots-replays-v2/onboarding-bot-pro-1.race`, (req, res) => {
+    res.sendFile(path.join(__dirname, 'bots', '$cache-onboarding-replay-Pro0.rpl.bytes'));
+})
+
+app.get(`/onboarding-bots-replays-v2/onboarding-bot-pro-2.race`, (req, res) => {
+    res.sendFile(path.join(__dirname, 'bots', '$cache-onboarding-replay-Pro1.rpl.bytes'));
+})
+
+app.get(`/onboarding-bots-replays-v2/onboarding-bot-pro-3.race`, (req, res) => {
+    res.sendFile(path.join(__dirname, 'bots', '$cache-onboarding-replay-Pro2.rpl.bytes'));
+})
+
+
 /*
 ---------------------------------------
 ██╗      ██████╗  ██████╗ ██╗███╗   ██╗
@@ -1655,18 +1680,24 @@ app.get('/social/profile/', badTokenAuthv2, (req, res) => {
     console.log("social profile header for:", req.query);
     const uid = req.uid
     let payload = []
-    console.log(req.query['epic-ids'])
-    if (req.query['epic-ids']) {
+    const epicIds = Array.isArray(req.query['epic-ids'])
+        ? req.query['epic-ids']
+        : (typeof req.query['epic-ids'] === 'string' ? [req.query['epic-ids']] : []);
+    const steamIds = Array.isArray(req.query['steam-ids'])
+        ? req.query['steam-ids']
+        : (typeof req.query['steam-ids'] === 'string' ? [req.query['steam-ids']] : []);
+    console.log(epicIds)
+    if (epicIds.length > 0) {
         let marks = []
-        for (let i = 0; i < req.query['epic-ids'].length; i++) {
+        for (let i = 0; i < epicIds.length; i++) {
             marks.push("?")
         }
-        db.all(`SELECT * FROM profilestatemodel WHERE player_id IN (${marks.join(',')})`, [req.query['epic-ids']], (err, rows) => {
+        db.all(`SELECT * FROM profilestatemodel WHERE player_id IN (${marks.join(',')})`, [...epicIds], (err, rows) => {
             if (err || rows.length === 0) {
                 console.log("epic_id faild with:", err)
             } else {
-                for (let i = 0; i < req.query['epic-ids'].length; i++) {
-                    if (rows[i].player_id === req.query['epic-ids'][i]) {
+                for (let i = 0; i < epicIds.length; i++) {
+                    if (rows[i].player_id === epicIds[i]) {
                         payload.push({
                             "platform-id": "epic-id",
                             "player-id": rows[i].player_id,
@@ -1685,17 +1716,17 @@ app.get('/social/profile/', badTokenAuthv2, (req, res) => {
             }
         });
     }
-    if (req.query['steam-ids']) {
+    if (steamIds.length > 0) {
         let marks = []
-        for (let i = 0; i < req.query['steam-ids'].length; i++) {
+        for (let i = 0; i < steamIds.length; i++) {
             marks.push("?")
         }
-        db.all(`SELECT * FROM profilestatemodel WHERE steam_id IN (${marks.join(',')})`, [...req.query['steam-ids']], (err, rows) => {
+        db.all(`SELECT * FROM profilestatemodel WHERE steam_id IN (${marks.join(',')})`, [...steamIds], (err, rows) => {
             if (err || rows.length === 0) {
                 console.log("steam_id faild with:", err)
             } else {
-                for (let i = 0; i < req.query['steam-ids'].length; i++) {
-                    if (rows[i].steam_id === req.query['steam-ids'][i]) {
+                for (let i = 0; i < steamIds.length; i++) {
+                    if (rows[i].steam_id === steamIds[i]) {
                         payload.push({
                             "platform-id": "steam-id",
                             "player-id": rows[i].player_id,
