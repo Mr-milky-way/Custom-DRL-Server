@@ -773,7 +773,6 @@ app.get('/progression/maps/', (req, res) => {
 
 
 
-
 app.get('/maps/updated/', (req, res) => {
     console.log("req sent to /maps/updated/")
     const token = req.headers['x-access-jsonwebtoken']
@@ -801,55 +800,58 @@ app.get('/maps/updated/', (req, res) => {
                         return res.status(200).json(Track);
                     }
                     let payload = [];
-                    let trackss = JSON.parse(row.tracks);
-                    for (let i = 0; i < trackss.length; i++) {
-                        for (e = 0; e < Track.length; e++) {
-                            if (trackss[i].guid !== Track[e].guid || trackss[i].version !== Track[e].version) {
-                                payload.push(mapCTracksqlToJson(Track[e]));
-                            }
+                    let localTracks = JSON.parse(JSON.parse(row.tracks).maps);
+                    const localMap = new Map();
+                    for (const t of localTracks) {
+                        localMap.set(t.guid, t.version);
+                    }
+                    for (const dbTrack of Track) {
+                        const localVersion = localMap.get(dbTrack.guid);
+                        if (localVersion === undefined) {
+                            payload.push(mapCTracksqlToJson(dbTrack));
+                        }
+                        if (localVersion !== dbTrack.version) {
+                            payload.push(mapCTracksqlToJson(dbTrack));
                         }
                     }
-                    res.status(200).json(payload);
+                    if (payload.length === 0) {
+                        console.log("No updated tracks for user", uid, "returning tracks");
+
+                        //Do this bc the game is slow and will mess up usernames?
+                        setTimeout(() => {
+                        return res.status(200).json(payload);
+                        }, 10000);
+                    } else {
+                        res.status(200).json(payload);
+                    }
                 });
             }
         });
     });
 });
-
+/*
 app.post('/maps/updated/', express.urlencoded({ extended: false }), (req, res) => {
     console.log("req sent to /maps/updated/ via POST")
     console.log(req.body);
     console.log(req.headers)
     res.status(200).json({ success: true });
 })
+*/
 
-/*
-app.post('/maps/updated/', express.urlencoded({ extended: false }), (req, res) => {
+app.post('/maps/updated/', express.urlencoded({ extended: false }), badTokenAuthv2, (req, res) => {
     console.log("req sent to /maps/updated/ via POST")
     const token = req.headers['x-access-jsonwebtoken']
-    db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
-        if (err || !row) {
-            console.error("Error fetching UID:", err);
-            res.status(404).json({ success: false });
-            return;
-        } else if (row.expires < Math.floor(Date.now() / 1000)) {
-            console.error("Error fetching UID: Token expired");
-            res.status(401).json({ success: false, message: "Token invalid" });
-            return;
+    console.log(JSON.stringify(req.body))
+    db.run(`INSERT INTO trackupdates (uid, tracks) VALUES (?, ?) ON CONFLICT(uid) DO UPDATE SET tracks = excluded.tracks`, [req.uid, JSON.stringify(req.body)], function (err) {
+        if (err) {
+            console.error("Error inserting track update:", err);
+            res.status(500).json({ success: false });
         } else {
-            console.log(JSON.stringify(req.body))
-            db.run(`INSERT INTO trackupdates (uid, tracks) VALUES (?, ?) ON CONFLICT(uid) DO UPDATE SET tracks = excluded.tracks`, [row.uid, JSON.stringify(req.body)], function (err) {
-                if (err) {
-                    console.error("Error inserting track update:", err);
-                    res.status(500).json({ success: false });
-                } else {
-                    res.status(200).json({ success: true });
-                }
-            });
+            res.status(200).json({ success: true });
         }
     });
 });
-*/
+
 
 app.get('/maps/user/updated/', express.urlencoded({ extended: false }), badTokenAuthv2, (req, res) => {
     const token = req.headers['x-access-jsonwebtoken']
@@ -1334,7 +1336,7 @@ app.post('/storage/image/', badTokenAuthv2, imageCloud.single('file'), (req, res
 })
 
 app.get('/images/', async (req, res) => {
-    console.log("Image requested from /images/ here is data:", req.headers);
+    console.log("Image requested from /images/");
     const { url, w, h } = req.query;
     console.log(req.query)
     if (url.startsWith("/image-cloud/")) {
@@ -1479,8 +1481,8 @@ app.post('/v2/login', express.urlencoded({ extended: false }), (req, res) => {
             return res.status(401).json({ success: false, message: "Token banned" });
         }
         db.run(`INSERT INTO user (uid, token, expires) VALUES (?, ?, ?)
-            ON CONFLICT(uid) DO UPDATE SET 
-                token = excluded.token, 
+            ON CONFLICT(uid) DO UPDATE SET
+                token = excluded.token,
                 expires = CASE WHEN user.expires = -1 THEN -1 ELSE excluded.expires END;`,
             [decToken.uid, req.body.token, responseData.expires],
             (err) => {
@@ -3705,6 +3707,11 @@ app.get('/time/', (req, res) => {
     res.status(200).json({ success: true, data: getTimeBase64() });
 })
 
+
+app.get(`/store/`, (req, res) => {
+    res.status(200).json({ success: true, data: null, pagging: { "page-total": 0, "page": 0 } });
+})
+
 //TODO: Fix crash dummy data
 //filler data
 app.get('/crash-settings', (req, res) => {
@@ -3715,7 +3722,7 @@ app.get('/crash-settings', (req, res) => {
 app.get('/circuits/', (req, res) => {
     const payload = [];
     const base64Data = Buffer.from(JSON.stringify(payload)).toString('base64');
-    res.status(200).json({ success: true });
+    res.status(200).json({ success: true, data: payload });
 })
 
 function getTimeBase64() {
@@ -4200,11 +4207,14 @@ app.post(`/admin/createapiKey/`, express.json(), (req, res) => {
 
 app.get(`/admin/apikey/`, express.json(), (req, res) => {
     db.all(`SELECT * FROM user WHERE name IS NOT NULL`, [], (err, rows) => {
-        if (err || rows.length === 0) {
+        if (err) {
             console.error("/admin/apikeys/ ERROR: " + err)
             return res.status(500).json({ success: false, message: err })
+        } else if (rows.length === 0) {
+            res.status(200).json({ success: true, body: [] })
+        } else {
+            res.status(200).json({ success: true, body: rows })
         }
-        res.status(200).json({ success: true, body: rows })
     })
 })
 
