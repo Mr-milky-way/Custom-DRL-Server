@@ -1319,7 +1319,9 @@ app.post('/replay/', badTokenAuthv2, replay.single('replay-data'), (req, res) =>
 });
 
 
-app.post('/storage/replay-cloud/', badTokenAuthv2, replayCloud.single('file'), (req, res) => {
+app.post('/storage/replay-cloud/', badTokenAuthv2,
+    //replayCloud.single('file'), DONT SAVE THE FILE
+    (req, res) => {
     console.log("replay sent to /storage/replay-cloud/ here is data:", req.headers);
     console.log(req.query)
     console.log(req.body);
@@ -2884,7 +2886,7 @@ app.post('/leaderboards/', express.urlencoded({ extended: false }), badTokenAuth
                     req.body['profile-color'] || null,
                     parsed[0].map ? parsed[0].map : "unknown",
                     parsed[0].track ? parsed[0].track : "unknown",
-                    parsed[0]['is-custom-map'] ? parsed[0]['is-custom-map'] : true,
+                    parsed[0]['is-custom-map'] ? parsed[0]['is-custom-map'] : false,
                     parsed[0]['custom-map'] ? parsed[0]['custom-map'] : null,
                     parsed[0]['mission'] ? parsed[0]['mission'] : null,
                     parsed[0]['group-id'] ? parsed[0]['group-id'] : null,
@@ -2923,7 +2925,7 @@ app.post('/leaderboards/', express.urlencoded({ extended: false }), badTokenAuth
                     parsed[0]['race-id'] ? parsed[0]['race-id'] : null,
                     parsed[0]['limit-col'] ? parsed[0]['limit-col'] : null,
                     parsed[0]['heat'] ? parsed[0]['heat'] : null,
-                    parsed[0]['custom-physics'] === true ? 1 : 0,
+                    parsed[0]['custom-physics'] === true ? true : false,
                     parsed[0]['drl-official'] ? parsed[0]['drl-official'] : false,
                     parsed[0]['drl-pilot-mode'] ? parsed[0]['drl-pilot-mode'] : null,
                     parsed[0]['drone-guid'] ? parsed[0]['drone-guid'] : null,
@@ -3098,15 +3100,16 @@ app.get('/leaderboards/rivals/', badTokenAuthv2, (req, res) => {
     console.log(req.query)
     const uid = req.query['player-id'];
     const diameter = Number(req.query.diameter);
-    const drlOfficial = req.query["drl-official"] === "true" ? 1 : 0;
+    const drlOfficial = req.query["drl-official"] === "true" ? true : false;
+    const IscustomMap = req.query["is-custom-map"] === "true" ? true : false;
     let query;
     let inputs;
-    if (req.query['is-custom-map'] == `true`) {
+    if (req.query['is-custom-map'] == "true") {
         query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? AND custom_map = ? AND match_id = 'normal' `
         inputs = [req.query.map, req.query.track, diameter, drlOfficial, req.query['custom-map']]
     } else {
-        query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? AND match_id = 'normal' `
-        inputs = [req.query.map, req.query.track, diameter, drlOfficial]
+        query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? AND is_custom_map = ? AND match_id = 'normal' `
+        inputs = [req.query.map, req.query.track, diameter, drlOfficial, IscustomMap]
     }
     let player_pos = 0
     db.all(`SELECT l.*,
@@ -3187,8 +3190,8 @@ app.get(`/replay/rivals/`, (req, res) => {
         query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? AND custom_map = ? AND match_id = 'normal' `
         inputs = [req.query.map, req.query.track, diameter, drlOfficial, req.query['custom-map']]
     } else {
-        query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? AND match_id = 'normal' `
-        inputs = [req.query.map, req.query.track, diameter, drlOfficial]
+        query = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? AND custom_map = ? AND match_id = 'normal' `
+        inputs = [req.query.map, req.query.track, diameter, drlOfficial, req.query['custom-map'] ? req.query['custom-map'] : false]
     }
     let player_pos = 0
     db.all(`SELECT * FROM leaderboard l LEFT JOIN profilestatemodel p ON p.player_id = l.player_id ` + query + `ORDER BY score ASC`, inputs, (err, row) => {
