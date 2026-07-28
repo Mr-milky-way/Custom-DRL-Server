@@ -819,7 +819,7 @@ app.get('/maps/updated/', (req, res) => {
 
                         //Do this bc the game is slow and will mess up usernames?
                         setTimeout(() => {
-                        return res.status(200).json(payload);
+                            return res.status(200).json(payload);
                         }, 10000);
                     } else {
                         res.status(200).json(payload);
@@ -1322,12 +1322,12 @@ app.post('/replay/', badTokenAuthv2, replay.single('replay-data'), (req, res) =>
 app.post('/storage/replay-cloud/', badTokenAuthv2,
     //replayCloud.single('file'), DONT SAVE THE FILE
     (req, res) => {
-    console.log("replay sent to /storage/replay-cloud/ here is data:", req.headers);
-    console.log(req.query)
-    console.log(req.body);
-    console.log(req.file);
-    res.status(200).json({ success: true });
-})
+        console.log("replay sent to /storage/replay-cloud/ here is data:", req.headers);
+        console.log(req.query)
+        console.log(req.body);
+        console.log(req.file);
+        res.status(200).json({ success: true });
+    })
 
 app.post('/storage/image/', badTokenAuthv2, imageCloud.single('file'), (req, res) => {
     console.log("Image sent to /storage/image/ here is data:", req.headers);
@@ -2321,6 +2321,139 @@ app.post('/state/', express.urlencoded(), badTokenAuthv2, (req, res) => {
 ---------------------------------------------------------------------------------------------------
 */
 
+var tournamentsMap = new Map();
+
+function loadAllTournaments() {
+    return new Promise((resolve, reject) => {
+        // 1. Group player IDs into a single string separated by commas
+        const query = `
+        SELECT t.*,
+        COUNT(tr.uid) AS player_count,
+        tr.uid AS raw_player_ids
+        FROM tournaments t
+        LEFT JOIN tournamentsregistered tr ON t.guid = tr.guid
+        GROUP BY t.guid
+    `;
+
+        db.all(query, [], (err, rows) => {
+            if (err) return reject(err);
+
+            const formattedRows = rows.map(tournament => {
+                if (tournament.raw_player_ids) {
+                    tournament.playerids = tournament.raw_player_ids.split(',');
+                } else {
+                    tournament.playerids = [];
+                }
+
+                delete tournament.raw_player_ids;
+
+                return tournament;
+            });
+
+            resolve(formattedRows);
+        });
+    });
+
+
+}
+
+
+async function updateTournament(tournament, now) {
+
+    console.log(now)
+    console.log(tournament.register_end)
+
+    if (new Date(tournament.register_end) >= now) {
+        tournament.status = "idle"
+    }
+
+    if (tournament.status === "idle" && tournament.allow_new_registration === 0 && tournament.player_count < tournament.max_players) {
+        tournament.allow_new_registration = 1;
+    }
+
+
+    if (tournament.status === "idle" && new Date(tournament.register_end) <= now) {
+        tournament.allow_new_registration = 0;
+        tournament.status = "active";
+        tournament.rounds = createTournamentRounds(tournament, tournament.player_count, "DRL")
+
+    }
+
+    if (tournament.status === "active" && tournament.player_count < 2) {
+        //tournament.status = "fail";
+    }
+
+
+    await saveTournament(tournament);
+}
+
+
+function saveTournament(tournament) {
+    return new Promise((resolve, reject) => {
+
+        db.run(
+            `
+                UPDATE tournaments
+                SET
+                    status = ?,
+                    allow_new_registration = ?
+                WHERE guid = ?
+                `,
+            [
+                tournament.status,
+                tournament.allow_new_registration,
+                tournament.guid
+            ],
+            err => {
+
+                if (err)
+                    return reject(err);
+
+                resolve();
+            }
+        );
+
+    });
+}
+
+async function LoadTournaments() {
+    const tournaments = await loadAllTournaments();
+    for (const tournament of tournaments) {
+        tournamentsMap.set(tournament.guid, tournament);
+    }
+    console.log(
+        `[TournamentManager] Loaded ${tournamentsMap.size} tournaments`
+    );
+}
+
+async function update() {
+    await LoadTournaments()
+    const now = new Date();
+
+    for (const tournament of tournamentsMap.values()) {
+        try {
+            console.log(`Trying to update ${tournament.guid}`)
+            await updateTournament(tournament, now);
+        }
+        catch (err) {
+            console.error(
+                `[TournamentManager] Failed updating ${tournament.guid}`,
+                err
+            );
+        }
+    }
+
+    setTimeout(update, 10000)
+}
+
+
+
+async function TournamentMan() {
+    update()
+}
+
+
+TournamentMan();
 
 function mapTournamentsSqlToJson(row, playerids, player_count, ranking, rounds) {
     try {
@@ -2339,7 +2472,7 @@ function mapTournamentsSqlToJson(row, playerids, player_count, ranking, rounds) 
             "terms-and-conditions-url": row.terms_and_conditions_url,
 
             "region": row.region,
-            "players-size": player_count || 0,
+            "players-size": row.player_count,
             "max-players": row.max_players,
 
             "current-time": new Date().toISOString(),
@@ -2403,7 +2536,7 @@ function mapTournamentsSqlToJson(row, playerids, player_count, ranking, rounds) 
 function createTournamentRounds(tournament, playerCount, tournamentType) {
     if (tournamentType === "DRL") {
         const rounds = [];
-        let currentPlayers = playerCount;
+        let currentPlayers = 16;
 
         const targetBracketSize = currentPlayers > 24 ? 24 : (currentPlayers > 12 ? 12 : currentPlayers);
         let roundNumber = 0;
@@ -2436,7 +2569,7 @@ function createTournamentRounds(tournament, playerCount, tournamentType) {
                         "end-at": new Date(Date.now() + 60 * 1000).toISOString(),
                         "current-time": new Date().toISOString(),
                         mode: "leaderboard",
-                        "player-ids": ["b9365d125935475b8327162c66a25e12"],
+                        "player-ids": tournament['player-ids'],
                         "round-id": "QUAL",
                         "id": "QUAL",
                         "num-winners": targetBracketSize,
@@ -2449,7 +2582,7 @@ function createTournamentRounds(tournament, playerCount, tournamentType) {
             });
             currentPlayers = targetBracketSize;
             roundNumber++;
-        } /*
+        }
         while (currentPlayers > 1) {
             const playersPerMatch = 6;
             const advancingPerMatch = currentPlayers <= 6 ? 1 : 3;
@@ -2481,7 +2614,7 @@ function createTournamentRounds(tournament, playerCount, tournamentType) {
             currentPlayers = advancingPerMatch === 1 ? 1 : outgoingPlayers;
 
             roundNumber++;
-        } */
+        }
 
         return rounds;
     }
@@ -2607,38 +2740,20 @@ app.get(`/tournaments/:guid/matches/:mid`, (req, res) => {
 })
 
 app.get(`/tournaments/:guid`, (req, res) => {
-    db.get(`SELECT * FROM tournaments WHERE guid = ?`, [req.params.guid], (err, row) => {
-        if (err) {
-            console.error("Error fetching tournaments:", err);
-            res.status(500).json({ success: false });
-            return;
-        }
-        let tournament = row;
-        db.all(`SELECT uid FROM tournamentsregistered WHERE guid = ?`, [req.params.guid], (err, playerRows) => {
-            console.log(playerRows.length)
-            console.log(playerRows.map(r => r.uid).join(','))
-            tournament = mapTournamentsSqlToJson(tournament, [playerRows.map(r => r.uid).join(',')], playerRows.length);
-            tournament.rounds = createTournamentRounds(tournament, 15, "DRL")
-            console.log(tournament)
-            res.status(200).json({ success: true, data: [tournament] });
-        });
-    })
+    let tournament = tournamentsMap.get(req.params.guid)
+    tournament = mapTournamentsSqlToJson(tournament, tournament.playerids, tournament.player_count, null, tournament.rounds);
+    //tournament.rounds = createTournamentRounds(tournament, 15, "DRL")
+    console.log(tournament)
+    res.status(200).json({ success: true, data: [tournament] });
 })
 
 app.get('/tournaments/', (req, res) => {
     console.log("/tournaments/");
-    db.all(`SELECT * FROM tournaments`, [], (err, rows) => {
-        if (err) {
-            console.error("Error fetching tournaments:", err);
-            res.status(500).json({ success: false });
-            return;
-        }
-        for (let i in rows) {
-            rows[i] = mapTournamentsSqlToJson(rows[i]);
-        }
-        console.log(rows)
-        res.status(200).json({ success: true, data: rows });
-    })
+    const rows = Array.from(tournamentsMap.values(), row =>
+        mapTournamentsSqlToJson(row)
+    );
+    console.log(rows)
+    res.status(200).json({ success: true, data: rows });
 })
 
 /*

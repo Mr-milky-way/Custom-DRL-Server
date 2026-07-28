@@ -1,0 +1,14 @@
+DRLTournamentData
+│
+├── Rankings (DRLTournamentPlayerData[])
+├── Rounds (DRLTournamentRoundData[])
+│   │
+│   ├── Matches (DRLTournamentMatchData[])
+│   │   │
+│   │   ├── Players (DRLTournamentPlayerData[])
+│   │   ├── Scores (DRLTournamentScoreData[])
+│   │   └── Replays (DRLTournamentReplayData[])
+│   │
+│   └── Round metadata
+│
+└── Tournament metadata
