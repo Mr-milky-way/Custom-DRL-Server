@@ -22,6 +22,7 @@ const db = new sqlite3.Database('main.db', err => {
 
 const multer = require('multer');
 const { env } = require('process');
+const { ERROR } = require('sqlite3');
 const replayCloud = multer({ dest: 'replay-cloud/' });
 
 process.on("uncaughtException", err => {
@@ -157,13 +158,13 @@ db.serialize(() => {
         custom_map_title TEXT
         )`);
 
-    /*
+
     db.run(`CREATE TABLE IF NOT EXISTS tournamentrounds (
     guid TEXT,
+    title TEXT,
     roundNumber INT,
     status TEXT,
     norder INT,
-    title TEXT,
     start_at DATETIME,
     end_at DATETIME,
     map TEXT,
@@ -174,11 +175,14 @@ db.serialize(() => {
     multiplayer_countdown BOOLEAN,
     mode TEXT,
     timeout INT,
-    matches TEXT,
+    roundId TEXT,
     PRIMARY KEY (roundNumber, guid)
     )`);
 
+
     db.run(`CREATE TABLE IF NOT EXISTS tournamentroundmatches (
+    roundNumber INT,
+    guid TEXT,
     id TEXT,
     round_id TEXT,
     round_norder INT,
@@ -199,22 +203,18 @@ db.serialize(() => {
     num_winners INT,
     start_at DATETIME,
     end_at DATETIME,
-    current_time DATETIME,
     progress INT,
     default_drone_class INT,
     mode TEXT,
     parents TEXT,
     player_ids TEXT,
     player_order TEXT,
-    players TEXT,
-    scores TEXT,
-    replay_urls TEXT,
 
     PRIMARY KEY (roundNumber, guid, id)
     )`);
-
-    db.run("CREATE TABLE IF NOT EXISTS tournamentsubscribed (uid TEXT, guid TEXT, PRIMARY KEY (uid, guid))");
-    */
+    /*
+db.run("CREATE TABLE IF NOT EXISTS tournamentsubscribed (uid TEXT, guid TEXT, PRIMARY KEY (uid, guid))");
+*/
 
 
     db.run(`CREATE TABLE IF NOT EXISTS profilestatemodel (
@@ -591,7 +591,7 @@ db.serialize(() => {
             is_avatar_blocked BOOLEAN,
             full_track_url TEXT
             );`);
-    //db.run("DROP TABLE tournaments")
+    //db.run("DROP TABLE tournamentroundmatches")
 });
 
 
@@ -2325,11 +2325,10 @@ var tournamentsMap = new Map();
 
 function loadAllTournaments() {
     return new Promise((resolve, reject) => {
-        // 1. Group player IDs into a single string separated by commas
         const query = `
         SELECT t.*,
         COUNT(tr.uid) AS player_count,
-        tr.uid AS raw_player_ids
+        GROUP_CONCAT(tr.uid) AS raw_player_ids
         FROM tournaments t
         LEFT JOIN tournamentsregistered tr ON t.guid = tr.guid
         GROUP BY t.guid
@@ -2338,30 +2337,61 @@ function loadAllTournaments() {
         db.all(query, [], (err, rows) => {
             if (err) return reject(err);
 
-            const formattedRows = rows.map(tournament => {
-                if (tournament.raw_player_ids) {
-                    tournament.playerids = tournament.raw_player_ids.split(',');
-                } else {
-                    tournament.playerids = [];
-                }
+            db.all(` SELECT * FROM tournamentrounds ORDER BY guid, roundNumber ASC`, [], (err, roundRows) => {
+                if (err) return reject(err);
 
-                delete tournament.raw_player_ids;
+                db.all(` SELECT * FROM tournamentroundmatches ORDER BY guid, roundNumber, id ASC`, [], (err, matchRows) => {
+                    const roundsByTournament = {};
+                roundRows.forEach(round => {
+                    if (!roundsByTournament[round.guid]) {
+                        roundsByTournament[round.guid] = [];
+                    }
+                    round.matches = [];
+                    roundsByTournament[round.guid].push(round);
+                });
 
-                return tournament;
-            });
 
-            resolve(formattedRows);
+                const matchesByRound = {};
+                matchRows.forEach(match => {
+                    const key = `${match.guid}_${match.roundNumber}`;
+                    if (!matchesByRound[key]) {
+                        matchesByRound[key] = [];
+                    }
+                    matchesByRound[key].push(match);
+                });
+
+                roundRows.forEach(round => {
+                    const key = `${round.guid}_${round.roundNumber}`;
+                    round.matches = matchesByRound[key] || [];
+                });
+
+
+                const formattedRows = rows.map(tournament => {
+                    if (tournament.raw_player_ids) {
+                        tournament.playerids = tournament.raw_player_ids.split(',');
+                    } else {
+                        tournament.playerids = [];
+                    }
+
+                    delete tournament.raw_player_ids;
+
+                    tournament.rounds = roundsByTournament[tournament.guid] || [];
+
+
+                    return tournament;
+                });
+
+                console.log(formattedRows[0].rounds[0].matches)
+                resolve(formattedRows);
+                })
+            })
         });
     });
-
-
 }
 
 
 async function updateTournament(tournament, now) {
 
-    console.log(now)
-    console.log(tournament.register_end)
 
     if (new Date(tournament.register_end) >= now) {
         tournament.status = "idle"
@@ -2371,49 +2401,366 @@ async function updateTournament(tournament, now) {
         tournament.allow_new_registration = 1;
     }
 
-
+    console.log(now)
+    console.log(tournament.register_end)
     if (tournament.status === "idle" && new Date(tournament.register_end) <= now) {
         tournament.allow_new_registration = 0;
         tournament.status = "active";
-        tournament.rounds = createTournamentRounds(tournament, tournament.player_count, "DRL")
-
+        tournament.rounds = createTournamentRounds(tournament, 48, "DRL")
     }
 
     if (tournament.status === "active" && tournament.player_count < 2) {
         //tournament.status = "fail";
     }
 
-
-    await saveTournament(tournament);
+    saveTournament(tournament);
 }
 
+function createTournamentRounds(tournament, playerCount, tournamentType) {
+    if (tournamentType === "DRL") {
+        const rounds = [];
+        let currentPlayers = playerCount;
 
-function saveTournament(tournament) {
-    return new Promise((resolve, reject) => {
+        const targetBracketSize = currentPlayers > 24 ? 24 : (currentPlayers > 12 ? 12 : currentPlayers);
+        let roundNumber = 0;
+        if (currentPlayers > targetBracketSize) {
+            rounds.push({
+                status: "idle",
+                norder: 0,
+                title: "QUALIFIERS",
+                start_at: new Date().toISOString(),
+                end_at: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
+                map: tournament.map,
+                track: tournament.track,
+                is_custom_map: tournament.is_custom_map,
+                custom_map: tournament.custom_map,
+                custom_map_title: tournament.custom_map_title,
+                multiplayer_countdown: true,
+                mode: "leaderboard",
+                matches: [],
+                roundId: roundNumber,
+                roundNumber: roundNumber,
+                remainingPlayers: targetBracketSize
+            });
+            currentPlayers = targetBracketSize;
+            roundNumber++;
 
-        db.run(
-            `
+            rounds[0].matches = createTournamentMatches(1, rounds[0], targetBracketSize, playerCount)
+        }
+
+
+
+        while (currentPlayers > 1) {
+            const playersPerMatch = 6;
+            const advancingPerMatch = currentPlayers <= 6 ? 1 : 3;
+
+            const matchCount = Math.ceil(currentPlayers / playersPerMatch);
+            const outgoingPlayers = matchCount * advancingPerMatch;
+
+            let title
+            let Matches = []
+            if (currentPlayers === 24)
+                title = "QUARTERFINALS"
+            else if (currentPlayers === 12) {
+                title = "SEMIFINALS"
+            } else if (currentPlayers === 6) {
+                title = "Finals"
+            }
+
+            rounds.push({
+                title: title,
+                incomingPlayers: currentPlayers,
+                matchCount: matchCount,
+                status: "idle",
+                start_at: null,
+                end_at: null,
+                map: tournament.map,
+                track: tournament.track,
+                is_custom_map: tournament.is_custom_map,
+                custom_map: tournament.custom_map,
+                custom_map_title: tournament.custom_map_title,
+                multiplayer_countdown: true,
+                mode: "match_points",
+                timeout: 0,
+                matches: [],
+                roundId: "ROUND" + roundNumber,
+                roundNumber: roundNumber,
+                advancingPerMatch: advancingPerMatch,
+                remainingPlayers: Math.min(outgoingPlayers, currentPlayers - 1)
+            });
+
+            rounds[roundNumber].matches = createTournamentMatches(matchCount, rounds[roundNumber], null, currentPlayers / matchCount);
+
+            currentPlayers = advancingPerMatch === 1 ? 1 : outgoingPlayers;
+
+            roundNumber++;
+        }
+
+        return rounds;
+    }
+}
+
+function createTournamentMatches(matchCount, roundINFO, targetBracketSize, numberOfPlayers) {
+    let matches = []
+    for (i = 0; i < matchCount; i++) {
+        if (roundINFO.title === "QUALIFIERS") {
+            matches.push({
+                id: "QUALS",
+                round_id: roundINFO.roundId,
+                round_norder: roundINFO.norder,
+                map: roundINFO.map,
+                track: roundINFO.track,
+                is_custom_map: roundINFO.is_custom_map,
+                custom_map: roundINFO.custom_map,
+                custom_map_title: roundINFO.custom_map_title,
+                multiplayer_room_timer: roundINFO.multiplayer_countdown,
+                is_under_review: false,
+                players_size: numberOfPlayers,
+                throttle_cap: 0,
+                num_winners: targetBracketSize,
+                start_at: roundINFO.start_at,
+                end_at: roundINFO.end_at,
+                status: "waiting"
+            })
+        } else if (roundINFO.title === "QUARTERFINALS") {
+            matches.push({
+                id: "QUARTERFINALS" + i,
+                round_id: roundINFO.roundId,
+                round_norder: roundINFO.norder,
+                map: roundINFO.map,
+                track: roundINFO.track,
+                is_custom_map: roundINFO.is_custom_map,
+                custom_map: roundINFO.custom_map,
+                custom_map_title: roundINFO.custom_map_title,
+                multiplayer_room_timer: roundINFO.multiplayer_countdown,
+                is_under_review: false,
+                players_size: numberOfPlayers,
+                throttle_cap: 0,
+                num_winners: 3,
+                norder: i + 1,
+                heats: 4,
+                start_at: roundINFO.start_at,
+                end_at: roundINFO.end_at,
+                status: "waiting"
+            })
+        } else if (roundINFO.title === "SEMIFINALS") {
+            matches.push({
+                id: "SEMIFINALS" + i,
+                round_id: roundINFO.roundId,
+                round_norder: roundINFO.norder,
+                map: roundINFO.map,
+                track: roundINFO.track,
+                is_custom_map: roundINFO.is_custom_map,
+                custom_map: roundINFO.custom_map,
+                custom_map_title: roundINFO.custom_map_title,
+                multiplayer_room_timer: roundINFO.multiplayer_countdown,
+                is_under_review: false,
+                players_size: numberOfPlayers,
+                throttle_cap: 0,
+                num_winners: 3,
+                norder: i + 1,
+                heats: 4,
+                start_at: roundINFO.start_at,
+                end_at: roundINFO.end_at,
+                status: "waiting"
+            })
+        } else if (roundINFO.title === "Finals") {
+            matches.push({
+                id: "Finals" + i,
+                round_id: roundINFO.roundId,
+                round_norder: roundINFO.norder,
+                map: roundINFO.map,
+                track: roundINFO.track,
+                is_custom_map: roundINFO.is_custom_map,
+                custom_map: roundINFO.custom_map,
+                custom_map_title: roundINFO.custom_map_title,
+                multiplayer_room_timer: roundINFO.multiplayer_countdown,
+                is_under_review: false,
+                players_size: numberOfPlayers,
+                throttle_cap: 0,
+                num_winners: 1,
+                heats: 4,
+                start_at: roundINFO.start_at,
+                end_at: roundINFO.end_at,
+                status: "waiting"
+            })
+        }
+    }
+    return matches
+}
+
+async function saveTournament(tournament) {
+
+    db.run(
+        `
                 UPDATE tournaments
                 SET
                     status = ?,
                     allow_new_registration = ?
                 WHERE guid = ?
                 `,
-            [
-                tournament.status,
-                tournament.allow_new_registration,
-                tournament.guid
-            ],
-            err => {
+        [
+            tournament.status,
+            tournament.allow_new_registration,
+            tournament.guid
+        ],
+        err => {
+        }
+    );
 
-                if (err)
-                    return reject(err);
-
-                resolve();
+    if (tournament.rounds) {
+        for (const round of tournament.rounds) {
+            await saveRound(round, tournament);
+            for (const match of round.matches) {
+                await saveMatch(match, round, tournament)
             }
-        );
+        }
+    }
+}
 
-    });
+
+function saveMatch(Match, round, tournament) {
+    return new Promise((resolve, reject) => {
+        db.run(`INSERT INTO tournamentroundmatches (
+            guid,
+            roundNumber,
+            id,
+            round_id,
+            round_norder,
+            map,
+            track,
+            is_custom_map,
+            custom_map,
+            custom_map_title,
+            multiplayer_room_timer,
+            is_under_review,
+            players_size,
+            throttle_cap,
+            current_heat,
+            active_heat,
+            status,
+            norder,
+            heats,
+            num_winners,
+            start_at,
+            end_at,
+            progress,
+            default_drone_class,
+            mode,
+            parents,
+            player_ids,
+            player_order
+            )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(roundNumber, guid, id) DO UPDATE SET
+                round_id = excluded.round_id,
+                round_norder = excluded.round_norder,
+                map = excluded.map,
+                track = excluded.track,
+                is_custom_map = excluded.is_custom_map,
+                custom_map = excluded.custom_map,
+                custom_map_title = excluded.custom_map_title,
+                multiplayer_room_timer = excluded.multiplayer_room_timer,
+                is_under_review = excluded.is_under_review,
+                players_size = excluded.players_size,
+                throttle_cap = excluded.throttle_cap,
+                current_heat = excluded.current_heat,
+                active_heat = excluded.active_heat,
+                status = excluded.status,
+                norder = excluded.norder,
+                heats = excluded.heats,
+                num_winners = excluded.num_winners,
+                start_at = excluded.start_at,
+                end_at = excluded.end_at,
+                progress = excluded.progress,
+                default_drone_class = excluded.default_drone_class,
+                mode = excluded.mode,
+                parents = excluded.parents,
+                player_ids = excluded.player_ids,
+                player_order = excluded.player_order
+        `, [
+            tournament.guid,
+            round.roundNumber,
+            Match.id,
+            Match.round_id,
+            Match.round_norder,
+            Match.map,
+            Match.track,
+            Match.is_custom_map,
+            Match.custom_map,
+            Match.custom_map_title,
+            Match.multiplayer_room_timer,
+            Match.is_under_review,
+            Match.players_size,
+            Match.throttle_cap,
+            Match.current_heat,
+            Match.active_heat,
+            Match.status,
+            Match.norder,
+            Match.heats,
+            Match.num_winners,
+            Match.start_at,
+            Match.end_at,
+            Match.progress,
+            Match.default_drone_class,
+            Match.mode,
+            Match.parents,
+            Match.player_ids,
+            Match.player_order,
+        ], err => {
+            if (err) {
+                throw new Error( err)
+                return reject(err)
+            }
+
+            resolve();
+        })
+    })
+}
+
+async function saveRound(round, tournament) {
+    return new Promise((resolve, reject) => {
+        db.run(`INSERT INTO tournamentrounds (guid, title, roundNumber, status, norder, start_at, end_at, map, track, is_custom_map, custom_map, custom_map_title, multiplayer_countdown, mode, timeout, roundId) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(guid, roundNumber) DO UPDATE SET
+                    title = excluded.title,
+                    status = excluded.status,
+                    norder = excluded.norder,
+                    start_at = excluded.start_at,
+                    end_at = excluded.end_at,
+                    map = excluded.map,
+                    track = excluded.track,
+                    is_custom_map = excluded.is_custom_map,
+                    custom_map = excluded.custom_map,
+                    custom_map_title = excluded.custom_map_title,
+                    multiplayer_countdown = excluded.multiplayer_countdown,
+                    mode = excluded.mode,
+                    timeout = excluded.timeout,
+                    roundId = excluded.roundId
+        `, [
+            tournament.guid,
+            round.title,
+            round.roundNumber,
+            round.status,
+            round.norder,
+            round.start_at,
+            round.end_at,
+            round.map,
+            round.track,
+            round.is_custom_map,
+            round.custom_map,
+            round.custom_map_title,
+            round.multiplayer_countdown,
+            round.mode,
+            round.timeout,
+            round.roundId
+        ], err => {
+            if (err)
+                return reject(err)
+
+            resolve();
+        })
+    })
 }
 
 async function LoadTournaments() {
@@ -2422,12 +2769,11 @@ async function LoadTournaments() {
         tournamentsMap.set(tournament.guid, tournament);
     }
     console.log(
-        `[TournamentManager] Loaded ${tournamentsMap.size} tournaments`
+        `Loaded ${tournamentsMap.size} tournaments`
     );
 }
 
 async function update() {
-    await LoadTournaments()
     const now = new Date();
 
     for (const tournament of tournamentsMap.values()) {
@@ -2449,6 +2795,7 @@ async function update() {
 
 
 async function TournamentMan() {
+    await LoadTournaments()
     update()
 }
 
@@ -2510,7 +2857,6 @@ function mapTournamentsSqlToJson(row, playerids, player_count, ranking, rounds) 
 
             "player-ids": playerids || [],
             "ranking": ranking || null,
-            "rounds": rounds || null,
 
 
 
@@ -2524,99 +2870,71 @@ function mapTournamentsSqlToJson(row, playerids, player_count, ranking, rounds) 
             "custom-map-title": row.custom_map_title
         }
 
+        let Rounds = row.rounds
+        let R = []
+        if (Rounds) {
+            Rounds.forEach(round => {
+                let datas = {
+                    "status": round.status,
+                    "norder": round.norder,
+                    "title": round.title,
+                    "start-at": round.start_at,
+                    "end-at": round.end_at,
+                    "current-time": new Date().toISOString(),
+                    "map": round.map,
+                    "track": round.track,
+                    "is-custom-map": round.is_custom_map,
+                    "custom-map": round.custom_map,
+                    "custom-map-title": round.custom_map_title,
+                    "multiplayer-countdown": round.multiplayer_countdown,
+                    "mode": round.mode,
+                    matches: []
+                }
+
+                let M = []
+                if (round.matches) {
+                    round.matches.forEach(Match => {
+                        let datatat = {
+                            id: Match.id,
+                            "round-id": Match.round_id,
+                            "round-norder": Match.round_norder,
+                            map: Match.map,
+                            track: Match.track,
+                            "is-custom-map": Match.is_custom_map,
+                            "custom-map": Match.custom_map,
+                            "custom-map-title": Match.custom_map_title,
+                            "multiplayer-room-timer": Match.multiplayer_room_timer,
+                            "is-under-review": false,
+                            "players-size": Match.players_size,
+                            "throttle-cap": Match.throttle_cap,
+                            "heats": Match.heats,
+                            "start-at": Match.start_at,
+                            "end-at": Match.end_at,
+                            "current-time": new Date().toISOString(),
+                            "norder": Match.norder,
+                            "num-winners": Match.num_winners,
+                            status: Match.status
+                        }
+                        console.log(datatat)
+                        M.push(datatat);
+                    });
+                }
+
+                datas.matches = M
+                R.push(datas)
+            });
+        }
+
+        data.rounds = R;
+
+        console.log(data)
+
         return Object.fromEntries(
             Object.entries(data).filter(([key, value]) => value != null)
         );
     } catch (E) {
         console.error("Error mapping tournament SQL to JSON:", E);
         return {};
-    }
-}
-
-function createTournamentRounds(tournament, playerCount, tournamentType) {
-    if (tournamentType === "DRL") {
-        const rounds = [];
-        let currentPlayers = 16;
-
-        const targetBracketSize = currentPlayers > 24 ? 24 : (currentPlayers > 12 ? 12 : currentPlayers);
-        let roundNumber = 0;
-        if (currentPlayers > targetBracketSize) {
-            rounds.push({
-                status: tournament.progression === "auto" ? "active" : "idle",
-                title: "QUALIFIERS",
-                "start-at": new Date().toISOString(),
-                "end-at": null,
-                map: tournament.map,
-                track: tournament.track,
-                "is-custom-map": tournament['is-custom-map'],
-                "custom-map": tournament['custom-map'],
-                "custom-map-title": tournament['custom-map-title'],
-                "multiplayer-countdown": true,
-                mode: "leaderboard",
-                "timeout": 0,
-                matches: [
-                    {
-                        map: tournament.map,
-                        track: tournament.track,
-                        "is-custom-map": tournament['is-custom-map'],
-                        "custom-map": tournament['custom-map'],
-                        "custom-map-title": tournament['custom-map-title'],
-                        "players-size": 2,
-                        "current-heat": 1,
-                        "active-heat": 1,
-                        status: "active",
-                        "start-at": new Date().toISOString(),
-                        "end-at": new Date(Date.now() + 60 * 1000).toISOString(),
-                        "current-time": new Date().toISOString(),
-                        mode: "leaderboard",
-                        "player-ids": tournament['player-ids'],
-                        "round-id": "QUAL",
-                        "id": "QUAL",
-                        "num-winners": targetBracketSize,
-                        "round-norder": 1,
-                        "players": []
-                    }
-                ],
-                roundId: roundNumber,
-                remainingPlayers: targetBracketSize
-            });
-            currentPlayers = targetBracketSize;
-            roundNumber++;
-        }
-        while (currentPlayers > 1) {
-            const playersPerMatch = 6;
-            const advancingPerMatch = currentPlayers <= 6 ? 1 : 3;
-
-            const matchCount = Math.ceil(currentPlayers / playersPerMatch);
-            const outgoingPlayers = matchCount * advancingPerMatch;
-
-            rounds.push({
-                title: currentPlayers <= 6 ? "Finals" : `Elimination Round ${roundNumber}`,
-                incomingPlayers: currentPlayers,
-                matchCount: matchCount,
-                status: tournament.progression === "auto" && roundNumber === 0 ? "active" : "idle",
-                "start-at": null,
-                "end-at": null,
-                map: tournament.map,
-                track: tournament.track,
-                "is-custom-map": tournament['is-custom-map'],
-                "custom-map": tournament['custom-map'],
-                "custom-map-title": tournament['custom-map-title'],
-                "multiplayer-countdown": true,
-                mode: "match_points",
-                "timeout": 0,
-                matches: [],
-                roundId: roundNumber,
-                advancingPerMatch: advancingPerMatch,
-                remainingPlayers: Math.min(outgoingPlayers, currentPlayers - 1)
-            });
-
-            currentPlayers = advancingPerMatch === 1 ? 1 : outgoingPlayers;
-
-            roundNumber++;
-        }
-
-        return rounds;
     }
 }
 
@@ -2643,14 +2961,6 @@ app.get(`/tournaments/:guid/results/:roundid`, badTokenAuthv2, (req, res) => {
     })
 })
 
-
-app.post(`/tournaments/:guid/scores`, express.urlencoded(), badTokenAuthv2, (req, res) => {
-    console.log("/tournaments/:guid/scores")
-    console.log(req.headers)
-    console.log(req.body)
-})
-
-
 app.get('/tournaments/:guid/register', badTokenAuthv2, (req, res) => {
     console.log("/tournaments/:guid/register");
     const uid = req.uid;
@@ -2659,6 +2969,7 @@ app.get('/tournaments/:guid/register', badTokenAuthv2, (req, res) => {
             console.error("Error registering for tournament:", err);
             return res.status(500).json({ success: false })
         }
+        LoadTournaments()
         res.status(200).json({ success: true });
     })
 })
@@ -2668,82 +2979,21 @@ app.get('/tournaments/:guid/unregister', badTokenAuthv2, (req, res) => {
     console.log("/tournaments/:guid/register");
     const uid = req.uid;
     db.run(`DELETE FROM tournamentsregistered WHERE uid = ? AND guid = ?`, [uid, req.params.guid], (err) => {
+        if (err) {
+            console.error("Error unregister for tournament:", err);
+            return res.status(500).json({ success: false })
+        }
+        LoadTournaments()
         res.status(200).json({ success: true });
     })
 })
 
-app.get(`/tournaments/:guid/subscription`, (req, res) => {
-    console.log("/tournaments/:guid/subscription");
-    res.status(200).json({
-        success: true, data:
-        {
-            "tournament-id": "tournament-001",
-            "player-id": "b9365d125935475b8327162c66a25e12"
-        }
-    });
-})
 
-
-app.get(`/tournaments/:guid/matches/:mid/countdown`, (req, res) => {
-    console.log("/tournaments/:guid/matches/:mid/countdown");
-    const base64Data = Buffer.from(JSON.stringify(true)).toString('base64');
-    res.status(200).json({
-        success: true, data: base64Data
-    });
-})
-
-app.get(`/tournaments/subscription`, (req, res) => {
-    console.log("/tournaments/subscription");
-    res.status(200).json({ success: true, data: [] });
-})
-
-
-app.get(`/player/tournaments/`, (req, res) => {
-    console.log("/player/tournaments/");
-    res.status(200).json({ success: true, data: [] });
-})
-
-app.get(`/tournaments/:guid/matches/:mid`, (req, res) => {
-    console.log("/tournaments/:guid/matches/:mid");
-    const now = new Date();
-    let yyyy = now.getFullYear();
-    let MM = String(now.getMonth() + 1).padStart(2, '0');
-    let dd = String(now.getDate()).padStart(2, '0');
-    let HH = String(now.getHours()).padStart(2, '0');
-    let mm = String(now.getMinutes()).padStart(2, '0');
-    let ss = String(now.getSeconds()).padStart(2, '0');
-
-    const timeStr = `${yyyy}-${MM}-${dd}T${HH}:${mm}:${ss}-00`;
-    res.status(200).json({
-        success: true, data: [
-            {
-                map: tournament.map,
-                track: tournament.track,
-                "is-custom-map": tournament['is-custom-map'],
-                "custom-map": tournament['custom-map'],
-                "custom-map-title": tournament['custom-map-title'],
-                "players-size": 2,
-                "current-heat": 1,
-                "active-heat": 1,
-                status: "active",
-                "start-at": new Date().toISOString(),
-                "end-at": new Date(Date.now() + 60 * 1000).toISOString(),
-                "current-time": new Date().toISOString(),
-                mode: "leaderboard",
-                "player-ids": ["b9365d125935475b8327162c66a25e12"],
-                "round-id": "QUAL",
-                "id": "QUAL",
-                "num-winners": targetBracketSize
-            }
-        ]
-    });
-})
 
 app.get(`/tournaments/:guid`, (req, res) => {
     let tournament = tournamentsMap.get(req.params.guid)
     tournament = mapTournamentsSqlToJson(tournament, tournament.playerids, tournament.player_count, null, tournament.rounds);
     //tournament.rounds = createTournamentRounds(tournament, 15, "DRL")
-    console.log(tournament)
     res.status(200).json({ success: true, data: [tournament] });
 })
 
@@ -2752,7 +3002,6 @@ app.get('/tournaments/', (req, res) => {
     const rows = Array.from(tournamentsMap.values(), row =>
         mapTournamentsSqlToJson(row)
     );
-    console.log(rows)
     res.status(200).json({ success: true, data: rows });
 })
 
@@ -4306,6 +4555,7 @@ app.put(`/admin/tournaments/update/:guid`, express.json(), (req, res) => {
                 console.error("Error updating tournament:", err);
                 return res.status(500).json({ success: false });
             }
+            LoadTournaments()
             res.status(200).json({ success: true });
         })
 })
