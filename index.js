@@ -716,7 +716,7 @@ function mapCTracksqlToJson(row) {
     }
 }
 
-app.post('/maps/:guid/duplicate', express.urlencoded({ limit: "100mb", extended: true }), badTokenAuthv2, (req, res) => {
+app.post('/maps/:guid/duplicate', express.urlencoded({ limit: "100mb", extended: true }), rateLimit({ windowMs: 60_000, max: 10 }), badTokenAuthv2, (req, res) => {
     const baseDir = path.join(__dirname, 'tracks');
     const finalPath = path.resolve(baseDir, req.params.guid + '.cmp');
 
@@ -1032,7 +1032,7 @@ app.get('/maps/', (req, res) => {
     );
 });
 
-app.post('/maps/', express.urlencoded({ limit: "2gb", extended: true }), badTokenAuthv2, (req, res) => {
+app.post('/maps/', express.urlencoded({ limit: "100mb", extended: true }), rateLimit({ windowMs: 60_000, max: 120 }), badTokenAuthv2, (req, res) => {
     console.log("req sent to /maps/ via POST", req.body);
     if (req.body.prefs === '{}') {
         req.body.prefs = { "map-prefs-auto-save": true }
@@ -2342,47 +2342,45 @@ function loadAllTournaments() {
 
                 db.all(` SELECT * FROM tournamentroundmatches ORDER BY guid, roundNumber, id ASC`, [], (err, matchRows) => {
                     const roundsByTournament = {};
-                roundRows.forEach(round => {
-                    if (!roundsByTournament[round.guid]) {
-                        roundsByTournament[round.guid] = [];
-                    }
-                    round.matches = [];
-                    roundsByTournament[round.guid].push(round);
-                });
+                    roundRows.forEach(round => {
+                        if (!roundsByTournament[round.guid]) {
+                            roundsByTournament[round.guid] = [];
+                        }
+                        round.matches = [];
+                        roundsByTournament[round.guid].push(round);
+                    });
 
 
-                const matchesByRound = {};
-                matchRows.forEach(match => {
-                    const key = `${match.guid}_${match.roundNumber}`;
-                    if (!matchesByRound[key]) {
-                        matchesByRound[key] = [];
-                    }
-                    matchesByRound[key].push(match);
-                });
+                    const matchesByRound = {};
+                    matchRows.forEach(match => {
+                        const key = `${match.guid}_${match.roundNumber}`;
+                        if (!matchesByRound[key]) {
+                            matchesByRound[key] = [];
+                        }
+                        matchesByRound[key].push(match);
+                    });
 
-                roundRows.forEach(round => {
-                    const key = `${round.guid}_${round.roundNumber}`;
-                    round.matches = matchesByRound[key] || [];
-                });
-
-
-                const formattedRows = rows.map(tournament => {
-                    if (tournament.raw_player_ids) {
-                        tournament.playerids = tournament.raw_player_ids.split(',');
-                    } else {
-                        tournament.playerids = [];
-                    }
-
-                    delete tournament.raw_player_ids;
-
-                    tournament.rounds = roundsByTournament[tournament.guid] || [];
+                    roundRows.forEach(round => {
+                        const key = `${round.guid}_${round.roundNumber}`;
+                        round.matches = matchesByRound[key] || [];
+                    });
 
 
-                    return tournament;
-                });
+                    const formattedRows = rows.map(tournament => {
+                        if (tournament.raw_player_ids) {
+                            tournament.playerids = tournament.raw_player_ids.split(',');
+                        } else {
+                            tournament.playerids = [];
+                        }
 
-                console.log(formattedRows[0].rounds[0].matches)
-                resolve(formattedRows);
+                        delete tournament.raw_player_ids;
+
+                        tournament.rounds = roundsByTournament[tournament.guid] || [];
+
+
+                        return tournament;
+                    });
+                    resolve(formattedRows);
                 })
             })
         });
@@ -2401,14 +2399,11 @@ async function updateTournament(tournament, now) {
         tournament.allow_new_registration = 1;
     }
 
-    console.log(now)
-    console.log(tournament.register_end)
     if (tournament.status === "idle" && new Date(tournament.register_end) <= now) {
         tournament.allow_new_registration = 0;
         tournament.status = "active";
-        tournament.rounds = createTournamentRounds(tournament, 48, "DRL")
     }
-
+    tournament.rounds = createTournamentRounds(tournament, 48, "DRL")
     if (tournament.status === "active" && tournament.player_count < 2) {
         //tournament.status = "fail";
     }
@@ -2425,8 +2420,8 @@ function createTournamentRounds(tournament, playerCount, tournamentType) {
         let roundNumber = 0;
         if (currentPlayers > targetBracketSize) {
             rounds.push({
-                status: "idle",
-                norder: 0,
+                status: "active",
+                norder: 1,
                 title: "QUALIFIERS",
                 start_at: new Date().toISOString(),
                 end_at: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
@@ -2445,7 +2440,7 @@ function createTournamentRounds(tournament, playerCount, tournamentType) {
             currentPlayers = targetBracketSize;
             roundNumber++;
 
-            rounds[0].matches = createTournamentMatches(1, rounds[0], targetBracketSize, playerCount)
+            rounds[0].matches = createTournamentMatches(1, rounds[0], targetBracketSize, playerCount, tournament)
         }
 
 
@@ -2500,7 +2495,7 @@ function createTournamentRounds(tournament, playerCount, tournamentType) {
     }
 }
 
-function createTournamentMatches(matchCount, roundINFO, targetBracketSize, numberOfPlayers) {
+function createTournamentMatches(matchCount, roundINFO, targetBracketSize, numberOfPlayers, tournament) {
     let matches = []
     for (i = 0; i < matchCount; i++) {
         if (roundINFO.title === "QUALIFIERS") {
@@ -2520,7 +2515,8 @@ function createTournamentMatches(matchCount, roundINFO, targetBracketSize, numbe
                 num_winners: targetBracketSize,
                 start_at: roundINFO.start_at,
                 end_at: roundINFO.end_at,
-                status: "waiting"
+                status: "active",
+                player_ids: tournament.playerids
             })
         } else if (roundINFO.title === "QUARTERFINALS") {
             matches.push({
@@ -2709,7 +2705,7 @@ function saveMatch(Match, round, tournament) {
             Match.player_order,
         ], err => {
             if (err) {
-                throw new Error( err)
+                throw new Error(err)
                 return reject(err)
             }
 
@@ -2801,6 +2797,35 @@ async function TournamentMan() {
 
 
 TournamentMan();
+
+function mapTournamentMatchSqlToJson(Match) {
+    let data = {
+        id: Match.id,
+        "round-id": Match.round_id,
+        "round-norder": Match.round_norder,
+        map: Match.map,
+        track: Match.track,
+        "is-custom-map": Match.is_custom_map,
+        "custom-map": Match.custom_map,
+        "custom-map-title": Match.custom_map_title,
+        "multiplayer-room-timer": Match.multiplayer_room_timer,
+        "is-under-review": false,
+        "players-size": Match.players_size,
+        "throttle-cap": Match.throttle_cap,
+        "heats": Match.heats,
+        "start-at": Match.start_at,
+        "end-at": Match.end_at,
+        "current-time": new Date().toISOString(),
+        "norder": Match.norder,
+        "num-winners": Match.num_winners,
+        status: Match.status,
+        "player-ids": Match.player_ids
+    }
+
+    return Object.fromEntries(
+            Object.entries(data).filter(([key, value]) => value != null)
+        );
+}
 
 function mapTournamentsSqlToJson(row, playerids, player_count, ranking, rounds) {
     try {
@@ -2894,29 +2919,7 @@ function mapTournamentsSqlToJson(row, playerids, player_count, ranking, rounds) 
                 let M = []
                 if (round.matches) {
                     round.matches.forEach(Match => {
-                        let datatat = {
-                            id: Match.id,
-                            "round-id": Match.round_id,
-                            "round-norder": Match.round_norder,
-                            map: Match.map,
-                            track: Match.track,
-                            "is-custom-map": Match.is_custom_map,
-                            "custom-map": Match.custom_map,
-                            "custom-map-title": Match.custom_map_title,
-                            "multiplayer-room-timer": Match.multiplayer_room_timer,
-                            "is-under-review": false,
-                            "players-size": Match.players_size,
-                            "throttle-cap": Match.throttle_cap,
-                            "heats": Match.heats,
-                            "start-at": Match.start_at,
-                            "end-at": Match.end_at,
-                            "current-time": new Date().toISOString(),
-                            "norder": Match.norder,
-                            "num-winners": Match.num_winners,
-                            status: Match.status
-                        }
-                        console.log(datatat)
-                        M.push(datatat);
+                        M.push(mapTournamentMatchSqlToJson(Match));
                     });
                 }
 
@@ -2927,8 +2930,6 @@ function mapTournamentsSqlToJson(row, playerids, player_count, ranking, rounds) 
 
         data.rounds = R;
 
-        console.log(data)
-
         return Object.fromEntries(
             Object.entries(data).filter(([key, value]) => value != null)
         );
@@ -2938,28 +2939,29 @@ function mapTournamentsSqlToJson(row, playerids, player_count, ranking, rounds) 
     }
 }
 
-app.get(`/tournaments/:guid/results/:roundid`, badTokenAuthv2, (req, res) => {
+app.get(`/tournaments/:guid/results/:roundid`, (req, res) => {
     console.log("/tournaments/:guid/scores")
     console.log(req.params.guid)
     console.log(req.params.roundid)
     res.status(200).json({
         success: true, data: {
-            "status": "waiting",
+            "status": "success",
             "leaderboard-params": [
-                { guid: "9054cbe9-c880-4b20-9344-0b2f7824c211", match: "QUAL" }
+                { guid: "9054cbe9-c880-4b20-9344-0b2f7824c211", match: "QUALS" }
             ],
             "matches": [
                 {
                     "player-id": "b9365d125935475b8327162c66a25e12",
                     score: 1,
                     "match-id": "QUAL",
-                    "position": 1
+                    "position": 1,
                 }
             ],
             "leaderboard": []
         }
     })
 })
+
 
 app.get('/tournaments/:guid/register', badTokenAuthv2, (req, res) => {
     console.log("/tournaments/:guid/register");
@@ -2990,10 +2992,38 @@ app.get('/tournaments/:guid/unregister', badTokenAuthv2, (req, res) => {
 
 
 
+app.get(`/tournaments/:guid/matches/:mid`, (req, res) => {
+    console.log("/tournaments/:guid/matches/:mid")
+    let tournament = tournamentsMap.get(req.params.guid)
+    if (!tournament)
+        return res.status(404).json({ success: false })
+
+    let found = null;
+    for (const round in tournament.rounds) {
+        const match = round.Matches.find(m => m.id === req.params.mid);
+        if (match) {
+            found = match
+            break
+        }
+    }
+
+    if (!found)
+        return res.status(404).json({ success: false })
+
+    res.status(200).json({ success: true, data: mapTournamentMatchSqlToJson(found) });
+
+})
+
+app.post(`/tournaments/:guid/scores`,express.urlencoded({ extended: true }), badTokenAuthv2, (req, res) => {
+    console.log("/tournaments/:guid/scores")
+    console.log(req.body)
+})
+
+
+
 app.get(`/tournaments/:guid`, (req, res) => {
     let tournament = tournamentsMap.get(req.params.guid)
     tournament = mapTournamentsSqlToJson(tournament, tournament.playerids, tournament.player_count, null, tournament.rounds);
-    //tournament.rounds = createTournamentRounds(tournament, 15, "DRL")
     res.status(200).json({ success: true, data: [tournament] });
 })
 

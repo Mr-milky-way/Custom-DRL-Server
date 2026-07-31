@@ -12,3 +12,13 @@ DRLTournamentData
 │   └── Round metadata
 │
 └── Tournament metadata
+
+
+
+
+
+/tournaments/:guid/scores
+{
+  guid: '9054cbe9-c880-4b20-9344-0b2f7824c211',
+  scores: '[{"guid":"c5ba3d697267baba293e0abe","mode":"SinglePlayer","player-id":"b9365d125935475b8327162c66a25e12","crashes":0,"score":88173,"order":0,"type":"Race","map":"MP-3fd","track":"MT-8ab","status":"Success","match-id":"QUALS","heat":0,"gate-times":"[5.10585546,7.761026,11.9885521,14.1502151,16.67548,19.9930019,22.3794632,26.35271,27.8083134,28.7021656,36.62673,40.4303,43.8531876,44.08531,46.5254173,49.2987938,53.00416,55.45689,57.758934,60.884285,63.348053,65.17416,66.34845,66.8811,72.5517349,76.49415,79.79606,80.13309,88.17347]","race-id":"007730029ad9cce085446736"}]'
+}
