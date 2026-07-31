@@ -716,7 +716,7 @@ function mapCTracksqlToJson(row) {
     }
 }
 
-app.post('/maps/:guid/duplicate', express.urlencoded({ limit: "100mb", extended: true }), badTokenAuthv2, (req, res) => {
+app.post('/maps/:guid/duplicate', express.urlencoded({ limit: "1kb", extended: true }), badTokenAuthv2, (req, res) => {
     const baseDir = path.join(__dirname, 'tracks');
     const finalPath = path.resolve(baseDir, req.params.guid + '.cmp');
 
