@@ -91,6 +91,10 @@ app.use(rateLimit({
 -------------------------------------------------
 */
 
+app.use((req, res, next) => {
+    console.log(req.url)
+    next();
+})
 
 app.use((req, res, next) => {
     res.setTimeout(20000, () => {
@@ -2328,9 +2332,17 @@ function loadAllTournaments() {
         const query = `
         SELECT t.*,
         COUNT(tr.uid) AS player_count,
-        GROUP_CONCAT(tr.uid) AS raw_player_ids
+
+        GROUP_CONCAT(tr.uid) AS player_ids,
+
+        GROUP_CONCAT(COALESCE(p.profile_name, '')) AS profile_names,
+        GROUP_CONCAT(COALESCE(p.profile_photo_url, '')) AS profile_photos,
+        GROUP_CONCAT(COALESCE(p.profile_color, '')) AS profile_colors
+
+    
         FROM tournaments t
         LEFT JOIN tournamentsregistered tr ON t.guid = tr.guid
+        LEFT JOIN profilestatemodel p ON p.player_id = tr.uid
         GROUP BY t.guid
     `;
 
@@ -2366,19 +2378,51 @@ function loadAllTournaments() {
                         round.matches = matchesByRound[key] || [];
                     });
 
-
                     const formattedRows = rows.map(tournament => {
-                        if (tournament.raw_player_ids) {
-                            tournament.playerids = tournament.raw_player_ids.split(',');
+                        if (tournament.player_ids) {
+                            tournament.playerids = tournament.player_ids.split(',');
                         } else {
                             tournament.playerids = [];
                         }
 
-                        delete tournament.raw_player_ids;
+                        const ids = tournament.player_ids
+                            ? tournament.player_ids.split(',')
+                            : [];
+
+                        const names = tournament.profile_names
+                            ? tournament.profile_names.split(',')
+                            : [];
+
+                        const photos = tournament.profile_photos
+                            ? tournament.profile_photos.split(',')
+                            : [];
+
+                        const colors = tournament.profile_colors
+                            ? tournament.profile_colors.split(',')
+                            : [];
+
+                        tournament.playerStuff = ids.map((id, i) => ({
+                            player_id: id,
+                            profile_name: names[i] || null,
+                            profile_thumb: photos[i] || null,
+                            profile_color: colors[i] || null
+                        }));
+
+                        tournament.players = {};
+
+                        tournament.playerStuff.forEach(player => {
+                            tournament.players[player.player_id] = player;
+                        });
+
+                        delete tournament.playerStuff;
+                        delete tournament.player_ids;
+                        delete tournament.profile_names;
+                        delete tournament.profile_photos;
+                        delete tournament.profile_colors;
 
                         tournament.rounds = roundsByTournament[tournament.guid] || [];
 
-
+                        console.log(tournament);
                         return tournament;
                     });
                     resolve(formattedRows);
@@ -2388,7 +2432,7 @@ function loadAllTournaments() {
     });
 }
 
-async function updateTournamentMatch(Match, now, roundinfo) {
+async function updateTournamentMatch(Match, now, roundinfo, players) {
     if (Match.status === "active" && new Date(Match.end_at) <= now) {
         Match.status = "complete"
     }
@@ -2396,13 +2440,29 @@ async function updateTournamentMatch(Match, now, roundinfo) {
     Match.start_at = roundinfo.start_at
     Match.end_at = roundinfo.end_at
 
+    if (!Match.players && Match.player_ids) {
+        Match.players = []
+        for (const id of Match.player_ids) {
+            console.log(id)
+            Match.players.push(
+                {
+                    "player-id": id,
+                    "profile-name": players[id].profile_name,
+                    "profile-thumb": players[id].profile_thumb,
+                    "profile-color": players[id].profile_color,
+                    "score": 182947,
+                    "position": 1
+                })
+        }
+    }
+
     if (roundinfo.status === "active" && Match.status === "idle") {
         Match.status = "waiting"
     }
     return Match
 }
 
-async function updateTournamentRounds(rounds, now) {
+async function updateTournamentRounds(rounds, now, players) {
     let LastRoundStatus = "NoLastRound"
     for (i = 0; i < rounds.length; i++) {
         const round = rounds[i]
@@ -2411,13 +2471,13 @@ async function updateTournamentRounds(rounds, now) {
             round.status = "active"
         }
 
-        
+
         if (round.end_at) {
             if (round.status === "active" && new Date(round.end_at) <= now) {
                 round.status = "complete"
             }
         }
-        
+
 
         if (LastRoundStatus === "complete" && round.status === "idle") {
             round.status = "active"
@@ -2426,13 +2486,11 @@ async function updateTournamentRounds(rounds, now) {
         }
 
         for (e = 0; e < round.matches.length; e++) {
-            round.matches[e] = await updateTournamentMatch(round.matches[e], now, round);
+            round.matches[e] = await updateTournamentMatch(round.matches[e], now, round, players);
         }
         LastRoundStatus = round.status;
         rounds[i] = round;
     }
-    console.log(rounds);
-    console.log(now)
     return rounds
 }
 
@@ -2452,13 +2510,13 @@ async function updateTournament(tournament, now) {
         tournament.status = "active";
         tournament.rounds = await createTournamentRounds(tournament, 48, "DRL")
     }
-    //tournament.rounds = await createTournamentRounds(tournament, 48, "DRL")
+    tournament.rounds = await createTournamentRounds(tournament, 48, "DRL")
     if (tournament.status === "active" && tournament.player_count < 2) {
         //tournament.status = "fail";
     }
 
     if (tournament.status === "active") {
-        tournament.rounds = await updateTournamentRounds(tournament.rounds, now);
+        tournament.rounds = await updateTournamentRounds(tournament.rounds, now, tournament.players);
     }
 
     saveTournament(tournament);
@@ -2617,7 +2675,7 @@ function createTournamentMatches(matchCount, roundINFO, targetBracketSize, numbe
                 status: "idle",
                 mode: roundINFO.mode
             })
-        } else if (roundINFO.title === "Finals") {
+        } else if (roundINFO.title === "FINALS") {
             matches.push({
                 id: "FINALS" + i,
                 round_id: roundINFO.roundId,
@@ -2878,7 +2936,8 @@ function mapTournamentMatchSqlToJson(Match) {
         "num-winners": Match.num_winners,
         status: Match.status,
         "player-ids": Match.player_ids,
-        mode: Match.mode
+        mode: Match.mode,
+        players: Match.players || [],
     }
 
     return Object.fromEntries(
@@ -3075,7 +3134,7 @@ app.get(`/tournaments/:guid/matches/:mid`, (req, res) => {
         return res.status(404).json({ success: false })
 
     console.log(mapTournamentMatchSqlToJson(found))
-    res.status(200).json({ success: true, data: mapTournamentMatchSqlToJson(found) });
+    res.status(200).json({ success: true, data: [mapTournamentMatchSqlToJson(found)] });
 
 })
 

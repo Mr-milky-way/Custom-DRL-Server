@@ -16,8 +16,8 @@ def xor_file(input_file, output_file):
 
 
 
-directory_path = Path('./')
-directory_Out_path = Path('mapss/')
+directory_path = Path('maps')
+directory_Out_path = Path('tracks/')
 
 os.mkdir(directory_Out_path)
 files = [p for p in directory_path.iterdir() if p.is_file()]
