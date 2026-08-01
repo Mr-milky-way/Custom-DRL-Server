@@ -188,7 +188,7 @@ db.serialize(() => {
     round_norder INT,
     map TEXT,
     track TEXT,
-    is_custom_map TEXT,
+    is_custom_map BOOLEAN,
     custom_map TEXT,
     custom_map_title TEXT,
     multiplayer_room_timer BOOLEAN,
@@ -2357,6 +2357,7 @@ function loadAllTournaments() {
                         if (!matchesByRound[key]) {
                             matchesByRound[key] = [];
                         }
+                        match.player_ids = TOJSON(match.player_ids)
                         matchesByRound[key].push(match);
                     });
 
@@ -2387,6 +2388,53 @@ function loadAllTournaments() {
     });
 }
 
+async function updateTournamentMatch(Match, now, roundinfo) {
+    if (Match.status === "active" && new Date(Match.end_at) <= now) {
+        Match.status = "complete"
+    }
+
+    Match.start_at = roundinfo.start_at
+    Match.end_at = roundinfo.end_at
+
+    if (roundinfo.status === "active" && Match.status === "idle") {
+        Match.status = "waiting"
+    }
+    return Match
+}
+
+async function updateTournamentRounds(rounds, now) {
+    let LastRoundStatus = "NoLastRound"
+    for (i = 0; i < rounds.length; i++) {
+        const round = rounds[i]
+
+        if (LastRoundStatus === "NoLastRound" && round.status === "idle") {
+            round.status = "active"
+        }
+
+        
+        if (round.end_at) {
+            if (round.status === "active" && new Date(round.end_at) <= now) {
+                round.status = "complete"
+            }
+        }
+        
+
+        if (LastRoundStatus === "complete" && round.status === "idle") {
+            round.status = "active"
+            round.start_at = new Date().toISOString()
+            round.end_at = new Date(Date.now() + 3 * 60 * 1000).toISOString()
+        }
+
+        for (e = 0; e < round.matches.length; e++) {
+            round.matches[e] = await updateTournamentMatch(round.matches[e], now, round);
+        }
+        LastRoundStatus = round.status;
+        rounds[i] = round;
+    }
+    console.log(rounds);
+    console.log(now)
+    return rounds
+}
 
 async function updateTournament(tournament, now) {
 
@@ -2402,10 +2450,15 @@ async function updateTournament(tournament, now) {
     if (tournament.status === "idle" && new Date(tournament.register_end) <= now) {
         tournament.allow_new_registration = 0;
         tournament.status = "active";
+        tournament.rounds = await createTournamentRounds(tournament, 48, "DRL")
     }
-    tournament.rounds = createTournamentRounds(tournament, 48, "DRL")
+    //tournament.rounds = await createTournamentRounds(tournament, 48, "DRL")
     if (tournament.status === "active" && tournament.player_count < 2) {
         //tournament.status = "fail";
+    }
+
+    if (tournament.status === "active") {
+        tournament.rounds = await updateTournamentRounds(tournament.rounds, now);
     }
 
     saveTournament(tournament);
@@ -2424,7 +2477,7 @@ function createTournamentRounds(tournament, playerCount, tournamentType) {
                 norder: 1,
                 title: "QUALIFIERS",
                 start_at: new Date().toISOString(),
-                end_at: new Date(Date.now() + 20 * 60 * 1000).toISOString(),
+                end_at: new Date(Date.now() + 1 * 60 * 1000).toISOString(),
                 map: tournament.map,
                 track: tournament.track,
                 is_custom_map: tournament.is_custom_map,
@@ -2433,7 +2486,7 @@ function createTournamentRounds(tournament, playerCount, tournamentType) {
                 multiplayer_countdown: true,
                 mode: "leaderboard",
                 matches: [],
-                roundId: roundNumber,
+                roundId: "ROUND" + roundNumber,
                 roundNumber: roundNumber,
                 remainingPlayers: targetBracketSize
             });
@@ -2459,7 +2512,7 @@ function createTournamentRounds(tournament, playerCount, tournamentType) {
             else if (currentPlayers === 12) {
                 title = "SEMIFINALS"
             } else if (currentPlayers === 6) {
-                title = "Finals"
+                title = "FINALS"
             }
 
             rounds.push({
@@ -2467,6 +2520,7 @@ function createTournamentRounds(tournament, playerCount, tournamentType) {
                 incomingPlayers: currentPlayers,
                 matchCount: matchCount,
                 status: "idle",
+                norder: 1 + roundNumber,
                 start_at: null,
                 end_at: null,
                 map: tournament.map,
@@ -2516,7 +2570,8 @@ function createTournamentMatches(matchCount, roundINFO, targetBracketSize, numbe
                 start_at: roundINFO.start_at,
                 end_at: roundINFO.end_at,
                 status: "active",
-                player_ids: tournament.playerids
+                player_ids: tournament.playerids,
+                mode: roundINFO.mode
             })
         } else if (roundINFO.title === "QUARTERFINALS") {
             matches.push({
@@ -2537,7 +2592,8 @@ function createTournamentMatches(matchCount, roundINFO, targetBracketSize, numbe
                 heats: 4,
                 start_at: roundINFO.start_at,
                 end_at: roundINFO.end_at,
-                status: "waiting"
+                status: "idle",
+                mode: roundINFO.mode
             })
         } else if (roundINFO.title === "SEMIFINALS") {
             matches.push({
@@ -2558,11 +2614,12 @@ function createTournamentMatches(matchCount, roundINFO, targetBracketSize, numbe
                 heats: 4,
                 start_at: roundINFO.start_at,
                 end_at: roundINFO.end_at,
-                status: "waiting"
+                status: "idle",
+                mode: roundINFO.mode
             })
         } else if (roundINFO.title === "Finals") {
             matches.push({
-                id: "Finals" + i,
+                id: "FINALS" + i,
                 round_id: roundINFO.roundId,
                 round_norder: roundINFO.norder,
                 map: roundINFO.map,
@@ -2578,7 +2635,8 @@ function createTournamentMatches(matchCount, roundINFO, targetBracketSize, numbe
                 heats: 4,
                 start_at: roundINFO.start_at,
                 end_at: roundINFO.end_at,
-                status: "waiting"
+                status: "idle",
+                mode: roundINFO.mode
             })
         }
     }
@@ -2701,7 +2759,7 @@ function saveMatch(Match, round, tournament) {
             Match.default_drone_class,
             Match.mode,
             Match.parents,
-            Match.player_ids,
+            JSON.stringify(Match.player_ids),
             Match.player_order,
         ], err => {
             if (err) {
@@ -2808,7 +2866,7 @@ function mapTournamentMatchSqlToJson(Match) {
         "is-custom-map": Match.is_custom_map,
         "custom-map": Match.custom_map,
         "custom-map-title": Match.custom_map_title,
-        "multiplayer-room-timer": Match.multiplayer_room_timer,
+        "multiplayer-room-timer": Match.multiplayer_room_timer == 1 ? true : false,
         "is-under-review": false,
         "players-size": Match.players_size,
         "throttle-cap": Match.throttle_cap,
@@ -2819,12 +2877,13 @@ function mapTournamentMatchSqlToJson(Match) {
         "norder": Match.norder,
         "num-winners": Match.num_winners,
         status: Match.status,
-        "player-ids": Match.player_ids
+        "player-ids": Match.player_ids,
+        mode: Match.mode
     }
 
     return Object.fromEntries(
-            Object.entries(data).filter(([key, value]) => value != null)
-        );
+        Object.entries(data).filter(([key, value]) => value != null)
+    );
 }
 
 function mapTournamentsSqlToJson(row, playerids, player_count, ranking, rounds) {
@@ -2911,7 +2970,7 @@ function mapTournamentsSqlToJson(row, playerids, player_count, ranking, rounds) 
                     "is-custom-map": round.is_custom_map,
                     "custom-map": round.custom_map,
                     "custom-map-title": round.custom_map_title,
-                    "multiplayer-countdown": round.multiplayer_countdown,
+                    "multiplayer-countdown": round.multiplayer_countdown == 1 ? true : false,
                     "mode": round.mode,
                     matches: []
                 }
@@ -2922,7 +2981,6 @@ function mapTournamentsSqlToJson(row, playerids, player_count, ranking, rounds) 
                         M.push(mapTournamentMatchSqlToJson(Match));
                     });
                 }
-
                 datas.matches = M
                 R.push(datas)
             });
@@ -2940,24 +2998,30 @@ function mapTournamentsSqlToJson(row, playerids, player_count, ranking, rounds) 
 }
 
 app.get(`/tournaments/:guid/results/:roundid`, (req, res) => {
-    console.log("/tournaments/:guid/scores")
+    console.log("/tournaments/:guid/results/:roundid")
     console.log(req.params.guid)
     console.log(req.params.roundid)
     res.status(200).json({
         success: true, data: {
             "status": "success",
             "leaderboard-params": [
-                { guid: "9054cbe9-c880-4b20-9344-0b2f7824c211", match: "QUALS" }
+                { guid: req.params.guid, match: "QUALS" }
             ],
             "matches": [
                 {
                     "player-id": "b9365d125935475b8327162c66a25e12",
                     score: 1,
-                    "match-id": "QUAL",
+                    "match-id": "QUALS",
                     "position": 1,
+                    "heat": 0,
+                    "crashes": 0,
+                    "points": 0,
                 }
             ],
-            "leaderboard": []
+            "leaderboard": [{
+                "player-id": "b9365d125935475b8327162c66a25e12",
+                "profile-name": "BOY BOY"
+            }]
         }
     })
 })
@@ -2999,8 +3063,8 @@ app.get(`/tournaments/:guid/matches/:mid`, (req, res) => {
         return res.status(404).json({ success: false })
 
     let found = null;
-    for (const round in tournament.rounds) {
-        const match = round.Matches.find(m => m.id === req.params.mid);
+    for (const round of tournament.rounds) {
+        const match = round.matches.find(m => m.id === req.params.mid);
         if (match) {
             found = match
             break
@@ -3010,11 +3074,12 @@ app.get(`/tournaments/:guid/matches/:mid`, (req, res) => {
     if (!found)
         return res.status(404).json({ success: false })
 
+    console.log(mapTournamentMatchSqlToJson(found))
     res.status(200).json({ success: true, data: mapTournamentMatchSqlToJson(found) });
 
 })
 
-app.post(`/tournaments/:guid/scores`,express.urlencoded({ extended: true }), badTokenAuthv2, (req, res) => {
+app.post(`/tournaments/:guid/scores`, express.urlencoded({ extended: true }), badTokenAuthv2, (req, res) => {
     console.log("/tournaments/:guid/scores")
     console.log(req.body)
 })
@@ -3662,6 +3727,9 @@ app.get('/leaderboards/', badTokenAuthv2, (req, res) => {
     } else {
         page = req.query.page
     }
+
+
+
     const offset = (page - 1) * limit;
     console.log(req.query)
     const allowed = ["player-id", "map", "track", "diameter", "drl-official", "drone-name", "drone-guid", "profile-platform-id", "username", "profile-color", "profile-thumb", "profile-name", "profile-platform", "is-custom-map", "custom-map", "mission", "group-id", "region", "replay-url", "game-type", "drone-thumb", "multiplayer", "multiplayer-room-id", "multiplayer-room-size", "multiplayer-player-id", "multiplayer-master-id", "multiplayer-player-position", "flag-url", "score-type", "match-id", "tryouts", "battery-resistance", "controller-type", "position", "score", "score-check", "score-double-check", "score-cheat", "score-cheat-ratio", "score-cheat-samples", "crash-count", "top-speed", "time-in-first", "lap-times", "gate-times", "fastest-lap", "slowest-lap", "total-distance", "percentile", "order-col", "high-score", "race-id", "limit-col", "heat", "custom-physics", "drl-pilot-mode", "drone-rig", "drone-hash",]
@@ -3690,6 +3758,10 @@ app.get('/leaderboards/', badTokenAuthv2, (req, res) => {
             normalizeValue(value)
         ])
     );
+
+    if (req.query.match) {
+        normalizedQuery.match_id = req.query.match
+    }
     console.log(normalizedQuery)
     const keys = Object.keys(normalizedQuery);
     const conditions = keys.map(key => `${key} = ?`);
