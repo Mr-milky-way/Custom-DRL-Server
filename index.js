@@ -2325,6 +2325,10 @@ app.post('/state/', express.urlencoded(), badTokenAuthv2, (req, res) => {
 ---------------------------------------------------------------------------------------------------
 */
 
+const QualsTimeMins = 20
+
+const RoundTimeMaxMins = 90
+
 var tournamentsMap = new Map();
 
 function loadAllTournaments() {
@@ -2422,7 +2426,6 @@ function loadAllTournaments() {
 
                         tournament.rounds = roundsByTournament[tournament.guid] || [];
 
-                        console.log(tournament);
                         return tournament;
                     });
                     resolve(formattedRows);
@@ -2482,7 +2485,7 @@ async function updateTournamentRounds(rounds, now, players) {
         if (LastRoundStatus === "complete" && round.status === "idle") {
             round.status = "active"
             round.start_at = new Date().toISOString()
-            round.end_at = new Date(Date.now() + 3 * 60 * 1000).toISOString()
+            round.end_at = new Date(Date.now() + RoundTimeMaxMins * 60 * 1000).toISOString()
         }
 
         for (e = 0; e < round.matches.length; e++) {
@@ -2535,7 +2538,7 @@ function createTournamentRounds(tournament, playerCount, tournamentType) {
                 norder: 1,
                 title: "QUALIFIERS",
                 start_at: new Date().toISOString(),
-                end_at: new Date(Date.now() + 1 * 60 * 1000).toISOString(),
+                end_at: new Date(Date.now() + QualsTimeMins * 60 * 1000).toISOString(),
                 map: tournament.map,
                 track: tournament.track,
                 is_custom_map: tournament.is_custom_map,
@@ -2624,6 +2627,9 @@ function createTournamentMatches(matchCount, roundINFO, targetBracketSize, numbe
                 is_under_review: false,
                 players_size: numberOfPlayers,
                 throttle_cap: 0,
+                heats: 4,
+                current_heat: 1,
+                active_heat: 1,
                 num_winners: targetBracketSize,
                 start_at: roundINFO.start_at,
                 end_at: roundINFO.end_at,
@@ -2929,6 +2935,8 @@ function mapTournamentMatchSqlToJson(Match) {
         "players-size": Match.players_size,
         "throttle-cap": Match.throttle_cap,
         "heats": Match.heats,
+        "current-heat": Match.current_heat,
+        "active-heat": Match.active_heat,
         "start-at": Match.start_at,
         "end-at": Match.end_at,
         "current-time": new Date().toISOString(),
@@ -3113,7 +3121,10 @@ app.get('/tournaments/:guid/unregister', badTokenAuthv2, (req, res) => {
     })
 })
 
-
+app.get(`/tournaments/:guid/matches/:mid/countdown`, (req, res) => {
+    const base64Data = Buffer.from(JSON.stringify(true)).toString('base64');
+    res.status(200).json({ success: true, data: base64Data });
+})
 
 app.get(`/tournaments/:guid/matches/:mid`, (req, res) => {
     console.log("/tournaments/:guid/matches/:mid")
@@ -3299,7 +3310,6 @@ app.post('/leaderboards/user/reset/', express.urlencoded({ extended: true }), ba
             res.status(500).json({ success: false });
             return;
         }
-
         for (const file of files) {
             fs.unlink(path.join("replay/" + uid, file), (err) => {
                 if (err) {
@@ -3307,17 +3317,17 @@ app.post('/leaderboards/user/reset/', express.urlencoded({ extended: true }), ba
                     res.status(500).json({ success: false });
                     return;
                 }
-                db.run(`DELETE FROM leaderboard WHERE player_id = ?`, [uid], function (err) {
-                    if (err) {
-                        res.status(500).json({ success: false });
-                        return;
-                    } else {
-                        res.status(200).json({ success: true });
-                        console.log(`Deleted ${this.changes} leaderboard entries for user ${uid}`);
-                    }
-                });
             });
         }
+        db.run(`DELETE FROM leaderboard WHERE player_id = ?`, [uid], function (err) {
+            if (err) {
+                res.status(500).json({ success: false });
+                return;
+            } else {
+                res.status(200).json({ success: true });
+                console.log(`Deleted ${this.changes} leaderboard entries for user ${uid}`);
+            }
+        });
     });
 });
 
@@ -3356,13 +3366,19 @@ app.post('/leaderboards/', express.urlencoded({ extended: false }), badTokenAuth
         const uid = req.uid;
         const diameter = Number(parsed[0].diameter);
         let query = ""
+        let query1 = ""
         let inputs = []
+        let inputs1 = []
         if (parsed[0]['is-custom-map'] == true) {
             query = `WHERE player_id = ? AND map = ? AND track = ? AND diameter = ? AND drl_official = ? AND custom_map = ? `
+            query1 = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? AND custom_map = ? `
             inputs = [uid, parsed[0].map, parsed[0].track, diameter, parsed[0]["drl-official"], parsed[0]['custom-map']]
+            inputs1 = [parsed[0].map, parsed[0].track, diameter, parsed[0]["drl-official"], parsed[0]['custom-map']]
         } else {
             query = `WHERE player_id = ? AND map = ? AND track = ? AND diameter = ? AND drl_official = ? `
+            query1 = `WHERE map = ? AND track = ? AND diameter = ? AND drl_official = ? AND custom_map = ? `
             inputs = [uid, parsed[0].map, parsed[0].track, diameter, parsed[0]["drl-official"]]
+            inputs1 = [parsed[0].map, parsed[0].track, diameter, parsed[0]["drl-official"], parsed[0]['custom-map']]
         }
         console.log(`SELECT * FROM leaderboard ${query} `, inputs)
         db.get(`SELECT * FROM leaderboard ${query}`, inputs, (err, row) => {
@@ -3370,10 +3386,14 @@ app.post('/leaderboards/', express.urlencoded({ extended: false }), badTokenAuth
                 console.error("Error fetching leaderboard:", err);
             }
             const isNewRow = !row;
-            const isBetterScore =
+            let isBetterScore =
                 row && row.score != null && parsed[0].score != null
                     ? parsed[0].score < row.score
                     : true;
+
+            if (parsed[0]['race-status'] && parsed[0]['race-status'] != "Success") {
+                isBetterScore = false
+            }
             if (isBetterScore || isNewRow) {
                 if (!isNewRow) {
                     let rep = row.replay_url
@@ -3530,7 +3550,7 @@ app.post('/leaderboards/', express.urlencoded({ extended: false }), badTokenAuth
                         res.status(500).json({ success: false });
                         return;
                     } else {
-                        db.all(`SELECT * FROM leaderboard ${query}`, inputs,
+                        db.all(`SELECT * FROM leaderboard ${query1}`, inputs1,
                             (err, rows) => {
                                 if (err) {
                                     console.error(err);
@@ -3820,6 +3840,7 @@ app.get('/leaderboards/', badTokenAuthv2, (req, res) => {
 
     if (req.query.match) {
         normalizedQuery.match_id = req.query.match
+        normalizedQuery
     }
     console.log(normalizedQuery)
     const keys = Object.keys(normalizedQuery);
