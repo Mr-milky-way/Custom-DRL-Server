@@ -3859,7 +3859,7 @@ app.get('/leaderboards/', badTokenAuthv2, (req, res) => {
             console.error("Error fetching leaderboard:", err);
             res.status(200).json({
                 success: true, data: {
-                    "leaderboard": null,
+                    "leaderboard": [],
                     "pagging": { "page": page, "limit": limit, "total": 2 }
                 }
             });
