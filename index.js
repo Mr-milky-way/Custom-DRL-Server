@@ -3240,7 +3240,9 @@ function mapLeaderboardSqlToJson(row, i) {
         "custom-physics": row[i].custom_physics,
         "drl-pilot-mode": row[i].drl_pilot_mode,
         "drone-rig": row[i].drone_rig,
-        "drone-hash": row[i].drone_hash
+        "drone-hash": row[i].drone_hash,
+        "created-at": row[i].created_at || new Date().toISOString(),
+        "updated-at": row[i].updated_at || new Date().toISOString(),
     }
 }
 
