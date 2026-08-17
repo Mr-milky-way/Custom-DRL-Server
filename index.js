@@ -604,7 +604,7 @@ db.run("CREATE TABLE IF NOT EXISTS tournamentsubscribed (uid TEXT, guid TEXT, PR
 
 
 const badTokenAuthv2 = (req, res, next) => {
-    const token = req.headers['x-access-jsonwebtoken']
+    const token = req.headers['x-access-jsonwebtoken'] || req.query.token;
     db.get(`SELECT uid, expires FROM user WHERE token = ?`, [token], (err, row) => {
         if (err || !row) {
             console.error("Error fetching UID:", err);
