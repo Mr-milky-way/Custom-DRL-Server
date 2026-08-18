@@ -3198,7 +3198,7 @@ function mapLeaderboardSqlToJson(row, i) {
         "profile-platform-id": row[i].profile_platform_id,
         "username": row[i].profile_name,
         "profile-color": row[i].profile_color,
-        "profile-thumb": row[i].profile_thumb,
+        "profile-thumb": row[i].profile_thumb || "https://raw.githubusercontent.com/gysi/drl-leaderboard-app/refs/heads/main/frontend/src/assets/placeholder.png",
         "profile-name": row[i].profile_name,
         "profile-platform": row[i].profile_platform,
         "is-custom-map": row[i].is_custom_map,
