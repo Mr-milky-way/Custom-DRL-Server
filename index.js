@@ -3196,7 +3196,7 @@ function mapLeaderboardSqlToJson(row, i) {
         "drone-name": row[i].drone_name,
         "drone-guid": row[i].drone_guid,
         "profile-platform-id": row[i].profile_platform_id,
-        "username": row[i].username,
+        "username": row[i].profile_name,
         "profile-color": row[i].profile_color,
         "profile-thumb": row[i].profile_thumb,
         "profile-name": row[i].profile_name,
