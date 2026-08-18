@@ -3188,6 +3188,7 @@ app.get('/tournaments/', (req, res) => {
 function mapLeaderboardSqlToJson(row, i) {
     return {
         "player-id": row[i].player_id,
+        "id": crypto.createHash('sha256').update([row[i].player_id, row[i].map, row[i].track, row[i].diameter, row[i].drl_official, row[i].custom_map ?? "", row[i].match_id].join("|")).digest('hex'),
         "map": row[i].map,
         "track": row[i].track,
         "diameter": row[i].diameter,
