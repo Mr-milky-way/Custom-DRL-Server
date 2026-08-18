@@ -91,6 +91,10 @@ app.use(rateLimit({
 -------------------------------------------------
 */
 
+const normalizeDate = (value) =>
+    value ? new Date(value).toISOString() : new Date().toISOString();
+
+
 app.use((req, res, next) => {
     console.log(req.url)
     next();
@@ -3241,8 +3245,8 @@ function mapLeaderboardSqlToJson(row, i) {
         "drl-pilot-mode": row[i].drl_pilot_mode,
         "drone-rig": row[i].drone_rig,
         "drone-hash": row[i].drone_hash,
-        "created-at": row[i].created_at || new Date().toISOString(),
-        "updated-at": row[i].updated_at || new Date().toISOString(),
+        "created-at": normalizeDate(row[i].created_at),
+        "updated-at": normalizeDate(row[i].updated_at)
     }
 }
 
